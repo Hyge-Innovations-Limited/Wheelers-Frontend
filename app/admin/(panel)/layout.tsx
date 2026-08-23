@@ -57,6 +57,12 @@ function Icon({ name }: { name: string }) {
           <path d="M2 12l10 5 10-5" />
         </svg>
       );
+    case "activity":
+      return (
+        <svg {...props}>
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+      );
     case "logout":
       return (
         <svg {...props}>
@@ -75,6 +81,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/drivers", label: "Drivers", icon: "drivers" },
   { href: "/admin/dashboard/riders", label: "Riders", icon: "riders" },
   { href: "/admin/dashboard/rides", label: "Rides", icon: "rides" },
+  { href: "/admin/dashboard/activity", label: "Activity", icon: "activity" },
 ];
 
 export default function AdminPanelLayout({

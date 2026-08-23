@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { adminFetch } from "@/lib/admin-api";
 
 interface RiderAnalytics {
@@ -134,7 +135,11 @@ export default function AdminRidersPage() {
               <tbody>
                 {analytics.topRiders.map((r) => (
                   <tr key={r.riderId}>
-                    <td>{r.name || "—"}</td>
+                    <td>
+                      <Link className="admin-user-link" href={`/admin/dashboard/activity?userId=${r.riderId}`}>
+                        {r.name || "—"}
+                      </Link>
+                    </td>
                     <td>{r.phone || "—"}</td>
                     <td>{r.email || "—"}</td>
                     <td>{r.rideCount}</td>

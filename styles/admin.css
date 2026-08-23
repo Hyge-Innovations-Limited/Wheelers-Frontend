@@ -738,3 +738,100 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── Activity explorer + dashboard live feed ── */
+
+.admin-activity-search {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-input {
+  flex: 1;
+  min-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid #E5E0DB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  color: #1A1614;
+  outline: none;
+}
+
+.admin-input:focus {
+  border-color: var(--or, #FF6B2C);
+}
+
+.admin-select {
+  flex: 0 0 auto;
+  min-width: 170px;
+}
+
+.admin-btn-primary {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: var(--or, #FF6B2C);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.admin-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.admin-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  border-top: 1px solid #F0EDEA;
+}
+
+.admin-activity-details {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #786F68;
+  font-size: 13px;
+}
+
+.admin-user-link {
+  color: var(--or, #FF6B2C);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-user-link:hover {
+  text-decoration: underline;
+}
+
+.admin-pulse-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.admin-pulse-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #F0EDEA;
+  border-radius: 10px;
+}
+
+.admin-pulse-count {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1A1614;
+}
