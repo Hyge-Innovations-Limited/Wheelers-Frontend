@@ -52,7 +52,13 @@ function RidesTable() {
   }, [query, status]);
 
   const path = `/admin/rides${buildQuery({ status, q: query, limit: PAGE_SIZE, offset })}`;
-  const { data, error, loading, refresh } = useAdminData<PagedResponse<AdminRideRow>>(path);
+  // Rides is the page an operator watches during a shift, so it re-reads
+  // itself rather than going stale behind them.
+  const { data, error, loading, refresh } = useAdminData<PagedResponse<AdminRideRow>>(
+    path,
+    [],
+    { refreshMs: 20_000 },
+  );
 
   return (
     <>

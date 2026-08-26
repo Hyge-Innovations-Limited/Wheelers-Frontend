@@ -14,7 +14,21 @@ interface State<T> {
  * error that survives to the UI, a manual refresh, and cancellation so a
  * fast filter change cannot let a stale response overwrite a newer one.
  */
-export function useAdminData<T>(path: string | null, deps: unknown[] = []): State<T> & { refresh: () => void } {
+export function useAdminData<T>(
+  path: string | null,
+  deps: unknown[] = [],
+  options: {
+    /**
+     * Re-fetch every N milliseconds.
+     *
+     * Off by default — most panel pages are things an operator reads once. Turn
+     * it on for the pages that answer "what is happening right now", where a
+     * number that was true when the tab was opened an hour ago is worse than no
+     * number at all.
+     */
+    refreshMs?: number;
+  } = {},
+): State<T> & { refresh: () => void } {
   const [state, setState] = useState<State<T>>({ data: null, error: null, loading: path !== null });
   const [nonce, setNonce] = useState(0);
   const requestRef = useRef(0);
@@ -46,6 +60,29 @@ export function useAdminData<T>(path: string | null, deps: unknown[] = []): Stat
   }, [path, nonce, ...deps]);
 
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
+
+  // Background refresh. Deliberately silent: it does not flip `loading`, so the
+  // page never flashes a spinner over numbers that are already on screen, and a
+  // failed poll leaves the last good data alone rather than blanking the page.
+  useEffect(() => {
+    if (!path || !options.refreshMs) return;
+
+    const timer = setInterval(() => {
+      const requestId = ++requestRef.current;
+      adminJson<T>(path)
+        .then((data) => {
+          if (requestId !== requestRef.current) return;
+          setState({ data, error: null, loading: false });
+        })
+        .catch(() => {
+          // Keep what is on screen. A blip is not worth wiping the dashboard.
+        });
+    }, options.refreshMs);
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, options.refreshMs, ...deps]);
+
   return { ...state, refresh };
 }
 

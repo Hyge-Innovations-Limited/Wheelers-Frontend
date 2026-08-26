@@ -27,10 +27,19 @@ import {
 
 const RANGES = [7, 30, 90] as const;
 
+/** How often the live pages re-read themselves. */
+const LIVE_REFRESH_MS = 20_000;
+
 export default function DashboardPage() {
   const [days, setDays] = useState<(typeof RANGES)[number]>(30);
 
-  const overview = useAdminData<OverviewResponse>("/admin/metrics/overview");
+  // The Overview answers "how are we doing right now", so it keeps itself
+  // current: a ride booked while this tab is open shows up without anyone
+  // pressing Refresh. Every number still comes from the live API — nothing here
+  // is cached or estimated.
+  const overview = useAdminData<OverviewResponse>("/admin/metrics/overview", [], {
+    refreshMs: LIVE_REFRESH_MS,
+  });
   const series = useAdminData<{ days: number; points: TimeseriesPoint[] }>(
     `/admin/metrics/timeseries?days=${days}`,
   );
