@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { GroupRideMetrics, OverviewResponse, TimeseriesPoint } from "@/lib/admin-api";
+import type {
+  GroupRideMetrics,
+  OverviewResponse,
+  PendingDriverRow,
+  TimeseriesPoint,
+} from "@/lib/admin-api";
 import {
   formatDistance,
   formatDuration,
@@ -10,12 +15,14 @@ import {
   formatNairaCompact,
   formatNumber,
   formatPercent,
+  formatWhen,
   humanise,
 } from "@/lib/admin-format";
 import { AreaChart, BarChart, BreakdownBars, CHART_COLORS } from "@/components/admin/charts";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import {
   Card,
+  EmptyState,
   ErrorState,
   PageHeader,
   SectionLabel,
@@ -23,12 +30,126 @@ import {
   Spinner,
   StatCard,
   StatGrid,
+  TableWrap,
 } from "@/components/admin/ui";
 
 const RANGES = [7, 30, 90] as const;
 
 /** How often the live pages re-read themselves. */
 const LIVE_REFRESH_MS = 20_000;
+
+/** Rows of the approval queue shown inline before it defers to the full page. */
+const QUEUE_PREVIEW = 8;
+
+/** A submission older than this has been sitting too long, and is called out. */
+const STALE_AFTER_HOURS = 48;
+
+const hoursWaiting = (submittedAt: string | null): number =>
+  submittedAt ? (Date.now() - Date.parse(submittedAt)) / 3_600_000 : 0;
+
+const vehicleOf = (d: PendingDriverRow): string => {
+  const parts = [d.vehicleMake, d.vehicleModel].filter(Boolean).join(" ");
+  const year = d.vehicleYear ? ` (${d.vehicleYear})` : "";
+  const plate = d.vehiclePlate ? ` · ${d.vehiclePlate}` : "";
+  return parts ? `${parts}${year}${plate}` : d.vehiclePlate ?? "—";
+};
+
+/**
+ * Drivers waiting on a human, at the top of the page.
+ *
+ * The metrics below answer "how is the business doing"; this answers "what is
+ * on my desk right now", and it is the only thing on the Overview an operator
+ * can act on — so it goes first, in queue order, oldest submission at the top.
+ * Nobody should have to remember to click through to the KYC page to find out
+ * that someone has been waiting three days.
+ */
+function ApprovalQueue() {
+  const { data, error, loading, refresh } = useAdminData<{ drivers: PendingDriverRow[] }>(
+    "/admin/drivers",
+    [],
+    { refreshMs: LIVE_REFRESH_MS },
+  );
+
+  if (error) return <ErrorState error={error} onRetry={refresh} />;
+  if (loading && !data) return <Spinner label="Loading the approval queue…" />;
+
+  // The API already orders these oldest-first; sorting again costs nothing and
+  // means the queue stays a queue even if that ever changes.
+  const queue = [...(data?.drivers ?? [])].sort(
+    (a, b) => Date.parse(a.submittedAt ?? "") - Date.parse(b.submittedAt ?? ""),
+  );
+
+  if (queue.length === 0) {
+    return (
+      <Card>
+        <EmptyState>No drivers are waiting for review — the queue is clear.</EmptyState>
+      </Card>
+    );
+  }
+
+  const waitingLongest = hoursWaiting(queue[0].submittedAt);
+
+  return (
+    <Card
+      title={`${formatNumber(queue.length)} ${queue.length === 1 ? "driver" : "drivers"} waiting for review`}
+      right={
+        waitingLongest >= STALE_AFTER_HOURS
+          ? `longest wait ${Math.floor(waitingLongest / 24)}d`
+          : undefined
+      }
+    >
+      <TableWrap>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Waiting</th>
+              <th>Driver</th>
+              <th>Vehicle</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {queue.slice(0, QUEUE_PREVIEW).map((d) => {
+              const stale = hoursWaiting(d.submittedAt) >= STALE_AFTER_HOURS;
+              return (
+                <tr key={d.driverId}>
+                  <td>
+                    <span className={stale ? "admin-badge red" : "admin-badge orange"}>
+                      {formatWhen(d.submittedAt)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="admin-stack">
+                      <span>{d.name ?? "Unnamed driver"}</span>
+                      <em>{d.phone ?? d.email ?? "no contact on file"}</em>
+                    </span>
+                  </td>
+                  <td>{vehicleOf(d)}</td>
+                  <td className="num">
+                    <Link
+                      href={`/admin/dashboard/drivers/${d.driverId}`}
+                      className="admin-review-link"
+                    >
+                      Review
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </TableWrap>
+
+      {queue.length > QUEUE_PREVIEW ? (
+        <div className="admin-card-more">
+          <Link href="/admin/dashboard/drivers">
+            Review the other {formatNumber(queue.length - QUEUE_PREVIEW)} waiting →
+          </Link>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const [days, setDays] = useState<(typeof RANGES)[number]>(30);
@@ -48,10 +169,9 @@ export default function DashboardPage() {
   );
   const groupRides = useAdminData<GroupRideMetrics>("/admin/metrics/group-rides");
 
-  if (overview.loading && !overview.data) return <Spinner label="Loading platform metrics…" />;
-  if (overview.error) return <ErrorState error={overview.error} onRetry={overview.refresh} />;
-  if (!overview.data) return null;
-
+  // No early return on the metrics: the approval queue below is a different
+  // request, and a slow or broken /metrics/overview must not hide the work
+  // someone came here to do.
   const o = overview.data;
   const points = series.data?.points ?? [];
   const shortDate = (iso: string) => iso.slice(5).replace("-", "/");
@@ -73,6 +193,20 @@ export default function DashboardPage() {
         }
       />
 
+      {/* Work before numbers: the one thing on this page that needs a human. */}
+      <SectionLabel
+        right={<Link href="/admin/dashboard/drivers">Open the KYC queue →</Link>}
+      >
+        Driver approvals
+      </SectionLabel>
+      <ApprovalQueue />
+
+      {overview.error ? (
+        <ErrorState error={overview.error} onRetry={overview.refresh} />
+      ) : !o ? (
+        <Spinner label="Loading platform metrics…" />
+      ) : (
+        <>
       {/* Money first — it is the question everyone opens this page to answer. */}
       <SectionLabel>Money</SectionLabel>
       <StatGrid>
@@ -439,6 +573,8 @@ export default function DashboardPage() {
         even when settlement is still catching up.{" "}
         <Link href="/admin/dashboard/users">Browse users →</Link>
       </div>
+        </>
+      )}
     </>
   );
 }

@@ -252,6 +252,24 @@ export interface GroupRideMetrics {
   bookedValueNgn: string; avgSeatFareNgn: string;
 }
 
+/**
+ * A driver who has submitted KYC and is waiting on a human. `GET /admin/drivers`
+ * returns these oldest-submission-first — it is a queue, and whoever has been
+ * waiting longest is who to deal with next.
+ */
+export interface PendingDriverRow {
+  driverId: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  vehicleMake: string | null;
+  vehicleModel: string | null;
+  vehiclePlate: string | null;
+  vehicleYear: number | null;
+  status: string;
+  submittedAt: string | null;
+}
+
 
 /* ── Safety alerts ─────────────────────────────────────────────────────────
  *

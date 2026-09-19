@@ -889,7 +889,14 @@
   margin: 8px 0 14px;
 }
 
-.admin-section-right { display: flex; gap: 6px; }
+.admin-section-right { display: flex; gap: 6px; align-items: center; }
+.admin-section-right a {
+  color: var(--adm-orange);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.admin-section-right a:hover { text-decoration: underline; }
 
 /* ── stat cards ──────────────────────────────────────── */
 
@@ -963,6 +970,15 @@
 .admin-card-title { font-size: 14px; font-weight: 700; color: var(--adm-ink); }
 .admin-card-right { font-size: 12px; color: var(--adm-muted); }
 .admin-card-body  { padding: 20px; }
+
+/* "and N more" — a card that shows a preview says where the rest of it lives. */
+.admin-card-more {
+  padding: 12px 20px;
+  border-top: 1px solid var(--adm-line-soft);
+  font-size: 12.5px;
+}
+.admin-card-more a { color: var(--adm-orange); text-decoration: none; font-weight: 600; }
+.admin-card-more a:hover { text-decoration: underline; }
 
 .admin-two-col {
   display: grid;

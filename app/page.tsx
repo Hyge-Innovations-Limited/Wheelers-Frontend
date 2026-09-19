@@ -1,26 +1,54 @@
 import type { Metadata } from "next";
-import HomePageClient from "@/components/home/HomePageClient";
+import { Archivo, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import LandingPage from "@/components/landing/LandingPage";
+
+import "../styles/landing.css";
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "900"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: "italic",
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+const title = "Ride from WhatsApp. Drive from the app.";
+const description =
+  "Wheelers is Lagos ride-hailing with no rider app: book on WhatsApp, get a fixed fare before you commit, and get matched to a KYC-verified driver on the Wheelers Driver app for iOS and Android.";
 
 export const metadata: Metadata = {
-  title: "Affordable Electric Ride Hailing App in Nigeria",
-  description:
-    "Wheelers is an affordable electric ride hailing app in Nigeria with fixed prices, upfront fares, and a cleaner alternative for everyday rides.",
+  title,
+  description,
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Affordable Electric Ride Hailing App in Nigeria",
-    description:
-      "Wheelers is an affordable electric ride hailing app in Nigeria with fixed prices, upfront fares, and a cleaner alternative for everyday rides.",
+    title: `${title} | Wheelers`,
+    description,
     url: "/",
   },
   twitter: {
-    title: "Affordable Electric Ride Hailing App in Nigeria",
-    description:
-      "Wheelers is an affordable electric ride hailing app in Nigeria with fixed prices, upfront fares, and a cleaner alternative for everyday rides.",
+    title: `${title} | Wheelers`,
+    description,
   },
 };
 
 export default function Page() {
-  return <HomePageClient />;
+  return (
+    <LandingPage className={`${archivo.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`} />
+  );
 }
