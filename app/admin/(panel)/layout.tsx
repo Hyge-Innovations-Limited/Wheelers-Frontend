@@ -80,6 +80,13 @@ function Icon({ name }: { name: string }) {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
       );
+    case "map":
+      return (
+        <svg {...props}>
+          <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+          <circle cx="12" cy="10" r="2.4" />
+        </svg>
+      );
     case "logout":
       return (
         <svg {...props}>
@@ -98,6 +105,7 @@ function Icon({ name }: { name: string }) {
 // live where they belong — inside the user directory and each user's profile.
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Overview", icon: "dashboard" },
+  { href: "/admin/dashboard/live-map", label: "Live map", icon: "map" },
   { href: "/admin/dashboard/users", label: "Users", icon: "riders" },
   { href: "/admin/dashboard/rides", label: "Rides", icon: "rides" },
   { href: "/admin/dashboard/group-rides", label: "Group rides", icon: "group" },

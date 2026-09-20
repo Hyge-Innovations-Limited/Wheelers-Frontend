@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import type { AdminUserDetail } from "@/lib/admin-api";
+import { setWithdrawalFreeze, type AdminUserDetail } from "@/lib/admin-api";
 import {
   displayName,
   formatDate,
@@ -173,6 +173,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
 
       {tab === "money" ? (
         <>
+          {data.security ? (
+            <WithdrawalFreeze userId={user.id} security={data.security} onChanged={refresh} />
+          ) : null}
+
           {wallet && wallet.byType.length > 0 ? (
             <Card title="Lifetime totals" padded>
               <div className="admin-chip-row">
@@ -293,5 +297,77 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
         </Card>
       ) : null}
     </>
+  );
+}
+
+/**
+ * The button for "my phone was stolen". A freeze blocks every withdrawal until
+ * an admin lifts it; lifting it also clears the known-accounts-only restriction
+ * that follows a PIN reset.
+ */
+function WithdrawalFreeze({
+  userId,
+  security,
+  onChanged,
+}: {
+  userId: string;
+  security: NonNullable<AdminUserDetail["security"]>;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const frozen = security.withdrawalsFrozen;
+  const restricted = security.withdrawalsRestricted;
+  const byAdmin = security.withdrawalsFrozenReason === "admin_freeze";
+
+  async function change(next: boolean) {
+    const question = next
+      ? "Freeze withdrawals for this user? They will not be able to move money out until you unfreeze them."
+      : "Unfreeze withdrawals? Only do this once you are sure you are dealing with the real owner.";
+    if (!window.confirm(question)) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await setWithdrawalFreeze(userId, next);
+      onChanged();
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : "Could not change the freeze.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  let headline = "Withdrawals are open";
+  let detail = security.hasPin ? "Wallet PIN is set." : "No wallet PIN yet — they will be asked to create one before withdrawing.";
+  if (frozen) {
+    headline = byAdmin ? "Withdrawals frozen by support" : "Withdrawals frozen";
+    detail = byAdmin
+      ? "Stays frozen until an admin lifts it."
+      : `${humanise(security.withdrawalsFrozenReason) || "Frozen"} · lifts ${formatDateTime(security.withdrawalsFrozenUntil)}.`;
+  } else if (restricted) {
+    headline = "Withdrawals limited to known accounts";
+    detail = `After a PIN reset, until ${formatDateTime(security.withdrawalsRestrictedUntil)}.`;
+  }
+
+  return (
+    <Card title="Withdrawal safety" padded>
+      <div className={`admin-freeze${frozen ? " frozen" : ""}`}>
+        <div className="admin-freeze-text">
+          <strong>{headline}</strong>
+          <span>{detail}</span>
+          {failure ? <span style={{ color: "var(--adm-red)" }}>{failure}</span> : null}
+        </div>
+        {frozen || restricted ? (
+          <button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => void change(false)}>
+            {busy ? "Working…" : "Unfreeze"}
+          </button>
+        ) : (
+          <button type="button" className="admin-btn-danger" disabled={busy} onClick={() => void change(true)}>
+            {busy ? "Working…" : "Freeze withdrawals"}
+          </button>
+        )}
+      </div>
+    </Card>
   );
 }

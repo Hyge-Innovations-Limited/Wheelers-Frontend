@@ -231,6 +231,17 @@ export interface AdminUserDetail {
     id: string; status: string; amountNgn: string; bankAccountNumber: string;
     bankAccountName: string; failureReason: string | null; createdAt: string; settledAt: string | null;
   }>;
+  /** What stands between this user and a withdrawal. Null on an older backend. */
+  security?: {
+    hasPin: boolean;
+    /** Decided by the server's clock, not the browser's. */
+    withdrawalsFrozen: boolean;
+    withdrawalsRestricted: boolean;
+    pinLockedUntil: string | null;
+    withdrawalsFrozenUntil: string | null;
+    withdrawalsFrozenReason: string | null;
+    withdrawalsRestrictedUntil: string | null;
+  } | null;
   activity: {
     items: Array<{
       id: string; eventType: string; source: string; rideId: string | null;
@@ -375,4 +386,139 @@ export function describeAlertKind(kind: SafetyAlertKind): string {
     default:
       return kind;
   }
+}
+
+/* ── withdrawal freeze ─────────────────────────────────────────────────── */
+
+export interface WithdrawalFreezeResult {
+  userId: string;
+  withdrawalsFrozenUntil: string | null;
+  withdrawalsFrozenReason: string | null;
+}
+
+/** For the call that starts "my phone was stolen". Only an admin can undo it. */
+export function setWithdrawalFreeze(userId: string, frozen: boolean): Promise<WithdrawalFreezeResult> {
+  return adminJson(
+    `/admin/users/${encodeURIComponent(userId)}/withdrawals/${frozen ? "freeze" : "unfreeze"}`,
+    { method: "POST" },
+  );
+}
+
+/* ── live map + dispatch ───────────────────────────────────────────────── */
+
+export type DriverPresence = "on_trip" | "online" | "stale" | "standby" | "offline";
+
+export interface LiveDriver {
+  id: string;
+  userId: string;
+  name: string;
+  phone: string | null;
+  photoUrl: string | null;
+  status: string;
+  kycStatus: string;
+  presence: DriverPresence;
+  lat: number;
+  lng: number;
+  positionSource: "online" | "standby";
+  seenAt: string;
+  secondsSinceSeen: number;
+  standbyEnabled: boolean;
+  vehicle: string | null;
+  plate: string | null;
+  rating: number;
+  totalRides: number;
+  ride: {
+    id: string; status: string; pickupAddress: string; destAddress: string;
+    destLat: number; destLng: number;
+  } | null;
+}
+
+export interface LiveDriversResponse {
+  generatedAt: string;
+  summary: { total: number } & Record<DriverPresence, number>;
+  drivers: LiveDriver[];
+}
+
+export type DispatchOutcome = "accepted" | "declined" | "no_answer" | "unreachable";
+
+export interface DispatchContactRow {
+  id: string;
+  driverId: string;
+  rideId: string | null;
+  adminName: string;
+  kind: "call" | "nudge";
+  outcome: string;
+  note: string | null;
+  at: string;
+}
+
+export interface DispatchCandidate {
+  id: string;
+  name: string;
+  phone: string | null;
+  presence: DriverPresence;
+  vehicle: string | null;
+  plate: string | null;
+  distanceKm: number;
+  etaMinutes: number;
+  secondsSinceSeen: number;
+  contacts: DispatchContactRow[];
+}
+
+export interface DispatchRide {
+  id: string;
+  status: string;
+  pickupAddress: string;
+  destAddress: string;
+  pickupLat: number;
+  pickupLng: number;
+  offerNgn: number | null;
+  estimateNgn: number | null;
+  distanceKm: number | null;
+  bidCount: number;
+  waitingSeconds: number;
+  nearest: DispatchCandidate[];
+}
+
+export interface TrailPoint { lat: number; lng: number; source: "online" | "standby"; at: string }
+
+export function fetchLiveDrivers(): Promise<LiveDriversResponse> {
+  return adminJson("/admin/live/drivers");
+}
+
+export function fetchDispatch(): Promise<{ generatedAt: string; rides: DispatchRide[] }> {
+  return adminJson("/admin/live/dispatch");
+}
+
+export function fetchLiveDriver(
+  driverId: string,
+): Promise<{ driver: LiveDriver | null; contacts: DispatchContactRow[] }> {
+  return adminJson(`/admin/live/drivers/${encodeURIComponent(driverId)}`);
+}
+
+export function fetchDriverTrail(
+  driverId: string,
+  minutes: number,
+): Promise<{ driverId: string; minutes: number; points: TrailPoint[] }> {
+  return adminJson(`/admin/live/drivers/${encodeURIComponent(driverId)}/trail?minutes=${minutes}`);
+}
+
+/** A "ride near you" push. The backend refuses a second one within two minutes. */
+export function nudgeDriver(driverId: string, rideId?: string | null): Promise<{ contact: DispatchContactRow }> {
+  return adminJson(`/admin/live/drivers/${encodeURIComponent(driverId)}/nudge`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(rideId ? { rideId } : {}),
+  });
+}
+
+export function logDriverCall(
+  driverId: string,
+  input: { outcome: DispatchOutcome; rideId?: string | null; note?: string },
+): Promise<{ contact: DispatchContactRow }> {
+  return adminJson(`/admin/live/drivers/${encodeURIComponent(driverId)}/contacts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
