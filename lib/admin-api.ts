@@ -192,6 +192,9 @@ export interface AdminUserDetail {
     id: string; name: string | null; username: string | null; email: string | null;
     phone: string | null; role: string; riderKycStatus: string;
     kycVerifiedAt: string | null; photoUrl: string | null; createdAt: string;
+    /** WhatsApp privacy-policy answer. Absent on an older backend. */
+    privacyConsent?: "PENDING" | "AGREED" | "DECLINED";
+    privacyConsentAt?: string | null;
     referralCode: string | null; referralsMade: number;
   };
   wallet: {

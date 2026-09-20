@@ -65,6 +65,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
               </span>
             )}
             {isDriver && driver!.rating ? <span className="admin-badge gray">★ {driver!.rating.toFixed(2)}</span> : null}
+            {user.privacyConsent === "AGREED" ? (
+              <span className="admin-badge green" title={`Agreed ${formatDateTime(user.privacyConsentAt)}`}>Privacy policy agreed</span>
+            ) : user.privacyConsent === "DECLINED" ? (
+              <span className="admin-badge red" title={`Declined ${formatDateTime(user.privacyConsentAt)}`}>Privacy policy not agreed</span>
+            ) : user.privacyConsent === "PENDING" ? (
+              <span className="admin-badge gray">Privacy policy not answered</span>
+            ) : null}
           </div>
           <div className="admin-profile-facts">
             <span>{user.phone ?? "No phone"}</span>
