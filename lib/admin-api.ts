@@ -525,3 +525,23 @@ export function logDriverCall(
     body: JSON.stringify(input),
   });
 }
+
+/* ── Usage: what the backend asks other people's servers to do ─────────── */
+
+export interface ServiceDayUsage { day: string; calls: number; failed: number; avgMs: number | null }
+export interface ServiceUsage {
+  key: string;
+  label: string;
+  /** That vendor's own console, where the bill is. */
+  console: string;
+  pricing: string;
+  today: ServiceDayUsage;
+  /** Oldest first, zeros where nothing happened. */
+  days: ServiceDayUsage[];
+  totalCalls: number;
+  totalFailed: number;
+}
+
+export function fetchServiceUsage(days: number): Promise<{ days: number; services: ServiceUsage[] }> {
+  return adminJson(`/admin/usage/services?days=${days}`);
+}

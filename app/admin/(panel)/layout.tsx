@@ -111,6 +111,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/group-rides", label: "Group rides", icon: "group" },
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
+  { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
 ];
 
 export default function AdminPanelLayout({
