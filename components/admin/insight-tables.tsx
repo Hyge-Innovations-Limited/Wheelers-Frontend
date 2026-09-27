@@ -11,7 +11,7 @@ import type {
   TripRow,
   TripStatusFilter,
 } from "@/lib/admin-api";
-import { formatDateTime, formatDistance, formatNaira, formatNumber, formatPercent, humanise, statusBadgeClass } from "@/lib/admin-format";
+import { formatDateTime, formatDistance, formatHours, formatNaira, formatNumber, formatPercent, humanise, statusBadgeClass } from "@/lib/admin-format";
 import { filtersQuery, useInsightParams } from "@/lib/insight-filters";
 import { useAdminData, useDebounced } from "@/components/admin/use-admin-data";
 import { DataTable, type Column } from "@/components/admin/data-table";
@@ -170,6 +170,22 @@ function DriversTable({ filters }: { filters: InsightFilters }) {
           "0"
         ),
     },
+    {
+      key: "online",
+      label: "Hours online",
+      numeric: true,
+      sortKey: "onlineHours",
+      title: "Time on shift in this period, in every zone and channel",
+      render: (d) => (d.shifts > 0 ? <span title={`${formatNumber(d.shifts)} ${d.shifts === 1 ? "shift" : "shifts"}`}>{formatHours(d.onlineHours)}</span> : "—"),
+    },
+    {
+      key: "perHour",
+      label: "Trips / hour",
+      numeric: true,
+      sortKey: "tripsPerHour",
+      title: "Trips for every hour on shift",
+      render: (d) => (d.tripsPerOnlineHour == null ? "—" : d.tripsPerOnlineHour.toFixed(2)),
+    },
     { key: "gmv", label: "GMV", numeric: true, sortKey: "gmv", render: (d) => formatNaira(d.gmvNgn) },
     { key: "earnings", label: "Earnings", numeric: true, sortKey: "earnings", render: (d) => formatNaira(d.earningsNgn) },
     { key: "commission", label: "Commission", numeric: true, sortKey: "commission", render: (d) => formatNaira(d.commissionNgn) },
@@ -178,12 +194,13 @@ function DriversTable({ filters }: { filters: InsightFilters }) {
     { key: "won", label: "Won", numeric: true, sortKey: "bidsWon", render: (d) => formatNumber(d.bidsWon) },
     { key: "rate", label: "Win rate", numeric: true, sortKey: "winRate", render: (d) => (d.bidWinRate == null ? "—" : formatPercent(d.bidWinRate)) },
     { key: "last", label: "Last trip", sortKey: "lastTrip", render: (d) => (d.lastTripAt ? formatDateTime(d.lastTripAt) : "—") },
+    { key: "lastOnline", label: "Last online", sortKey: "lastOnline", render: (d) => (d.lastOnlineAt ? formatDateTime(d.lastOnlineAt) : "—") },
   ];
   return (
     <Card padded={false}>
       <div className="admin-toolbar admin-toolbar-inset">
         <SearchInput value={t.search} onChange={t.setSearch} placeholder="Search name or phone" />
-        {data ? <span className="admin-toolbar-note">{formatNumber(data.total)} drivers who bid or drove in this period</span> : null}
+        {data ? <span className="admin-toolbar-note">{formatNumber(data.total)} drivers who were online, bid or drove in this period</span> : null}
       </div>
       <DataTable
         columns={columns}
@@ -192,7 +209,7 @@ function DriversTable({ filters }: { filters: InsightFilters }) {
         loading={loading}
         error={error}
         onRetry={refresh}
-        empty="No driver bid or drove in this period."
+        empty="No driver was online, bid or drove in this period."
         sort={t.sort}
         dir={t.dir}
         onSort={t.onSort}

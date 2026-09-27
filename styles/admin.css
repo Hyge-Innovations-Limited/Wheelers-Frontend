@@ -2057,6 +2057,30 @@
 }
 
 
+/* ── Busiest hours (components/admin/busiest-hours.tsx) ────────────────── */
+
+.admin-hours-chips { margin-bottom: 16px; }
+.admin-hours-chips .admin-chip { flex: 1 1 220px; }
+
+/* Seven rows of twenty-four cells. On a narrow screen the grid keeps its size
+   and scrolls sideways inside its card; the page itself never does. */
+.admin-heat-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.admin-heat { display: grid; gap: 3px; min-width: 620px; }
+.admin-heat-row { display: grid; grid-template-columns: 38px repeat(24, minmax(0, 1fr)); gap: 3px; align-items: center; }
+.admin-heat-day { font-size: 11.5px; font-weight: 600; color: var(--adm-muted); }
+.admin-heat-hour { font-size: 10px; color: var(--adm-muted); text-align: left; }
+.admin-heat-cell {
+  height: 26px;
+  border-radius: 5px;
+  background: rgba(13, 13, 13, 0.035);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #fff;
+}
+
 /* ── Screenshot protection (components/admin/screen-guard.tsx) ─────────── */
 
 .admin-watermark {

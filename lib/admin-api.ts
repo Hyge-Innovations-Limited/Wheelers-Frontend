@@ -590,6 +590,12 @@ export interface Kpis {
   driverPayoutsNgn: number;
   activeDrivers: number;
   activeRiders: number;
+  /** Hours drivers spent on shift in the period. Only the driver filter narrows it. */
+  driverOnlineHours: number;
+  driversOnShift: number;
+  avgOnlineHoursPerDriver: number | null;
+  /** Null under a zone, channel, ride type or rider filter. */
+  tripsPerOnlineHour: number | null;
   ridesWithBids: number;
   ridesWithAcceptedBid: number;
   bidAcceptanceRate: number | null;
@@ -611,7 +617,47 @@ export interface InsightSummary {
   previous: { from: string; to: string };
   current: Kpis;
   previousKpis: Kpis;
-  snapshot: { inFlight: number; walletFloatNgn: number; walletLockedNgn: number; platformWalletNgn: number };
+  snapshot: {
+    driversOnShiftNow: number;
+    /** Hours online are counted from here. Null before the first shift was recorded. */
+    shiftsRecordedFrom: string | null;
+    inFlight: number;
+    walletFloatNgn: number;
+    walletLockedNgn: number;
+    platformWalletNgn: number;
+  };
+}
+
+export interface HourPoint {
+  /** Hour of the day in Lagos, 0 to 23. */
+  hour: number;
+  requests: number;
+  completed: number;
+  noDriver: number;
+  matchRate: number | null;
+  gmvNgn: number;
+  driverHours: number;
+  /** Drivers on shift during this hour on an average day. Null when supply is not shown. */
+  avgDriversOnline: number | null;
+  requestsPerDriver: number | null;
+}
+
+export interface WeekdayPoint extends Omit<HourPoint, "hour"> {
+  /** 1 Monday to 7 Sunday. */
+  weekday: number;
+  label: string;
+}
+
+export interface HoursResponse {
+  filters: InsightFilters;
+  hours: HourPoint[];
+  weekdays: WeekdayPoint[];
+  /** Requests by weekday (row, Monday first) and hour (column). */
+  grid: number[][];
+  peakHour: number | null;
+  peakWeekday: number | null;
+  tightestHour: number | null;
+  supply: { shown: boolean; recordedFrom: string | null };
 }
 
 export interface InsightPoint {
@@ -686,6 +732,10 @@ export interface InsightDriverRow {
   bidsWon: number;
   bidWinRate: number | null;
   lastTripAt: string | null;
+  onlineHours: number;
+  shifts: number;
+  tripsPerOnlineHour: number | null;
+  lastOnlineAt: string | null;
 }
 
 export interface InsightRiderRow {

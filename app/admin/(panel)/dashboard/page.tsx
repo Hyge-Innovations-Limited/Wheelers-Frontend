@@ -13,8 +13,10 @@ import type {
 } from "@/lib/admin-api";
 import { adminDownload } from "@/lib/admin-api";
 import {
+  formatDate,
   formatDistance,
   formatDuration,
+  formatHours,
   formatNaira,
   formatNairaCompact,
   formatNumber,
@@ -24,6 +26,7 @@ import {
 } from "@/lib/admin-format";
 import { describeRange, filtersQuery, useInsightParams } from "@/lib/insight-filters";
 import { AreaChart, BarChart, BreakdownBars, CHART_COLORS } from "@/components/admin/charts";
+import { BusiestHours } from "@/components/admin/busiest-hours";
 import { InsightFilterBar } from "@/components/admin/insight-filter-bar";
 import { InsightTables } from "@/components/admin/insight-tables";
 import { useAdminData } from "@/components/admin/use-admin-data";
@@ -475,7 +478,42 @@ function DashboardBody() {
               href="/admin/dashboard/users"
             />
           </StatGrid>
+          <StatGrid cols={4}>
+            <StatCard
+              label="Driver hours online"
+              value={formatHours(k.driverOnlineHours)}
+              hint={<Hint text="Time drivers spent on shift" now={k.driverOnlineHours} before={p.driverOnlineHours} />}
+              href={rows({ tab: "drivers", sort: "onlineHours" })}
+            />
+            <StatCard
+              label="Drivers on shift"
+              value={formatNumber(k.driversOnShift)}
+              hint={<Hint text={`Went online in this period · ${formatNumber(s.snapshot.driversOnShiftNow)} on now`} now={k.driversOnShift} before={p.driversOnShift} />}
+              href={rows({ tab: "drivers", sort: "onlineHours" })}
+            />
+            <StatCard
+              label="Hours per driver"
+              value={k.avgOnlineHoursPerDriver == null ? "—" : formatHours(k.avgOnlineHoursPerDriver)}
+              hint={<Hint text="Average time on shift" now={k.avgOnlineHoursPerDriver} before={p.avgOnlineHoursPerDriver} />}
+              href={rows({ tab: "drivers", sort: "onlineHours" })}
+            />
+            <StatCard
+              label="Trips per driver hour"
+              value={k.tripsPerOnlineHour == null ? "—" : k.tripsPerOnlineHour.toFixed(2)}
+              hint={
+                k.tripsPerOnlineHour == null && narrowed
+                  ? "Not shown under this filter"
+                  : <Hint text="Completed trips for each hour on shift" now={k.tripsPerOnlineHour} before={p.tripsPerOnlineHour} />
+              }
+              href={rows({ tab: "drivers", sort: "tripsPerHour" })}
+            />
+          </StatGrid>
           <p className="admin-footnote">
+            {s.snapshot.shiftsRecordedFrom && s.snapshot.shiftsRecordedFrom.slice(0, 10) > filters.from
+              ? `Hours online are recorded from ${formatDate(s.snapshot.shiftsRecordedFrom)}; earlier days count none. `
+              : !s.snapshot.shiftsRecordedFrom
+                ? "Hours online are counted from the first time a driver goes online after this update. "
+                : ""}
             Compared with {describeRange(s.previous.from, s.previous.to)}. Deposits, withdrawals, new users and the
             wallet figures are for the whole platform; the zone, channel and ride-type filters apply to ride numbers.
           </p>
@@ -522,6 +560,9 @@ function DashboardBody() {
           </div>
         </>
       )}
+
+      <SectionLabel>Busiest hours</SectionLabel>
+      <BusiestHours filters={filters} />
 
       <SectionLabel>Where rides come from</SectionLabel>
       <div className="admin-two-col">

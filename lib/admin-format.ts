@@ -76,6 +76,15 @@ export function formatDuration(seconds: number | null | undefined): string {
   return `${hours}h ${mins % 60}m`;
 }
 
+/** Hours as people say them: "45 min", "6.5 h", "1,204 h". */
+export function formatHours(hours: number | null | undefined): string {
+  if (hours == null || !Number.isFinite(hours)) return "—";
+  if (hours === 0) return "0 h";
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
+  if (hours < 100) return `${(Math.round(hours * 10) / 10).toLocaleString("en-NG")} h`;
+  return `${Math.round(hours).toLocaleString("en-NG")} h`;
+}
+
 export function formatDistance(km: number | null | undefined): string {
   const n = Number(km ?? 0);
   if (!Number.isFinite(n) || n <= 0) return "—";
