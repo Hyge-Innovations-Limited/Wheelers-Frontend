@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { buildQuery } from "@/lib/admin-api";
 import type { Bucket, InsightFilters, RideChannel } from "@/lib/admin-api";
 
@@ -67,7 +67,6 @@ export function filtersQuery(f: InsightFilters, extra: Record<string, string | n
 }
 
 export function useInsightParams() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
 
@@ -108,9 +107,13 @@ export function useInsightParams() {
     [params, pathname],
   );
 
+  // In-page state (filters, tabs, sort, search) changes the URL through the
+  // browser's history API, which Next.js syncs into useSearchParams without a
+  // server round trip. router.replace() was silently undone in production for
+  // any URL it had not prefetched: a tab would focus, and nothing would change.
   const set = useCallback(
-    (patch: Record<string, string | null | undefined>) => router.replace(hrefWith(patch), { scroll: false }),
-    [router, hrefWith],
+    (patch: Record<string, string | null | undefined>) => window.history.replaceState(null, "", hrefWith(patch)),
+    [hrefWith],
   );
 
   const setPreset = useCallback(
