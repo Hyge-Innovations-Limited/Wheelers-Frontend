@@ -18,16 +18,25 @@ import { Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshButton, Se
  * Income is the 4% commission and the ₦375 service fee on each wallet ride, and
  * the ₦30 deposit fee. The ₦30 state levy is collected on each ride for Lagos
  * State, so it is shown on its own and never counted as income. Costs are
- * Paystack's fee on deposits Wheelers absorbs, and on every withdrawal transfer.
+ * what the platform pays to take in deposits and to send out withdrawals.
  */
 
 const KINDS: Array<{ value: FeeKind | "all"; label: string }> = [
   { value: "all", label: "All" },
   { value: "ride_fee", label: "Ride fees" },
   { value: "deposit_fee", label: "Deposit fees" },
-  { value: "deposit_provider_fee", label: "Paystack deposit" },
-  { value: "transfer_fee", label: "Paystack transfer" },
+  { value: "deposit_provider_fee", label: "Platform deposits" },
+  { value: "transfer_fee", label: "Platform withdrawals" },
 ];
+
+/** What each ledger row is, in the words the team uses. The provider is not named. */
+const KIND_LABEL: Record<FeeKind, string> = {
+  ride_fee: "Ride fee",
+  deposit_fee: "Deposit fee",
+  deposit_provider_fee: "Platform deposit cost",
+  transfer_fee: "Platform withdrawal cost",
+  provider_fee: "Other platform cost",
+};
 
 const PAGE_SIZE = 25;
 
@@ -61,7 +70,7 @@ function FeeLedger() {
   const { data, error, loading, refresh } = useAdminData<PagedResponse<FeeLedgerRow>>(path);
   const columns: Array<Column<FeeLedgerRow>> = [
     { key: "when", label: "Time", sortKey: "createdAt", render: (r) => formatDateTime(r.createdAt) },
-    { key: "kind", label: "Kind", sortKey: "kind", render: (r) => r.label },
+    { key: "kind", label: "Kind", sortKey: "kind", render: (r) => KIND_LABEL[r.kind] ?? r.label },
     {
       key: "amount",
       label: "Amount",
@@ -170,7 +179,7 @@ function FeesBody() {
           <StatGrid>
             <StatCard label="State levy" value={formatNairaCompact(t.stateLevyNgn)} hint="₦30 per trip, owed to Lagos State: not income" tone="orange" href={trips()} />
             <StatCard
-              label="Paystack costs"
+              label="Platform costs"
               value={narrowed ? "—" : formatNairaCompact(t.costsNgn)}
               hint={narrowed ? notTied : `${formatNaira(t.depositProviderCostNgn)} on deposits · ${formatNaira(t.transferCostNgn)} on ${formatNumber(t.transfers)} withdrawals`}
               tone="red"
@@ -179,7 +188,7 @@ function FeesBody() {
             <StatCard
               label="Net"
               value={formatNairaCompact(t.netNgn)}
-              hint={change(t.netNgn, p.netNgn) ?? (narrowed ? "Fees on these trips; no Paystack costs apply" : "Income minus costs")}
+              hint={change(t.netNgn, p.netNgn) ?? (narrowed ? "Fees on these trips; no platform costs apply" : "Income minus costs")}
               tone="green"
               href={ledger(null)}
             />
