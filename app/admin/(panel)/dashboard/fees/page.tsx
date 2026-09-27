@@ -1,16 +1,17 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import type { FeeKind, FeeLedgerRow, FeesSummary, PagedResponse } from "@/lib/admin-api";
+import Link from "next/link";
+import type { DepositRow, FeeKind, FeeLedgerRow, FeesSummary, PagedResponse, WithdrawalRow } from "@/lib/admin-api";
 import { adminDownload } from "@/lib/admin-api";
-import { formatDateTime, formatNaira, formatNairaCompact, formatNumber, formatPercent } from "@/lib/admin-format";
+import { formatDateTime, formatNaira, formatNairaCompact, formatNumber, formatPercent, humanise, statusBadgeClass } from "@/lib/admin-format";
 import { describeRange, filtersQuery, useInsightParams } from "@/lib/insight-filters";
 import { AreaChart, BarChart, CHART_COLORS } from "@/components/admin/charts";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { InsightFilterBar } from "@/components/admin/insight-filter-bar";
 import { TripsTable } from "@/components/admin/insight-tables";
 import { useAdminData } from "@/components/admin/use-admin-data";
-import { Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshButton, SectionLabel, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
+import { Badge, Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshButton, SectionLabel, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 
 /**
  * What Wheelers earns and what it pays to earn it, for a period.
@@ -21,12 +22,14 @@ import { Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshButton, Se
  * what the platform pays to take in deposits and to send out withdrawals.
  */
 
-const KINDS: Array<{ value: FeeKind | "all"; label: string }> = [
-  { value: "all", label: "All" },
+/** The ledger tabs: fee rows by kind, then the deposits and withdrawals people made. */
+type LedgerTab = FeeKind | "all" | "deposits" | "withdrawals";
+const KINDS: Array<{ value: LedgerTab; label: string }> = [
+  { value: "all", label: "All fees" },
   { value: "ride_fee", label: "Ride fees" },
   { value: "deposit_fee", label: "Deposit fees" },
-  { value: "deposit_provider_fee", label: "Platform deposits" },
-  { value: "transfer_fee", label: "Platform withdrawals" },
+  { value: "deposits", label: "Platform deposits" },
+  { value: "withdrawals", label: "Platform withdrawals" },
 ];
 
 /** What each ledger row is, in the words the team uses. The provider is not named. */
@@ -52,21 +55,22 @@ function change(now: number, before: number): string | null {
   return `${c >= 0 ? "▲" : "▼"} ${formatPercent(Math.abs(c), 0)} on the previous period`;
 }
 
-function FeeLedger() {
+/** Page state for one ledger table, reset to the first page whenever the URL changes. */
+function useLedgerPage() {
   const { filters, params, set } = useInsightParams();
-  const ref = useRef<HTMLDivElement>(null);
-  const kind = (KINDS.find((k) => k.value === params.get("kind"))?.value ?? "all") as FeeKind | "all";
   const sort = params.get("lsort") || "createdAt";
   const dir = (params.get("ldir") as "asc" | "desc" | null) || "desc";
   const key = params.toString();
   const [page, setPage] = useState({ key, offset: 0 });
   const offset = page.key === key ? page.offset : 0;
   const setOffset = (next: number) => setPage({ key, offset: next });
-  useEffect(() => {
-    if (window.location.hash === "#ledger") ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [key]);
+  const onSort = (s: string, d: "asc" | "desc") => set({ lsort: s, ldir: d });
+  return { filters, sort, dir, offset, setOffset, onSort };
+}
 
-  const path = `/admin/fees/ledger${filtersQuery(filters, { kind: kind === "all" ? undefined : kind, sort, dir, limit: PAGE_SIZE, offset })}`;
+function FeeRows({ kind }: { kind: FeeKind | null }) {
+  const t = useLedgerPage();
+  const path = `/admin/fees/ledger${filtersQuery(t.filters, { kind: kind ?? undefined, sort: t.sort, dir: t.dir, limit: PAGE_SIZE, offset: t.offset })}`;
   const { data, error, loading, refresh } = useAdminData<PagedResponse<FeeLedgerRow>>(path);
   const columns: Array<Column<FeeLedgerRow>> = [
     { key: "when", label: "Time", sortKey: "createdAt", render: (r) => formatDateTime(r.createdAt) },
@@ -84,26 +88,88 @@ function FeeLedger() {
     { key: "ref", label: "Reference", render: (r) => <span className="mono admin-cell-ref" title={r.referenceId ?? ""}>{r.referenceId?.slice(0, 8) ?? "—"}</span> },
   ];
   return (
+    <Card padded={false}>
+      {data ? <div className="admin-toolbar admin-toolbar-inset"><span className="admin-toolbar-note">{formatNumber(data.total)} fee rows</span></div> : null}
+      <DataTable columns={columns} rows={data?.items} rowKey={(r) => r.id} loading={loading} error={error} onRetry={refresh}
+        empty="No fee rows in this period." sort={t.sort} dir={t.dir} onSort={t.onSort} />
+      {data ? <Pagination offset={t.offset} limit={PAGE_SIZE} total={data.total} onChange={t.setOffset} /> : null}
+    </Card>
+  );
+}
+
+function DepositRows() {
+  const t = useLedgerPage();
+  const path = `/admin/fees/deposits${filtersQuery(t.filters, { sort: t.sort, dir: t.dir, limit: PAGE_SIZE, offset: t.offset })}`;
+  const { data, error, loading, refresh } = useAdminData<PagedResponse<DepositRow>>(path);
+  const columns: Array<Column<DepositRow>> = [
+    { key: "when", label: "Time", sortKey: "createdAt", render: (r) => formatDateTime(r.createdAt) },
+    { key: "who", label: "Wallet owner", sortKey: "name", render: (r) => <Link href={`/admin/dashboard/users/${r.userId}`}>{r.name ?? "User"}</Link> },
+    { key: "sent", label: "Sent", numeric: true, render: (r) => (r.grossNgn == null ? "—" : formatNaira(r.grossNgn)) },
+    { key: "fee", label: "Deposit fee", numeric: true, render: (r) => (r.feeNgn == null ? "—" : formatNaira(r.feeNgn)) },
+    { key: "charge", label: "Transfer charge", numeric: true, title: "Charged on the transfer and paid by the sender", render: (r) => (r.providerFeeNgn == null ? "—" : formatNaira(r.providerFeeNgn)) },
+    { key: "credited", label: "Credited", numeric: true, sortKey: "amount", render: (r) => <span className="admin-text-green">+{formatNaira(r.creditedNgn)}</span> },
+    { key: "sender", label: "From", render: (r) => [r.senderName, r.senderBank].filter(Boolean).join(" · ") || "—" },
+  ];
+  return (
+    <Card padded={false}>
+      {data ? (
+        <div className="admin-toolbar admin-toolbar-inset">
+          <span className="admin-toolbar-note">
+            {formatNumber(data.total)} deposits · {formatNaira(data.items.reduce((n, r) => n + r.creditedNgn, 0))} credited on this page
+          </span>
+        </div>
+      ) : null}
+      <DataTable columns={columns} rows={data?.items} rowKey={(r) => r.id} loading={loading} error={error} onRetry={refresh}
+        empty="No deposits in this period." sort={t.sort} dir={t.dir} onSort={t.onSort} />
+      {data ? <Pagination offset={t.offset} limit={PAGE_SIZE} total={data.total} onChange={t.setOffset} /> : null}
+    </Card>
+  );
+}
+
+function WithdrawalRows() {
+  const t = useLedgerPage();
+  const path = `/admin/fees/withdrawals${filtersQuery(t.filters, { sort: t.sort, dir: t.dir, limit: PAGE_SIZE, offset: t.offset })}`;
+  const { data, error, loading, refresh } = useAdminData<PagedResponse<WithdrawalRow>>(path);
+  const columns: Array<Column<WithdrawalRow>> = [
+    { key: "when", label: "Requested", sortKey: "createdAt", render: (r) => formatDateTime(r.createdAt) },
+    { key: "who", label: "Wallet owner", sortKey: "name", render: (r) => <Link href={`/admin/dashboard/users/${r.userId}`}>{r.name ?? "User"}</Link> },
+    { key: "amount", label: "Amount", numeric: true, sortKey: "amount", render: (r) => <span className="admin-text-red">−{formatNaira(r.amountNgn)}</span> },
+    { key: "status", label: "Status", sortKey: "status", render: (r) => <Badge className={statusBadgeClass(r.status)}>{humanise(r.status)}</Badge> },
+    { key: "cost", label: "Platform cost", numeric: true, render: (r) => (r.transferFeeNgn == null ? "—" : formatNaira(r.transferFeeNgn)) },
+    { key: "to", label: "To account", render: (r) => `${r.accountName}${r.accountEnding ? ` ••${r.accountEnding}` : ""}` },
+    { key: "paid", label: "Paid", render: (r) => (r.settledAt ? formatDateTime(r.settledAt) : r.failureReason ? <span className="admin-text-red" title={r.failureReason}>Failed</span> : "—") },
+  ];
+  return (
+    <Card padded={false}>
+      {data ? <div className="admin-toolbar admin-toolbar-inset"><span className="admin-toolbar-note">{formatNumber(data.total)} withdrawals requested</span></div> : null}
+      <DataTable columns={columns} rows={data?.items} rowKey={(r) => r.id} loading={loading} error={error} onRetry={refresh}
+        empty="No withdrawals in this period." sort={t.sort} dir={t.dir} onSort={t.onSort} />
+      {data ? <Pagination offset={t.offset} limit={PAGE_SIZE} total={data.total} onChange={t.setOffset} /> : null}
+    </Card>
+  );
+}
+
+function FeeLedger() {
+  const { filters, params, set } = useInsightParams();
+  const ref = useRef<HTMLDivElement>(null);
+  const raw = params.get("kind");
+  // Older links named the provider-cost kinds; they now live under deposits and withdrawals.
+  const tab = (raw === "deposit_provider_fee" ? "deposits" : raw === "transfer_fee" ? "withdrawals" : KINDS.find((k) => k.value === raw)?.value ?? "all") as LedgerTab;
+  const key = params.toString();
+  const narrowed = Boolean(filters.zone || filters.channel || filters.rideType || filters.driverId || filters.riderId);
+  useEffect(() => {
+    if (window.location.hash === "#ledger") ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [key]);
+
+  return (
     <div id="ledger" ref={ref}>
       <div className="admin-toolbar">
-        <FilterTabs options={KINDS} value={kind} onChange={(v) => set({ kind: v === "all" ? null : v })} />
-        {data ? <span className="admin-toolbar-note">{formatNumber(data.total)} ledger rows</span> : null}
+        <FilterTabs options={KINDS} value={tab} onChange={(v) => set({ kind: v === "all" ? null : v, lsort: null, ldir: null })} />
+        {narrowed && (tab === "deposits" || tab === "withdrawals") ? (
+          <span className="admin-toolbar-note">Deposits and withdrawals belong to no ride, so the zone and channel filters don&apos;t apply here.</span>
+        ) : null}
       </div>
-      <Card padded={false}>
-        <DataTable
-          columns={columns}
-          rows={data?.items}
-          rowKey={(r) => r.id}
-          loading={loading}
-          error={error}
-          onRetry={refresh}
-          empty="No fee rows in this period."
-          sort={sort}
-          dir={dir}
-          onSort={(s, d) => set({ lsort: s, ldir: d })}
-        />
-        {data ? <Pagination offset={offset} limit={PAGE_SIZE} total={data.total} onChange={setOffset} /> : null}
-      </Card>
+      {tab === "deposits" ? <DepositRows /> : tab === "withdrawals" ? <WithdrawalRows /> : <FeeRows key={tab} kind={tab === "all" ? null : tab} />}
     </div>
   );
 }
@@ -118,7 +184,7 @@ function FeesBody() {
   // Deposits and withdrawals belong to no ride, so a channel or zone view has none of them.
   const narrowed = data?.rideFiltersApplied ?? false;
   const notTied = "Not tied to a ride, so not in a channel or zone view. Clear the filters to include it.";
-  const ledger = (kind: FeeKind | null) => hrefWith({ kind }, "#ledger");
+  const ledger = (kind: LedgerTab | null) => hrefWith({ kind, lsort: null, ldir: null }, "#ledger");
   const trips = () => hrefWith({}, "#trips");
 
   const download = async () => {
@@ -183,7 +249,7 @@ function FeesBody() {
               value={narrowed ? "—" : formatNairaCompact(t.costsNgn)}
               hint={narrowed ? notTied : `${formatNaira(t.depositProviderCostNgn)} on deposits · ${formatNaira(t.transferCostNgn)} on ${formatNumber(t.transfers)} withdrawals`}
               tone="red"
-              href={narrowed ? undefined : ledger("transfer_fee")}
+              href={narrowed ? undefined : ledger(null)}
             />
             <StatCard
               label="Net"
@@ -231,7 +297,7 @@ function FeesBody() {
         <TripsTable filters={filters} status="completed" feeColumns />
       </div>
 
-      <SectionLabel>Fee ledger</SectionLabel>
+      <SectionLabel>Ledger</SectionLabel>
       <FeeLedger />
     </>
   );

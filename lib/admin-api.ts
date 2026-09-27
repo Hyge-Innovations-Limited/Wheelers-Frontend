@@ -761,6 +761,36 @@ export interface FeeLedgerRow {
   stateLevyNgn: number | null;
 }
 
+export interface DepositRow {
+  id: string;
+  createdAt: string;
+  userId: string;
+  name: string | null;
+  phone: string | null;
+  grossNgn: number | null;
+  feeNgn: number | null;
+  providerFeeNgn: number | null;
+  creditedNgn: number;
+  senderName: string | null;
+  senderBank: string | null;
+  reference: string | null;
+}
+
+export interface WithdrawalRow {
+  id: string;
+  createdAt: string;
+  settledAt: string | null;
+  userId: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  amountNgn: number;
+  transferFeeNgn: number | null;
+  accountName: string;
+  accountEnding: string;
+  failureReason: string | null;
+}
+
 export interface ReconcileCheck {
   key: string;
   label: string;

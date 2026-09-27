@@ -365,13 +365,13 @@ function DashboardBody() {
               label="Deposits in"
               value={formatNairaCompact(k.depositsNgn)}
               hint={<Hint text={`${formatNumber(k.depositCount)} top-ups · ${formatNaira(k.depositFeesNgn)} in fees`} now={k.depositsNgn} before={p.depositsNgn} />}
-              href={`${feesHref({ kind: "deposit_fee" })}#ledger`}
+              href={`${feesHref({ kind: "deposits" })}#ledger`}
             />
             <StatCard
               label="Withdrawals out"
               value={formatNairaCompact(k.withdrawalsNgn)}
               hint={<Hint text={`${formatNumber(k.withdrawalCount)} paid to banks`} now={k.withdrawalsNgn} before={p.withdrawalsNgn} />}
-              href={`${feesHref({ kind: "transfer_fee" })}#ledger`}
+              href={`${feesHref({ kind: "withdrawals" })}#ledger`}
             />
             <StatCard
               label="Platform wallet"
