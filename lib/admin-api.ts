@@ -545,3 +545,259 @@ export interface ServiceUsage {
 export function fetchServiceUsage(days: number): Promise<{ days: number; services: ServiceUsage[] }> {
   return adminJson(`/admin/usage/services?days=${days}`);
 }
+
+/* ── Home analytics and the Fees page (/admin/insights, /admin/fees) ──────── */
+
+export type RideChannel = "APP" | "WHATSAPP" | "MCP" | "UNKNOWN";
+export type Bucket = "day" | "week" | "month";
+
+/** Every analytics endpoint takes these, as query parameters. Dates are Lagos days, both included. */
+export interface InsightFilters {
+  from: string;
+  to: string;
+  zone?: string;
+  channel?: RideChannel;
+  rideType?: "single" | "group";
+  driverId?: string;
+  riderId?: string;
+}
+
+export interface InsightOptions {
+  zones: Array<{ value: string; label: string }>;
+  channels: Array<{ value: RideChannel; label: string }>;
+  rideTypes: Array<{ value: "single" | "group"; label: string }>;
+  today: string;
+}
+
+export interface Kpis {
+  requests: number;
+  completed: number;
+  cancelled: number;
+  cancelledNoDriver: number;
+  cancelledBeforeMatch: number;
+  cancelledAfterMatch: number;
+  disputed: number;
+  matchRate: number | null;
+  gmvNgn: number;
+  avgFareNgn: number | null;
+  medianFareNgn: number | null;
+  distanceKm: number;
+  commissionNgn: number;
+  serviceFeeNgn: number;
+  stateLevyNgn: number;
+  depositFeesNgn: number;
+  platformRevenueNgn: number;
+  driverPayoutsNgn: number;
+  activeDrivers: number;
+  activeRiders: number;
+  ridesWithBids: number;
+  ridesWithAcceptedBid: number;
+  bidAcceptanceRate: number | null;
+  avgBidsPerRide: number | null;
+  medianSecondsToFirstBid: number | null;
+  depositsNgn: number;
+  depositCount: number;
+  withdrawalsNgn: number;
+  withdrawalCount: number;
+  refundsNgn: number;
+  newUsers: number;
+  newRiders: number;
+  newDrivers: number;
+}
+
+export interface InsightSummary {
+  filters: InsightFilters;
+  days: number;
+  previous: { from: string; to: string };
+  current: Kpis;
+  previousKpis: Kpis;
+  snapshot: { inFlight: number; walletFloatNgn: number; walletLockedNgn: number; platformWalletNgn: number };
+}
+
+export interface InsightPoint {
+  bucket: string;
+  requests: number;
+  completed: number;
+  cancelled: number;
+  gmvNgn: number;
+  commissionNgn: number;
+  serviceFeeNgn: number;
+  stateLevyNgn: number;
+  depositFeesNgn: number;
+  depositsNgn: number;
+  newUsers: number;
+}
+
+export interface BreakdownRow {
+  key: string;
+  label: string;
+  requests: number;
+  completed: number;
+  cancelled: number;
+  gmvNgn: number;
+}
+
+export type TripStatusFilter = "all" | "completed" | "cancelled" | "no_driver" | "disputed" | "active" | "open";
+
+export interface TripRow {
+  id: string;
+  createdAt: string;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  status: string;
+  channel: RideChannel;
+  rideType: "single" | "group";
+  pickupZone: string | null;
+  destZone: string | null;
+  pickupAddress: string;
+  destAddress: string;
+  riderId: string;
+  riderName: string | null;
+  riderPhone: string | null;
+  driverId: string | null;
+  driverName: string | null;
+  driverPhone: string | null;
+  fareNgn: number | null;
+  commissionNgn: number | null;
+  serviceFeeNgn: number | null;
+  stateLevyNgn: number | null;
+  platformTotalNgn: number | null;
+  driverPayoutNgn: number | null;
+  feeSplitEstimated: boolean;
+  distanceKm: number | null;
+  durationSeconds: number | null;
+  bids: number;
+  cancelReason: string | null;
+}
+
+export interface InsightDriverRow {
+  driverId: string;
+  userId: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  kycStatus: string;
+  trips: number;
+  gmvNgn: number;
+  earningsNgn: number;
+  commissionNgn: number;
+  avgFareNgn: number | null;
+  bids: number;
+  bidsWon: number;
+  bidWinRate: number | null;
+  lastTripAt: string | null;
+}
+
+export interface InsightRiderRow {
+  riderId: string;
+  name: string | null;
+  phone: string | null;
+  joinedAt: string;
+  requests: number;
+  trips: number;
+  cancelled: number;
+  spendNgn: number;
+  avgFareNgn: number | null;
+  topChannel: RideChannel | null;
+  lastRequestAt: string | null;
+  walletBalanceNgn: number;
+}
+
+export interface FeeTotals {
+  commissionNgn: number;
+  serviceFeeNgn: number;
+  depositFeesNgn: number;
+  incomeNgn: number;
+  stateLevyNgn: number;
+  depositProviderCostNgn: number;
+  transferCostNgn: number;
+  otherProviderCostNgn: number;
+  costsNgn: number;
+  netNgn: number;
+  feeRides: number;
+  deposits: number;
+  transfers: number;
+  estimatedCommissionNgn: number;
+}
+
+export interface FeePoint {
+  bucket: string;
+  commissionNgn: number;
+  serviceFeeNgn: number;
+  depositFeesNgn: number;
+  incomeNgn: number;
+  stateLevyNgn: number;
+  depositProviderCostNgn: number;
+  transferCostNgn: number;
+  otherProviderCostNgn: number;
+  costsNgn: number;
+  netNgn: number;
+}
+
+export interface FeesSummary {
+  filters: InsightFilters;
+  bucket: Bucket;
+  totals: FeeTotals;
+  previousTotals: FeeTotals;
+  previous: { from: string; to: string };
+  points: FeePoint[];
+  platformWalletNgn: number;
+}
+
+export type FeeKind = "ride_fee" | "deposit_fee" | "deposit_provider_fee" | "transfer_fee" | "provider_fee";
+
+export interface FeeLedgerRow {
+  id: string;
+  createdAt: string;
+  kind: FeeKind;
+  label: string;
+  direction: "CREDIT" | "DEBIT";
+  amountNgn: number;
+  referenceId: string | null;
+  commissionNgn: number | null;
+  serviceFeeNgn: number | null;
+  stateLevyNgn: number | null;
+}
+
+export interface ReconcileCheck {
+  key: string;
+  label: string;
+  left: { label: string; value: number };
+  right: { label: string; value: number };
+  diff: number;
+  ok: boolean;
+}
+
+/**
+ * Download a file from the admin API with the admin's token, and save it under
+ * the name the server gives (or the fallback). A plain link cannot carry the
+ * Authorization header, so the file is fetched and handed to the browser.
+ */
+export async function adminDownload(path: string, fallbackName: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await adminFetch(path);
+  } catch {
+    throw new AdminApiError("Cannot reach the Wheelers API. Check your connection.", 0);
+  }
+  if (!res.ok) {
+    let message = `Download failed (HTTP ${res.status})`;
+    try {
+      const body = (await res.json()) as { error?: unknown };
+      if (typeof body.error === "string") message = body.error;
+    } catch {
+      /* not JSON */
+    }
+    throw new AdminApiError(message, res.status);
+  }
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

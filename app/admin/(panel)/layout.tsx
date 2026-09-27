@@ -67,6 +67,14 @@ function Icon({ name }: { name: string }) {
           <path d="M2 12l10 5 10-5" />
         </svg>
       );
+    case "fees":
+      return (
+        <svg {...props}>
+          <rect x="2" y="6" width="20" height="12" rx="2" />
+          <circle cx="12" cy="12" r="2.5" />
+          <path d="M6 12h.01M18 12h.01" />
+        </svg>
+      );
     case "activity":
       return (
         <svg {...props}>
@@ -108,6 +116,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/live-map", label: "Live map", icon: "map" },
   { href: "/admin/dashboard/users", label: "Users", icon: "riders" },
   { href: "/admin/dashboard/rides", label: "Rides", icon: "rides" },
+  { href: "/admin/dashboard/fees", label: "Fees", icon: "fees" },
   { href: "/admin/dashboard/group-rides", label: "Group rides", icon: "group" },
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },

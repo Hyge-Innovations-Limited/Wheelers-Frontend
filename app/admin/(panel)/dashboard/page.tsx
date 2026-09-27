@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import type {
+  BreakdownRow,
   GroupRideMetrics,
+  InsightPoint,
+  InsightSummary,
   OverviewResponse,
   PendingDriverRow,
-  TimeseriesPoint,
+  ReconcileCheck,
 } from "@/lib/admin-api";
+import { adminDownload } from "@/lib/admin-api";
 import {
   formatDistance,
   formatDuration,
@@ -18,7 +22,10 @@ import {
   formatWhen,
   humanise,
 } from "@/lib/admin-format";
+import { describeRange, filtersQuery, useInsightParams } from "@/lib/insight-filters";
 import { AreaChart, BarChart, BreakdownBars, CHART_COLORS } from "@/components/admin/charts";
+import { InsightFilterBar } from "@/components/admin/insight-filter-bar";
+import { InsightTables } from "@/components/admin/insight-tables";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import {
   Card,
@@ -32,8 +39,6 @@ import {
   StatGrid,
   TableWrap,
 } from "@/components/admin/ui";
-
-const RANGES = [7, 30, 90] as const;
 
 /** How often the live pages re-read themselves. */
 const LIVE_REFRESH_MS = 20_000;
@@ -151,167 +156,391 @@ function ApprovalQueue() {
   );
 }
 
-export default function DashboardPage() {
-  const [days, setDays] = useState<(typeof RANGES)[number]>(30);
+/**
+ * "12% up on the previous 30 days", coloured by whether up is good. The
+ * previous period is the same number of days just before this one.
+ */
+function Change({ now, before, upIsGood = true }: { now: number | null; before: number | null; upIsGood?: boolean }) {
+  if (now == null || before == null) return null;
+  // Nothing to compare with: a percentage change from zero means nothing, so say nothing.
+  if (before === 0) return null;
+  const change = (now - before) / Math.abs(before);
+  if (Math.abs(change) < 0.005) return <span className="admin-delta neutral">same as before</span>;
+  const good = change > 0 === upIsGood;
+  return (
+    <span className={`admin-delta ${good ? "up" : "down"}`}>
+      {change > 0 ? "▲" : "▼"} {formatPercent(Math.abs(change), 0)}
+    </span>
+  );
+}
 
-  // The Overview answers "how are we doing right now", so it keeps itself
-  // current: a ride booked while this tab is open shows up without anyone
-  // pressing Refresh. Every number still comes from the live API — nothing here
-  // is cached or estimated.
-  const overview = useAdminData<OverviewResponse>("/admin/metrics/overview", [], {
-    refreshMs: LIVE_REFRESH_MS,
-  });
-  const series = useAdminData<{ days: number; points: TimeseriesPoint[] }>(
-    `/admin/metrics/timeseries?days=${days}`,
+/** A card's hint line, with the change against the previous period after it. */
+function Hint({ text, now, before, upIsGood }: { text?: string; now?: number | null; before?: number | null; upIsGood?: boolean }) {
+  return (
+    <>
+      {text}
+      {now !== undefined ? <> <Change now={now ?? null} before={before ?? null} upIsGood={upIsGood} /></> : null}
+    </>
   );
-  const cancels = useAdminData<{ reasons: Array<{ reason: string; count: number }> }>(
-    "/admin/metrics/cancellations",
+}
+
+const bucketLabel = (bucket: string, kind: string) => {
+  const d = new Date(`${bucket}T12:00:00Z`);
+  if (kind === "month") return d.toLocaleDateString("en-NG", { month: "short", year: "2-digit" });
+  const short = bucket.slice(5).replace("-", "/");
+  return kind === "week" ? `wk ${short}` : short;
+};
+
+function Breakdown({ title, rows, loading, note }: { title: string; rows: BreakdownRow[] | undefined; loading: boolean; note?: string }) {
+  return (
+    <Card title={title} padded>
+      {loading && !rows ? (
+        <Spinner />
+      ) : !rows || rows.length === 0 ? (
+        <EmptyState>Nothing in this period.</EmptyState>
+      ) : (
+        <BreakdownBars rows={rows.map((r) => ({ label: r.label, value: r.requests }))} />
+      )}
+      {note ? <p className="admin-note">{note}</p> : null}
+    </Card>
   );
+}
+
+function NumbersCheck({ query }: { query: string }) {
+  const { data, error, loading, refresh } = useAdminData<{ checks: ReconcileCheck[] }>(`/admin/insights/reconcile${query}`);
+  if (error) return <ErrorState error={error} onRetry={refresh} />;
+  if (loading && !data) return <Spinner label="Checking the numbers against the ledger…" />;
+  const checks = data?.checks ?? [];
+  const failing = checks.filter((c) => !c.ok);
+  return (
+    <Card
+      title="Numbers check"
+      right={<span className={failing.length ? "admin-check bad" : "admin-check good"}>{failing.length ? `${failing.length} of ${checks.length} disagree` : `All ${checks.length} agree`}</span>}
+      padded
+    >
+      <p className="admin-note">
+        Each headline total for this period, computed a second, independent way from the ledger. A difference means
+        something is wrong with the money or the dashboard, and says where to look.
+      </p>
+      <TableWrap>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th className="num">Dashboard</th>
+              <th className="num">Ledger</th>
+              <th className="num">Difference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {checks.map((c) => (
+              <tr key={c.key}>
+                <td>
+                  <span className={c.ok ? "admin-check-dot good" : "admin-check-dot bad"} aria-hidden /> {c.label}
+                </td>
+                <td className="num">{c.key === "completed" ? formatNumber(c.left.value) : formatNaira(c.left.value)}</td>
+                <td className="num">{c.key === "completed" ? formatNumber(c.right.value) : formatNaira(c.right.value)}</td>
+                <td className={`num${c.ok ? "" : " admin-text-red"}`}>{c.key === "completed" ? formatNumber(c.diff) : formatNaira(c.diff)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrap>
+    </Card>
+  );
+}
+
+function DashboardBody() {
+  const { filters, bucket, hrefWith } = useInsightParams();
+  const query = filtersQuery(filters);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  // The period's numbers keep themselves current, like the old Overview did: a
+  // ride booked while this tab is open shows up without pressing Refresh.
+  const summary = useAdminData<InsightSummary>(`/admin/insights/summary${query}`, [], { refreshMs: LIVE_REFRESH_MS });
+  const series = useAdminData<{ points: InsightPoint[] }>(`/admin/insights/timeseries${filtersQuery(filters, { bucket })}`);
+  const byChannel = useAdminData<{ rows: BreakdownRow[] }>(`/admin/insights/breakdown${filtersQuery(filters, { by: "channel" })}`);
+  const byZone = useAdminData<{ rows: BreakdownRow[] }>(`/admin/insights/breakdown${filtersQuery(filters, { by: "zone" })}`);
+  const byType = useAdminData<{ rows: BreakdownRow[] }>(`/admin/insights/breakdown${filtersQuery(filters, { by: "rideType" })}`);
+  const byCancel = useAdminData<{ rows: BreakdownRow[] }>(`/admin/insights/breakdown${filtersQuery(filters, { by: "cancelReason" })}`);
+  // All-time context the period does not replace: people, the ledger by type, withdrawals by status.
+  const overview = useAdminData<OverviewResponse>("/admin/metrics/overview", [], { refreshMs: LIVE_REFRESH_MS });
   const groupRides = useAdminData<GroupRideMetrics>("/admin/metrics/group-rides");
 
-  // No early return on the metrics: the approval queue below is a different
-  // request, and a slow or broken /metrics/overview must not hide the work
-  // someone came here to do.
+  const s = summary.data;
+  const k = s?.current;
+  const p = s?.previousKpis;
   const o = overview.data;
   const points = series.data?.points ?? [];
-  const shortDate = (iso: string) => iso.slice(5).replace("-", "/");
+  const period = describeRange(filters.from, filters.to);
+  const feesHref = (extra: Record<string, string> = {}) => `/admin/dashboard/fees${filtersQuery(filters, extra)}`;
+  // Every card opens the rows that make up its number, with the same filters.
+  const rows = (patch: Record<string, string | null> = {}) =>
+    hrefWith({ tab: null, status: null, sort: null, dir: null, q: null, ...patch }, "#rows");
+
+  const download = async () => {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await adminDownload(`/admin/insights/export${filtersQuery(filters, { scope: "overview", bucket })}`, `wheelers-overview-${filters.from}-to-${filters.to}.xlsx`);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : "Download failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const refreshAll = () => {
+    [summary, series, byChannel, byZone, byType, byCancel, overview, groupRides].forEach((d) => d.refresh());
+  };
 
   return (
     <>
       <PageHeader
         title="Overview"
+        subtitle={period}
         actions={
-          <RefreshButton
-            busy={overview.loading || series.loading || cancels.loading || groupRides.loading}
-            onClick={() => {
-              overview.refresh();
-              series.refresh();
-              cancels.refresh();
-              groupRides.refresh();
-            }}
-          />
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
+              {downloading ? "Preparing Excel…" : "Download Excel"}
+            </button>
+            <RefreshButton busy={summary.loading || series.loading || overview.loading} onClick={refreshAll} />
+          </div>
         }
       />
+      {downloadError ? <div className="admin-inline-error">{downloadError}</div> : null}
 
       {/* Work before numbers: the one thing on this page that needs a human. */}
-      <SectionLabel
-        right={<Link href="/admin/dashboard/drivers">Open the KYC queue →</Link>}
-      >
-        Driver approvals
-      </SectionLabel>
+      <SectionLabel right={<Link href="/admin/dashboard/drivers">Open the KYC queue →</Link>}>Driver approvals</SectionLabel>
       <ApprovalQueue />
 
-      {overview.error ? (
-        <ErrorState error={overview.error} onRetry={overview.refresh} />
-      ) : !o ? (
-        <Spinner label="Loading platform metrics…" />
+      <InsightFilterBar />
+
+      {summary.error ? (
+        <ErrorState error={summary.error} onRetry={summary.refresh} />
+      ) : !k || !p || !s ? (
+        <Spinner label="Loading this period…" />
       ) : (
         <>
-      {/* Money first — it is the question everyone opens this page to answer. */}
-      <SectionLabel>Money</SectionLabel>
-      <StatGrid>
-        <StatCard
-          label="Gross processed"
-          value={formatNairaCompact(o.money.grossProcessedNgn)}
-          hint={`${formatNaira(o.money.gross30dNgn)} in the last 30 days`}
-        />
-        <StatCard
-          label="Platform revenue"
-          value={formatNairaCompact(o.money.platformRevenueNgn)}
-          hint={`VAT + levy + service fee · ${formatNaira(o.money.platformRevenue30dNgn)} in 30d`}
-          tone="green"
-        />
-        <StatCard
-          label="Driver payouts"
-          value={formatNairaCompact(o.money.driverPayoutsNgn)}
-          hint={`${formatNaira(o.money.withdrawalsNgn)} withdrawn to banks`}
-        />
-        <StatCard
-          label="Wallet float"
-          value={formatNairaCompact(o.money.walletFloatNgn)}
-          hint={`${formatNaira(o.money.walletLockedNgn)} locked on active rides`}
-          tone="orange"
-        />
-      </StatGrid>
+          <SectionLabel>Money</SectionLabel>
+          <StatGrid>
+            <StatCard
+              label="GMV"
+              value={formatNairaCompact(k.gmvNgn)}
+              hint={<Hint text={`Fares of ${formatNumber(k.completed)} completed trips`} now={k.gmvNgn} before={p.gmvNgn} />}
+              href={rows({ status: "completed" })}
+            />
+            <StatCard
+              label="Platform revenue"
+              value={formatNairaCompact(k.platformRevenueNgn)}
+              hint={<Hint text="Commission + service fee + deposit fees" now={k.platformRevenueNgn} before={p.platformRevenueNgn} />}
+              tone="green"
+              href={feesHref()}
+            />
+            <StatCard
+              label="Driver payouts"
+              value={formatNairaCompact(k.driverPayoutsNgn)}
+              hint={<Hint text="What drivers kept after fees" now={k.driverPayoutsNgn} before={p.driverPayoutsNgn} />}
+              href={rows({ tab: "drivers", sort: "earnings" })}
+            />
+            <StatCard
+              label="Wallet float"
+              value={formatNairaCompact(s.snapshot.walletFloatNgn)}
+              hint={`Held in wallets now · ${formatNaira(s.snapshot.walletLockedNgn)} locked on rides`}
+              tone="orange"
+              href="/admin/dashboard/users?sort=spend"
+            />
+          </StatGrid>
+          <StatGrid cols={4}>
+            <StatCard
+              label="Commission"
+              value={formatNairaCompact(k.commissionNgn)}
+              hint={<Hint text={`4% · plus ${formatNaira(k.serviceFeeNgn)} service fees`} now={k.commissionNgn} before={p.commissionNgn} />}
+              href={feesHref()}
+            />
+            <StatCard
+              label="Deposits in"
+              value={formatNairaCompact(k.depositsNgn)}
+              hint={<Hint text={`${formatNumber(k.depositCount)} top-ups · ${formatNaira(k.depositFeesNgn)} in fees`} now={k.depositsNgn} before={p.depositsNgn} />}
+              href={`${feesHref({ kind: "deposit_fee" })}#ledger`}
+            />
+            <StatCard
+              label="Withdrawals out"
+              value={formatNairaCompact(k.withdrawalsNgn)}
+              hint={<Hint text={`${formatNumber(k.withdrawalCount)} paid to banks`} now={k.withdrawalsNgn} before={p.withdrawalsNgn} />}
+              href={`${feesHref({ kind: "transfer_fee" })}#ledger`}
+            />
+            <StatCard
+              label="Platform wallet"
+              value={formatNairaCompact(s.snapshot.platformWalletNgn)}
+              hint="Fees collected and held, now"
+              href={feesHref()}
+            />
+          </StatGrid>
 
-      <StatGrid cols={4}>
-        <StatCard
-          label="Deposits in"
-          value={formatNairaCompact(o.money.depositsNgn)}
-          hint={`${formatNumber(o.money.depositCount)} top-ups`}
-        />
-        <StatCard label="Platform wallet" value={formatNairaCompact(o.money.platformWalletNgn)} hint="Fees collected, held" />
-        <StatCard
-          label="Today"
-          value={formatNaira(o.money.grossTodayNgn)}
-          hint={`${formatNumber(o.rides.completedToday)} rides completed`}
-        />
-        <StatCard
-          label="Refunds & penalties"
-          value={formatNairaCompact(Number(o.money.refundsNgn) + Number(o.money.penaltiesNgn))}
-          hint="Reversed or charged"
-        />
-      </StatGrid>
+          <SectionLabel>Rides</SectionLabel>
+          <StatGrid>
+            <StatCard
+              label="Ride requests"
+              value={formatNumber(k.requests)}
+              hint={<Hint text={`${(k.requests / Math.max(1, s.days)).toFixed(1)} a day`} now={k.requests} before={p.requests} />}
+              href={rows()}
+            />
+            <StatCard
+              label="Completed"
+              value={formatNumber(k.completed)}
+              hint={<Hint text={`${formatPercent(k.matchRate)} of requests`} now={k.completed} before={p.completed} />}
+              tone="green"
+              href={rows({ status: "completed" })}
+            />
+            <StatCard
+              label="No driver found"
+              value={formatNumber(k.cancelledNoDriver)}
+              hint={<Hint text="The search ran out" now={k.cancelledNoDriver} before={p.cancelledNoDriver} upIsGood={false} />}
+              tone="red"
+              href={rows({ status: "no_driver" })}
+            />
+            <StatCard
+              label="In flight now"
+              value={formatNumber(s.snapshot.inFlight)}
+              hint="Matched or on a trip"
+              tone="blue"
+              href="/admin/dashboard/live-map"
+            />
+          </StatGrid>
+          <StatGrid cols={4}>
+            <StatCard
+              label="Cancelled"
+              value={formatNumber(k.cancelled)}
+              hint={<Hint text={`${formatNumber(k.cancelledAfterMatch)} after a driver was found`} now={k.cancelled} before={p.cancelled} upIsGood={false} />}
+              href={rows({ status: "cancelled" })}
+            />
+            <StatCard
+              label="Average fare"
+              value={k.avgFareNgn == null ? "—" : formatNaira(k.avgFareNgn)}
+              hint={<Hint text={k.medianFareNgn == null ? undefined : `Median ${formatNaira(k.medianFareNgn)}`} now={k.avgFareNgn} before={p.avgFareNgn} />}
+              href={rows({ status: "completed", sort: "fare" })}
+            />
+            <StatCard
+              label="Distance covered"
+              value={formatDistance(k.distanceKm)}
+              hint={<Hint text="On completed trips" now={k.distanceKm} before={p.distanceKm} />}
+              href={rows({ status: "completed", sort: "distance" })}
+            />
+            <StatCard
+              label="Disputed"
+              value={formatNumber(k.disputed)}
+              hint="Raised by a rider or driver"
+              href={rows({ status: "disputed" })}
+            />
+          </StatGrid>
 
-      <SectionLabel>Rides</SectionLabel>
-      <StatGrid>
-        <StatCard
-          label="Rides attempted"
-          value={formatNumber(o.rides.attempted)}
-          hint={`${formatNumber(o.rides.last30d)} in the last 30 days`}
-          href="/admin/dashboard/rides"
-        />
-        <StatCard
-          label="Completed"
-          value={formatNumber(o.rides.completed)}
-          hint={`${formatPercent(o.rides.completionRate)} of everything attempted`}
-          tone="green"
-          href="/admin/dashboard/rides?status=COMPLETED"
-        />
-        <StatCard
-          label="Never matched"
-          value={formatNumber(o.rides.neverMatched)}
-          hint={`Never reached a driver · ${formatPercent(1 - o.rides.matchRate)} of attempts`}
-          tone="red"
-          href="/admin/dashboard/rides?status=CANCELLED"
-        />
-        <StatCard label="In flight now" value={formatNumber(o.rides.active)} hint="Matched or on trip" tone="blue" />
-      </StatGrid>
+          <SectionLabel>Marketplace</SectionLabel>
+          <StatGrid>
+            <StatCard
+              label="Active drivers"
+              value={formatNumber(k.activeDrivers)}
+              hint={<Hint text="Completed at least one trip" now={k.activeDrivers} before={p.activeDrivers} />}
+              href={rows({ tab: "drivers" })}
+            />
+            <StatCard
+              label="Active riders"
+              value={formatNumber(k.activeRiders)}
+              hint={<Hint text="Took at least one trip" now={k.activeRiders} before={p.activeRiders} />}
+              href={rows({ tab: "riders" })}
+            />
+            <StatCard
+              label="Bid acceptance"
+              value={k.bidAcceptanceRate == null ? "—" : formatPercent(k.bidAcceptanceRate)}
+              hint={
+                <Hint
+                  text={
+                    k.ridesWithBids === 0
+                      ? "No ride got a bid"
+                      : `${formatNumber(k.ridesWithBids)} rides got bids · ${k.avgBidsPerRide?.toFixed(1)} each${k.medianSecondsToFirstBid != null ? ` · first in ${formatDuration(k.medianSecondsToFirstBid)}` : ""}`
+                  }
+                  now={k.bidAcceptanceRate}
+                  before={p.bidAcceptanceRate}
+                />
+              }
+              href={rows({ tab: "drivers", sort: "bids" })}
+            />
+            <StatCard
+              label="New users"
+              value={formatNumber(k.newUsers)}
+              hint={<Hint text={`${formatNumber(k.newRiders)} riders · ${formatNumber(k.newDrivers)} drivers`} now={k.newUsers} before={p.newUsers} />}
+              href="/admin/dashboard/users"
+            />
+          </StatGrid>
+          <p className="admin-footnote">
+            Compared with {describeRange(s.previous.from, s.previous.to)}. Deposits, withdrawals, new users and the
+            wallet figures are for the whole platform; the zone, channel and ride-type filters apply to ride numbers.
+          </p>
+        </>
+      )}
 
-      <StatGrid cols={4}>
-        <StatCard
-          label="Cancelled"
-          value={formatNumber(o.rides.cancelled)}
-          hint={`${formatNumber(o.rides.cancelled - o.rides.neverMatched)} after a driver was found`}
-          href="/admin/dashboard/rides?status=CANCELLED"
-        />
-        <StatCard
-          label="Match rate"
-          value={formatPercent(o.rides.matchRate)}
-          hint="Attempts that reached a driver"
-        />
-        <StatCard label="Disputed" value={formatNumber(o.rides.disputed)} hint="Raised by a rider or driver" />
-        <StatCard
-          label="Completed today"
-          value={formatNumber(o.rides.completedToday)}
-          hint={`${formatNumber(o.rides.completed7d)} this week`}
-        />
-      </StatGrid>
+      <SectionLabel>Trend</SectionLabel>
+      {series.error ? (
+        <ErrorState error={series.error} onRetry={series.refresh} />
+      ) : series.loading && points.length === 0 ? (
+        <Spinner />
+      ) : (
+        <>
+          <Card title="Requests and completed trips" padded>
+            <BarChart
+              height={220}
+              data={points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.requests, pt.completed] }))}
+              series={[
+                { name: "Requests", color: CHART_COLORS.MUTED },
+                { name: "Completed", color: CHART_COLORS.ORANGE },
+              ]}
+            />
+          </Card>
+          <div className="admin-two-col">
+            <Card title="GMV" padded>
+              <AreaChart
+                height={200}
+                data={points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), value: pt.gmvNgn }))}
+                formatValue={(n) => formatNairaCompact(n)}
+              />
+            </Card>
+            <Card title="Platform revenue" right={<Link href={feesHref()}>Fees →</Link>} padded>
+              <BarChart
+                height={200}
+                data={points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.commissionNgn, pt.serviceFeeNgn, pt.depositFeesNgn] }))}
+                series={[
+                  { name: "Commission", color: CHART_COLORS.ORANGE },
+                  { name: "Service fee", color: CHART_COLORS.GREEN },
+                  { name: "Deposit fees", color: CHART_COLORS.MUTED },
+                ]}
+                formatValue={(n) => formatNairaCompact(n)}
+              />
+            </Card>
+          </div>
+        </>
+      )}
 
-      <StatGrid cols={4}>
-        <StatCard label="Average fare" value={formatNaira(o.rides.avgFareNgn)} />
-        <StatCard
-          label="Average trip"
-          value={formatDistance(o.rides.avgDistanceKm)}
-          hint={formatDuration(o.rides.avgDurationSeconds)}
-        />
-        <StatCard label="Distance covered" value={`${formatNumber(Math.round(o.rides.totalDistanceKm))} km`} />
-        <StatCard
-          label="Attempts per day"
-          value={(o.rides.last30d / 30).toFixed(1)}
-          hint={`${(o.rides.completed30d / 30).toFixed(1)} completed · 30-day average`}
-        />
-      </StatGrid>
+      <SectionLabel>Where rides come from</SectionLabel>
+      <div className="admin-two-col">
+        <Breakdown title="By channel" rows={byChannel.data?.rows} loading={byChannel.loading} note="Rides before 27 September are labelled from the bot's records; Claude bookings before then show as App." />
+        <Breakdown title="By pickup zone" rows={byZone.data?.rows} loading={byZone.loading} />
+      </div>
+      <div className="admin-two-col">
+        <Breakdown title="Single and group" rows={byType.data?.rows} loading={byType.loading} />
+        <Card title="Why requests end without a trip" padded>
+          {byCancel.loading && !byCancel.data ? (
+            <Spinner />
+          ) : (byCancel.data?.rows ?? []).length === 0 ? (
+            <EmptyState>No cancellations in this period.</EmptyState>
+          ) : (
+            <BreakdownBars rows={(byCancel.data?.rows ?? []).map((r) => ({ label: r.label, value: r.cancelled }))} />
+          )}
+        </Card>
+      </div>
+
+      <SectionLabel>The rows behind the numbers</SectionLabel>
+      <InsightTables filters={filters} />
 
       <SectionLabel>Group rides</SectionLabel>
       {groupRides.error ? (
@@ -408,173 +637,78 @@ export default function DashboardPage() {
         </>
       ) : null}
 
+
+      {o ? (
+        <>
       <SectionLabel>People</SectionLabel>
-      <StatGrid>
-        <StatCard
-          label="Total users"
-          value={formatNumber(o.users.total)}
-          hint={`${formatNumber(o.users.new30d)} joined in 30 days`}
-          href="/admin/dashboard/users"
-        />
-        <StatCard
-          label="Riders"
-          value={formatNumber(o.users.riders)}
-          hint={`${formatNumber(o.users.kycVerified)} identity verified`}
-          href="/admin/dashboard/users?role=rider"
-        />
-        <StatCard
-          label="Drivers"
-          value={formatNumber(o.drivers.total)}
-          hint={`${formatNumber(o.drivers.approved)} approved · ${formatNumber(o.drivers.pendingKyc)} awaiting review`}
-          href="/admin/dashboard/users?role=driver"
-        />
-        <StatCard
-          label="Online now"
-          value={formatNumber(o.drivers.online + o.drivers.onRide)}
-          hint={`${formatNumber(o.drivers.onRide)} on a trip`}
-          tone="green"
-        />
-      </StatGrid>
-
-      <Card title="How the user base grew" padded>
-        {series.loading && points.length === 0 ? (
-          <Spinner />
-        ) : (
-          <AreaChart
-            height={200}
-            color={CHART_COLORS.ORANGE}
-            data={(() => {
-              // The window only covers the last N days, so start the running
-              // total at whatever existed before it — otherwise the line
-              // pretends the platform began this month.
-              const inWindow = points.reduce((n, p) => n + p.signups, 0);
-              let running = o.users.total - inWindow;
-              return points.map((p) => {
-                running += p.signups;
-                return { label: shortDate(p.date), value: running };
-              });
-            })()}
-            formatValue={(n) => formatNumber(Math.round(n))}
-          />
-        )}
-      </Card>
-
-      <Card title="New sign-ups per day" padded>
-        {series.loading && points.length === 0 ? (
-          <Spinner />
-        ) : (
-          <BarChart
-            height={180}
-            data={points.map((p) => ({
-              label: shortDate(p.date),
-              values: [Math.max(0, p.signups - p.driverSignups), p.driverSignups],
-            }))}
-            series={[
-              { name: "Riders", color: CHART_COLORS.MUTED },
-              { name: "Drivers", color: CHART_COLORS.GREEN },
-            ]}
-          />
-        )}
-      </Card>
-
-      <SectionLabel
-        right={
-          <div className="admin-range-tabs">
-            {RANGES.map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={`admin-range-tab${r === days ? " active" : ""}`}
-                onClick={() => setDays(r)}
-              >
-                {r}d
-              </button>
-            ))}
-          </div>
-        }
-      >
-        Trend
-      </SectionLabel>
-
-      <Card title="Requests vs completed rides" padded>
-        {series.error ? (
-          <ErrorState error={series.error} onRetry={series.refresh} />
-        ) : series.loading && points.length === 0 ? (
-          <Spinner />
-        ) : (
-          <BarChart
-            height={220}
-            data={points.map((p) => ({
-              label: shortDate(p.date),
-              values: [p.ridesRequested, p.ridesCompleted],
-            }))}
-            series={[
-              { name: "Requested", color: CHART_COLORS.MUTED },
-              { name: "Completed", color: CHART_COLORS.ORANGE },
-            ]}
-          />
-        )}
-      </Card>
-
-      <Card title="Gross processed per day" padded>
-        {series.loading && points.length === 0 ? (
-          <Spinner />
-        ) : (
-          <AreaChart
-            height={200}
-            data={points.map((p) => ({ label: shortDate(p.date), value: Number(p.grossNgn) }))}
-            formatValue={(n) => formatNairaCompact(n)}
-          />
-        )}
-      </Card>
-
-      <div className="admin-two-col">
-        <Card title="Why requests fail" padded>
-          {cancels.loading ? (
-            <Spinner />
-          ) : cancels.error ? (
-            <ErrorState error={cancels.error} onRetry={cancels.refresh} />
-          ) : (
-            <BreakdownBars
-              rows={(cancels.data?.reasons ?? []).slice(0, 8).map((r) => ({ label: r.reason, value: r.count }))}
+          <StatGrid>
+            <StatCard
+              label="Total users"
+              value={formatNumber(o.users.total)}
+              hint={`${formatNumber(o.users.new30d)} joined in 30 days`}
+              href="/admin/dashboard/users"
             />
-          )}
-        </Card>
+            <StatCard
+              label="Riders"
+              value={formatNumber(o.users.riders)}
+              hint={`${formatNumber(o.users.kycVerified)} identity verified`}
+              href="/admin/dashboard/users?role=rider"
+            />
+            <StatCard
+              label="Drivers"
+              value={formatNumber(o.drivers.total)}
+              hint={`${formatNumber(o.drivers.approved)} approved · ${formatNumber(o.drivers.pendingKyc)} awaiting review`}
+              href="/admin/dashboard/users?role=driver"
+            />
+            <StatCard
+              label="Online now"
+              value={formatNumber(o.drivers.online + o.drivers.onRide)}
+              hint={`${formatNumber(o.drivers.onRide)} on a trip`}
+              tone="green"
+            />
+          </StatGrid>
 
-        <Card title="Money movement" padded>
-          <BreakdownBars
-            color={CHART_COLORS.GREEN}
-            rows={o.money.byType
-              .slice()
-              .sort((a, b) => Number(b.allTime) - Number(a.allTime))
-              .map((t) => ({ label: humanise(t.type), value: Number(t.allTime) }))}
-            formatValue={(n) => formatNairaCompact(n)}
-          />
-        </Card>
-      </div>
 
-      {o.withdrawals.length > 0 ? (
-        <Card title="Withdrawals" padded>
-          <div className="admin-chip-row">
-            {o.withdrawals.map((w) => (
-              <span key={w.status} className="admin-chip">
-                <strong>{humanise(w.status)}</strong>
-                <span>
-                  {formatNumber(w.count)} · {formatNaira(w.amountNgn)}
-                </span>
-              </span>
-            ))}
-          </div>
-        </Card>
+          <Card title="Money movement, all time" padded>
+            <BreakdownBars
+              color={CHART_COLORS.GREEN}
+              rows={o.money.byType
+                .slice()
+                .sort((a, b) => Number(b.allTime) - Number(a.allTime))
+                .map((t) => ({ label: humanise(t.type), value: Number(t.allTime) }))}
+              formatValue={(n) => formatNairaCompact(n)}
+            />
+          </Card>
+
+          {o.withdrawals.length > 0 ? (
+            <Card title="Withdrawals by status, all time" padded>
+              <div className="admin-chip-row">
+                {o.withdrawals.map((w) => (
+                  <span key={w.status} className="admin-chip">
+                    <strong>{humanise(w.status)}</strong>
+                    <span>
+                      {formatNumber(w.count)} · {formatNaira(w.amountNgn)}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+        </>
+      ) : overview.error ? (
+        <ErrorState error={overview.error} onRetry={overview.refresh} />
       ) : null}
 
-      <div className="admin-footnote">
-        Money figures come from the transaction ledger, not from ride records — so they stay correct
-        even when settlement is still catching up.{" "}
-        <Link href="/admin/dashboard/users">Browse users →</Link>
-      </div>
-        </>
-      )}
+      <SectionLabel>Checks</SectionLabel>
+      <NumbersCheck query={query} />
     </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<Spinner label="Loading the overview…" />}>
+      <DashboardBody />
+    </Suspense>
   );
 }

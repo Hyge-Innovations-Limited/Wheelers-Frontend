@@ -149,6 +149,10 @@
 
 .admin-main {
   flex: 1;
+  /* A flex child grows to its widest content unless told otherwise; without
+     this, one wide table pushes the whole page sideways under the sidebar
+     instead of scrolling inside its own box. */
+  min-width: 0;
   margin-left: 240px;
   padding: 32px 40px;
   min-height: 100vh;
@@ -1830,3 +1834,126 @@
 }
 .admin-btn-danger:hover:not(:disabled) { background: #FFF0F0; }
 .admin-btn-danger:disabled { opacity: 0.6; cursor: progress; }
+
+
+/* ── analytics: filters, change markers, sortable tables, checks ─────────── */
+
+.admin-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 28px 0 8px;
+  padding: 14px 16px;
+  background: var(--adm-paper);
+  border: 1px solid var(--adm-line);
+  border-radius: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.admin-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.admin-filter-period { font-size: 13px; font-weight: 600; color: var(--adm-muted); }
+.admin-date-range { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--adm-muted); }
+.admin-date-input {
+  padding: 7px 10px;
+  border: 1px solid var(--adm-line);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--adm-ink);
+  background: var(--adm-paper);
+}
+.admin-date-input:focus { outline: none; border-color: var(--adm-orange); }
+
+.admin-link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--adm-orange);
+  cursor: pointer;
+}
+.admin-link-btn:hover { text-decoration: underline; }
+
+.admin-header-actions { display: flex; gap: 10px; align-items: center; }
+.admin-inline-error {
+  margin: -16px 0 20px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #FFF0F0;
+  color: var(--adm-red);
+  font-size: 13px;
+}
+
+.admin-delta { font-weight: 700; white-space: nowrap; }
+.admin-delta.up { color: var(--adm-green); }
+.admin-delta.down { color: var(--adm-red); }
+.admin-delta.neutral { color: var(--adm-muted); font-weight: 500; }
+
+.admin-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.admin-sort:hover, .admin-sort.active { color: var(--adm-ink); }
+.admin-sort-arrow { font-size: 9px; opacity: 0.45; }
+.admin-sort.active .admin-sort-arrow { opacity: 1; color: var(--adm-orange); }
+.admin-table.is-refreshing tbody { opacity: 0.55; transition: opacity 0.15s; }
+.admin-cell-route { display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.admin-cell-ref { color: var(--adm-muted); }
+.admin-estimated {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--adm-line-soft);
+  color: var(--adm-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.admin-toolbar-inset { padding: 14px 16px 0; margin-bottom: 12px; }
+.admin-toolbar-note { font-size: 12.5px; color: var(--adm-muted); }
+.admin-rows-section { scroll-margin-top: 150px; }
+#ledger, #trips { scroll-margin-top: 150px; }
+
+.admin-text-red { color: var(--adm-red); }
+.admin-text-green { color: var(--adm-green); }
+.admin-check { font-size: 12.5px; font-weight: 700; }
+.admin-check.good { color: var(--adm-green); }
+.admin-check.bad { color: var(--adm-red); }
+.admin-check-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.admin-check-dot.good { background: var(--adm-green); }
+.admin-check-dot.bad { background: var(--adm-red); }
+
+@media (max-width: 720px) {
+  .admin-filter-bar { position: static; }
+  .admin-header-actions { flex-wrap: wrap; }
+  .admin-cell-route { max-width: 160px; }
+}
+
+/* One line per row: the table scrolls sideways instead of growing tall. */
+.admin-data-table td { white-space: nowrap; }
+.admin-data-table td .admin-cell-route { max-width: 320px; }
+.admin-filter-bar .admin-select,
+.admin-rows-section .admin-select,
+#ledger .admin-select {
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 1px solid var(--adm-line);
+  border-radius: 9px;
+  background: var(--adm-paper);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-ink);
+}
+.admin-filter-bar .admin-select:focus,
+.admin-rows-section .admin-select:focus { outline: none; border-color: var(--adm-orange); }
