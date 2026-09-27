@@ -736,6 +736,8 @@ export interface FeePoint {
 
 export interface FeesSummary {
   filters: InsightFilters;
+  /** A zone, channel or person filter is on: deposit fees and Paystack costs belong to no ride, so they are left out. */
+  rideFiltersApplied: boolean;
   bucket: Bucket;
   totals: FeeTotals;
   previousTotals: FeeTotals;

@@ -274,6 +274,8 @@ function DashboardBody() {
   const o = overview.data;
   const points = series.data?.points ?? [];
   const period = describeRange(filters.from, filters.to);
+  // A zone, channel or ride-type view: deposits belong to no ride, so revenue there is ride fees only.
+  const narrowed = Boolean(filters.zone || filters.channel || filters.rideType || filters.driverId || filters.riderId);
   const feesHref = (extra: Record<string, string> = {}) => `/admin/dashboard/fees${filtersQuery(filters, extra)}`;
   // Every card opens the rows that make up its number, with the same filters.
   const rows = (patch: Record<string, string | null> = {}) =>
@@ -334,7 +336,7 @@ function DashboardBody() {
             <StatCard
               label="Platform revenue"
               value={formatNairaCompact(k.platformRevenueNgn)}
-              hint={<Hint text="Commission + service fee + deposit fees" now={k.platformRevenueNgn} before={p.platformRevenueNgn} />}
+              hint={<Hint text={narrowed ? "Commission + service fee on these trips" : "Commission + service fee + deposit fees"} now={k.platformRevenueNgn} before={p.platformRevenueNgn} />}
               tone="green"
               href={feesHref()}
             />

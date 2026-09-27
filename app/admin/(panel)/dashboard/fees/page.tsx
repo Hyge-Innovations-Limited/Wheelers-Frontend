@@ -106,6 +106,9 @@ function FeesBody() {
   const { data, error, loading, refresh } = useAdminData<FeesSummary>(`/admin/fees/summary${filtersQuery(filters, { bucket })}`, [], { refreshMs: 60_000 });
   const t = data?.totals;
   const p = data?.previousTotals;
+  // Deposits and withdrawals belong to no ride, so a channel or zone view has none of them.
+  const narrowed = data?.rideFiltersApplied ?? false;
+  const notTied = "Not tied to a ride, so not in a channel or zone view. Clear the filters to include it.";
   const ledger = (kind: FeeKind | null) => hrefWith({ kind }, "#ledger");
   const trips = () => hrefWith({}, "#trips");
 
@@ -146,10 +149,21 @@ function FeesBody() {
         <>
           <SectionLabel>Income</SectionLabel>
           <StatGrid>
-            <StatCard label="Income" value={formatNairaCompact(t.incomeNgn)} hint={change(t.incomeNgn, p.incomeNgn) ?? "Commission + service fee + deposit fees"} tone="green" href={ledger(null)} />
+            <StatCard
+              label="Income"
+              value={formatNairaCompact(t.incomeNgn)}
+              hint={change(t.incomeNgn, p.incomeNgn) ?? (narrowed ? "Commission + service fee on these trips" : "Commission + service fee + deposit fees")}
+              tone="green"
+              href={ledger(null)}
+            />
             <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`4% of the fare on ${formatNumber(t.feeRides)} trips`} href={trips()} />
             <StatCard label="Service fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 on each trip" href={trips()} />
-            <StatCard label="Deposit fees" value={formatNairaCompact(t.depositFeesNgn)} hint={`₦30 on each of ${formatNumber(t.deposits)} deposits`} href={ledger("deposit_fee")} />
+            <StatCard
+              label="Deposit fees"
+              value={narrowed ? "—" : formatNairaCompact(t.depositFeesNgn)}
+              hint={narrowed ? notTied : `₦30 on each of ${formatNumber(t.deposits)} deposits`}
+              href={narrowed ? undefined : ledger("deposit_fee")}
+            />
           </StatGrid>
 
           <SectionLabel>Owed, costs and what is left</SectionLabel>
@@ -157,12 +171,18 @@ function FeesBody() {
             <StatCard label="State levy" value={formatNairaCompact(t.stateLevyNgn)} hint="₦30 per trip, owed to Lagos State: not income" tone="orange" href={trips()} />
             <StatCard
               label="Paystack costs"
-              value={formatNairaCompact(t.costsNgn)}
-              hint={`${formatNaira(t.depositProviderCostNgn)} on deposits · ${formatNaira(t.transferCostNgn)} on ${formatNumber(t.transfers)} withdrawals`}
+              value={narrowed ? "—" : formatNairaCompact(t.costsNgn)}
+              hint={narrowed ? notTied : `${formatNaira(t.depositProviderCostNgn)} on deposits · ${formatNaira(t.transferCostNgn)} on ${formatNumber(t.transfers)} withdrawals`}
               tone="red"
-              href={ledger("transfer_fee")}
+              href={narrowed ? undefined : ledger("transfer_fee")}
             />
-            <StatCard label="Net" value={formatNairaCompact(t.netNgn)} hint={change(t.netNgn, p.netNgn) ?? "Income minus costs"} tone="green" href={ledger(null)} />
+            <StatCard
+              label="Net"
+              value={formatNairaCompact(t.netNgn)}
+              hint={change(t.netNgn, p.netNgn) ?? (narrowed ? "Fees on these trips; no Paystack costs apply" : "Income minus costs")}
+              tone="green"
+              href={ledger(null)}
+            />
             <StatCard label="Platform wallet" value={formatNairaCompact(data.platformWalletNgn)} hint="Fees collected and held, now" />
           </StatGrid>
           {t.estimatedCommissionNgn > 0 ? (
