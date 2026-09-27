@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { BarChart, CHART_COLORS } from "@/components/admin/charts";
-import { Card, ErrorState, PageHeader, RefreshButton, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
+import { Card, ErrorState, PageHeader, RefreshButton, Spinner, StatCard, StatGrid, TableWrap } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import type { ServiceUsage } from "@/lib/admin-api";
 
@@ -85,6 +85,7 @@ export default function UsagePage() {
           </Card>
 
           <Card title="By service">
+            <TableWrap>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -115,6 +116,7 @@ export default function UsagePage() {
                 ))}
               </tbody>
             </table>
+            </TableWrap>
           </Card>
         </>
       ) : null}

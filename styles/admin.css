@@ -685,63 +685,7 @@
 
 /* ── Responsive ──────────────────────────────────────── */
 
-@media (max-width: 768px) {
-  .admin-sidebar {
-    width: 56px;
-    overflow: hidden;
-  }
-
-  .admin-nav-link span,
-  .admin-logout-btn span,
-  .admin-user-info,
-  .admin-sidebar-logo h1 {
-    display: none;
-  }
-
-  .admin-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 11px;
-  }
-
-  .admin-sidebar-logo {
-    padding: 20px 14px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .admin-sidebar-logo::before {
-    content: "W";
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--or);
-  }
-
-  .admin-nav-link {
-    justify-content: center;
-    padding: 10px;
-  }
-
-  .admin-sidebar-user {
-    justify-content: center;
-    padding: 4px 0;
-  }
-
-  .admin-logout-btn {
-    justify-content: center;
-    padding: 10px;
-  }
-
-  .admin-main {
-    margin-left: 56px;
-    padding: 24px 16px;
-  }
-
-  .admin-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+/* Phones: see "Every screen size" at the end of this file. */
 
 /* ── Activity explorer + dashboard live feed ── */
 
@@ -1957,3 +1901,157 @@
 }
 .admin-filter-bar .admin-select:focus,
 .admin-rows-section .admin-select:focus { outline: none; border-color: var(--adm-orange); }
+
+
+/* ── Every screen size ───────────────────────────────────────────────────
+   Laptop and up: the sidebar sits beside the page. Tablet and phone
+   (≤ 768px): a top bar with a menu button, and the full sidebar slides in as
+   a drawer, so a phone keeps its whole width for the page. Rows of buttons
+   and tabs scroll sideways instead of breaking lines; wide tables scroll in
+   their own box; stat cards go two to a row. */
+
+.admin-topbar, .admin-nav-overlay { display: none; }
+
+/* Selects everywhere look like the rest of the panel, not the browser default. */
+.admin-select {
+  padding: 8px 12px;
+  border: 1px solid var(--adm-line);
+  border-radius: 9px;
+  background: var(--adm-paper);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-ink);
+}
+.admin-select:focus { outline: none; border-color: var(--adm-orange); }
+
+/* Anything wide inside a card scrolls inside the card. */
+.admin-card { min-width: 0; }
+.admin-card-body { overflow-x: auto; }
+.admin-card-body > .admin-table,
+.admin-card > .admin-table { min-width: 100%; }
+.admin-two-col > * { min-width: 0; }
+
+@media (max-width: 1100px) {
+  .admin-main { padding: 28px 24px; }
+}
+
+@media (max-width: 768px) {
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 56px;
+    padding: 0 12px;
+    background: #0D0D0D;
+    color: #fff;
+    z-index: 40;
+  }
+  .admin-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+  }
+  .admin-menu-btn:active { background: rgba(255, 255, 255, 0.12); }
+  .admin-topbar-brand { font-family: var(--display, inherit); font-size: 19px; font-weight: 800; color: var(--adm-orange); }
+  .admin-topbar-alerts {
+    margin-left: auto;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--adm-red);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .admin-sidebar {
+    width: 272px;
+    max-width: 85vw;
+    top: 0;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: none;
+  }
+  .nav-open .admin-sidebar { transform: translateX(0); box-shadow: 0 0 40px rgba(0, 0, 0, 0.35); }
+  .admin-nav-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(13, 13, 13, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .nav-open .admin-nav-overlay { opacity: 1; pointer-events: auto; }
+  .nav-open { overflow: hidden; }
+
+  .admin-main {
+    margin-left: 0;
+    padding: 72px 14px 32px;
+  }
+
+  .admin-page-head { flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  .admin-page-title, .admin-page-header h1 { font-size: 22px; }
+  .admin-header-actions { width: 100%; }
+  .admin-header-actions > * { flex: 1; justify-content: center; white-space: nowrap; }
+
+  .admin-two-col { grid-template-columns: 1fr; gap: 14px; }
+
+  /* A row of choices scrolls sideways rather than wrapping into a mess. */
+  .admin-range-tabs, .admin-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-range-tabs::-webkit-scrollbar, .admin-tabs::-webkit-scrollbar { display: none; }
+  .admin-range-tab, .admin-tab { flex: none; white-space: nowrap; }
+
+  .admin-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .admin-toolbar > .admin-search { flex: none; max-width: none; }
+  .admin-toolbar > .admin-select { width: 100%; }
+  .admin-toolbar-inset { padding: 12px 12px 0; }
+
+  .admin-filter-bar { padding: 12px; gap: 10px; margin-top: 20px; }
+  .admin-filter-row { gap: 8px; }
+  .admin-filter-row > .admin-select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+  .admin-date-range { width: 100%; }
+  .admin-date-input { flex: 1; min-width: 0; }
+
+  .admin-card-head { padding: 14px 16px; }
+  .admin-card-body { padding: 16px; }
+  .admin-table th, .admin-table td { padding-left: 12px; padding-right: 12px; }
+}
+
+@media (max-width: 560px) {
+  .admin-stats-grid,
+  .admin-stats-grid.cols-2,
+  .admin-stats-grid.cols-3,
+  .admin-stats-grid.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .admin-stat-card { padding: 14px; border-radius: 12px; }
+  .admin-stat-value { font-size: 20px; }
+  .admin-stat-label { font-size: 10px; }
+  .admin-stat-hint { font-size: 11.5px; line-height: 1.4; }
+  .admin-section-label, .admin-section { margin-top: 22px; }
+}
+
+@media (max-width: 360px) {
+  .admin-stats-grid,
+  .admin-stats-grid.cols-2,
+  .admin-stats-grid.cols-3,
+  .admin-stats-grid.cols-4 { grid-template-columns: 1fr; }
+}
