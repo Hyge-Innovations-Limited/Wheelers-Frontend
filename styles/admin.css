@@ -2075,12 +2075,22 @@
   justify-content: center;
   border: 0;
   padding: 20px;
-  background: rgba(250, 244, 238, 0.72);
-  -webkit-backdrop-filter: blur(28px) saturate(0.6);
-  backdrop-filter: blur(28px) saturate(0.6);
+  background: var(--adm-bg, #faf4ee);
   cursor: pointer;
   font: inherit;
 }
+.admin-screen-guard:disabled { cursor: default; }
+
+/* The content is taken off the screen, not blurred: there is nothing under
+   the cover to sharpen. Set on <html> in the same tick as the key press, so it
+   does not wait for React. The cover itself only arrives with the next render,
+   which is why the layout paints a plain background meanwhile. */
+html[data-screen-guard="on"] .admin-layout > *:not(.admin-screen-guard) {
+  visibility: hidden !important;
+}
+.admin-layout { -webkit-touch-callout: none; }
+.admin-layout img { -webkit-user-drag: none; user-select: none; }
+
 .admin-screen-guard-card {
   display: flex;
   flex-direction: column;
