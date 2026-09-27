@@ -2055,3 +2055,56 @@
   .admin-stats-grid.cols-3,
   .admin-stats-grid.cols-4 { grid-template-columns: 1fr; }
 }
+
+
+/* ── Screenshot protection (components/admin/screen-guard.tsx) ─────────── */
+
+.admin-watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+.admin-screen-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 20px;
+  background: rgba(250, 244, 238, 0.72);
+  -webkit-backdrop-filter: blur(28px) saturate(0.6);
+  backdrop-filter: blur(28px) saturate(0.6);
+  cursor: pointer;
+  font: inherit;
+}
+.admin-screen-guard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 340px;
+  padding: 20px 22px;
+  border: 1px solid var(--adm-line);
+  border-radius: 14px;
+  background: var(--adm-paper);
+  color: var(--adm-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+.admin-screen-guard-card strong { color: var(--adm-ink); font-size: 16px; }
+.admin-print-notice { display: none; }
+
+@media print {
+  .admin-layout > *:not(.admin-print-notice) { display: none !important; }
+  .admin-print-notice {
+    display: block !important;
+    padding: 80px 40px;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+  }
+}

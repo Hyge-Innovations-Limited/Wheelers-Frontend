@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { fetchAlertCounts } from "@/lib/admin-api";
+import { ScreenGuard } from "@/components/admin/screen-guard";
 import "../../../styles/admin.css";
 
 interface AdminUser {
@@ -269,6 +270,7 @@ export default function AdminPanelLayout({
       </aside>
 
       <main className="admin-main">{children}</main>
+      <ScreenGuard viewer={admin?.username ?? admin?.name ?? "admin"} />
     </div>
   );
 }
