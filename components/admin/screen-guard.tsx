@@ -187,25 +187,24 @@ export function ScreenGuard({ viewer }: { viewer: string }) {
     setReason(null);
   };
 
-  // A tile of tilted text, repeated across the screen, in two layers. The second
-  // is moved so that its lines fall midway between the first's: a line every
-  // 55 pixels, so no crop of a useful size is free of it.
+  // A faint line of text, far apart and tilted, over the content only: it should
+  // read as the texture of the page, not as a pattern the eye keeps catching.
+  // The exact time lives in one small corner label instead of in every line.
   const stamp = new Date(minute * 60_000);
   const day = stamp.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
   const time = stamp.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const text = `${viewer} · ${day} ${time} · Wheelers admin`.replace(/[<&>"']/g, "");
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='110'><text x='24' y='60' transform='rotate(-12 200 55)' font-family='sans-serif' font-size='13' font-weight='700' fill='rgba(13,13,13,0.10)'>${text}</text></svg>`;
+  const who = viewer.replace(/[<&>"']/g, "");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='520' height='300'><text x='40' y='170' transform='rotate(-18 260 150)' font-family='sans-serif' font-size='16' font-weight='500' letter-spacing='0.4' fill='rgba(13,13,13,0.045)'>${who} · ${day} · Wheelers admin</text></svg>`;
   const tile = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 
   const locked = reason === "capture" && secondsLeft > 0;
 
   return (
     <>
-      <div
-        className="admin-watermark"
-        style={{ backgroundImage: `${tile}, ${tile}`, backgroundPosition: "0 0, 200px 13px" }}
-        aria-hidden
-      />
+      <div className="admin-watermark" style={{ backgroundImage: tile }} aria-hidden />
+      <div className="admin-watermark-stamp" aria-hidden>
+        {who} · {day} {time}
+      </div>
       <div className="admin-print-notice" aria-hidden>
         Printing the Wheelers admin is disabled.
       </div>
