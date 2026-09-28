@@ -168,6 +168,8 @@ export interface PagedResponse<T> {
 
 export interface AdminRideRow {
   id: string;
+  /** The short trip ID people use, e.g. WH-01234. */
+  tripId?: string | null;
   status: string;
   riderId: string;
   riderName: string | null;
@@ -586,6 +588,7 @@ export interface Kpis {
   serviceFeeNgn: number;
   stateLevyNgn: number;
   depositFeesNgn: number;
+  withdrawalFeesNgn: number;
   platformRevenueNgn: number;
   driverPayoutsNgn: number;
   activeDrivers: number;
@@ -687,6 +690,8 @@ export type TripStatusFilter = "all" | "completed" | "cancelled" | "no_driver" |
 
 export interface TripRow {
   id: string;
+  /** The short trip ID people use, e.g. WH-01234. */
+  tripId: string | null;
   createdAt: string;
   completedAt: string | null;
   cancelledAt: string | null;
@@ -757,6 +762,8 @@ export interface FeeTotals {
   commissionNgn: number;
   serviceFeeNgn: number;
   depositFeesNgn: number;
+  /** Wheelers' fee on withdrawals that reached the bank. */
+  withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
   depositProviderCostNgn: number;
@@ -767,6 +774,7 @@ export interface FeeTotals {
   feeRides: number;
   deposits: number;
   transfers: number;
+  feeWithdrawals: number;
   estimatedCommissionNgn: number;
 }
 
@@ -775,6 +783,7 @@ export interface FeePoint {
   commissionNgn: number;
   serviceFeeNgn: number;
   depositFeesNgn: number;
+  withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
   depositProviderCostNgn: number;
@@ -796,7 +805,7 @@ export interface FeesSummary {
   platformWalletNgn: number;
 }
 
-export type FeeKind = "ride_fee" | "deposit_fee" | "deposit_provider_fee" | "transfer_fee" | "provider_fee";
+export type FeeKind = "ride_fee" | "deposit_fee" | "withdrawal_fee" | "deposit_provider_fee" | "transfer_fee" | "provider_fee";
 
 export interface FeeLedgerRow {
   id: string;
@@ -834,7 +843,11 @@ export interface WithdrawalRow {
   name: string | null;
   phone: string | null;
   status: string;
+  /** What left the wallet. */
   amountNgn: number;
+  /** Wheelers' withdrawal fee, and what the bank received. */
+  feeNgn: number;
+  payoutNgn: number;
   transferFeeNgn: number | null;
   accountName: string;
   accountEnding: string;

@@ -339,7 +339,7 @@ function DashboardBody() {
             <StatCard
               label="Platform revenue"
               value={formatNairaCompact(k.platformRevenueNgn)}
-              hint={<Hint text={narrowed ? "Commission + service fee on these trips" : "Commission + service fee + deposit fees"} now={k.platformRevenueNgn} before={p.platformRevenueNgn} />}
+              hint={<Hint text={narrowed ? "Commission + service fee on these trips" : "Ride, deposit and withdrawal fees"} now={k.platformRevenueNgn} before={p.platformRevenueNgn} />}
               tone="green"
               href={feesHref()}
             />

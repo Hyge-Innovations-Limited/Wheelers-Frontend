@@ -28,6 +28,7 @@ const KINDS: Array<{ value: LedgerTab; label: string }> = [
   { value: "all", label: "All fees" },
   { value: "ride_fee", label: "Ride fees" },
   { value: "deposit_fee", label: "Deposit fees" },
+  { value: "withdrawal_fee", label: "Withdrawal fees" },
   { value: "deposits", label: "Platform deposits" },
   { value: "withdrawals", label: "Platform withdrawals" },
 ];
@@ -36,6 +37,7 @@ const KINDS: Array<{ value: LedgerTab; label: string }> = [
 const KIND_LABEL: Record<FeeKind, string> = {
   ride_fee: "Ride fee",
   deposit_fee: "Deposit fee",
+  withdrawal_fee: "Withdrawal fee",
   deposit_provider_fee: "Platform deposit cost",
   transfer_fee: "Platform withdrawal cost",
   provider_fee: "Other platform cost",
@@ -134,6 +136,8 @@ function WithdrawalRows() {
     { key: "when", label: "Requested", sortKey: "createdAt", render: (r) => formatDateTime(r.createdAt) },
     { key: "who", label: "Wallet owner", sortKey: "name", render: (r) => <Link href={`/admin/dashboard/users/${r.userId}`}>{r.name ?? "User"}</Link> },
     { key: "amount", label: "Amount", numeric: true, sortKey: "amount", render: (r) => <span className="admin-text-red">−{formatNaira(r.amountNgn)}</span> },
+    { key: "fee", label: "Withdrawal fee", numeric: true, render: (r) => (r.feeNgn > 0 ? formatNaira(r.feeNgn) : "—") },
+    { key: "sent", label: "Sent to bank", numeric: true, render: (r) => formatNaira(r.payoutNgn) },
     { key: "status", label: "Status", sortKey: "status", render: (r) => <Badge className={statusBadgeClass(r.status)}>{humanise(r.status)}</Badge> },
     { key: "cost", label: "Platform cost", numeric: true, render: (r) => (r.transferFeeNgn == null ? "—" : formatNaira(r.transferFeeNgn)) },
     { key: "to", label: "To account", render: (r) => `${r.accountName}${r.accountEnding ? ` ••${r.accountEnding}` : ""}` },
@@ -223,21 +227,29 @@ function FeesBody() {
       ) : (
         <>
           <SectionLabel>Income</SectionLabel>
-          <StatGrid>
+          <StatGrid cols={3}>
             <StatCard
               label="Income"
               value={formatNairaCompact(t.incomeNgn)}
-              hint={change(t.incomeNgn, p.incomeNgn) ?? (narrowed ? "Commission + service fee on these trips" : "Commission + service fee + deposit fees")}
+              hint={change(t.incomeNgn, p.incomeNgn) ?? (narrowed ? "Commission + service fee on these trips" : "Ride, deposit and withdrawal fees")}
               tone="green"
               href={ledger(null)}
             />
             <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`4% of the fare on ${formatNumber(t.feeRides)} trips`} href={trips()} />
             <StatCard label="Service fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 on each trip" href={trips()} />
+          </StatGrid>
+          <StatGrid cols={2}>
             <StatCard
               label="Deposit fees"
               value={narrowed ? "—" : formatNairaCompact(t.depositFeesNgn)}
               hint={narrowed ? notTied : `₦30 on each of ${formatNumber(t.deposits)} deposits`}
               href={narrowed ? undefined : ledger("deposit_fee")}
+            />
+            <StatCard
+              label="Withdrawal fees"
+              value={narrowed ? "—" : formatNairaCompact(t.withdrawalFeesNgn)}
+              hint={narrowed ? notTied : `₦45 on each of ${formatNumber(t.feeWithdrawals)} withdrawals paid out`}
+              href={narrowed ? undefined : ledger("withdrawal_fee")}
             />
           </StatGrid>
 
@@ -271,11 +283,11 @@ function FeesBody() {
             <Card title="Income" padded>
               <BarChart
                 height={220}
-                data={data.points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.commissionNgn, pt.serviceFeeNgn, pt.depositFeesNgn] }))}
+                data={data.points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.commissionNgn, pt.serviceFeeNgn, pt.depositFeesNgn + (pt.withdrawalFeesNgn ?? 0)] }))}
                 series={[
                   { name: "Commission", color: CHART_COLORS.ORANGE },
                   { name: "Service fee", color: CHART_COLORS.GREEN },
-                  { name: "Deposit fees", color: CHART_COLORS.MUTED },
+                  { name: "Deposit and withdrawal fees", color: CHART_COLORS.MUTED },
                 ]}
                 formatValue={(n) => formatNairaCompact(n)}
               />
