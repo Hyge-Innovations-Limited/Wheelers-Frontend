@@ -68,7 +68,7 @@ function RidesTable() {
       />
 
       <div className="admin-toolbar">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search pickup, destination or ride id…" />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search trip ID (WH-01234), pickup or destination…" />
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -90,6 +90,7 @@ function RidesTable() {
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th>Trip ID</th>
                   <th>When</th>
                   <th>Status</th>
                   <th>Rider</th>
@@ -103,6 +104,7 @@ function RidesTable() {
               <tbody>
                 {data.items.map((r) => (
                   <tr key={r.id}>
+                    <td className="mono admin-trip-id">{r.tripId ?? "—"}</td>
                     <td>
                       <span className="admin-stack">
                         <span>{formatDateTime(r.createdAt)}</span>

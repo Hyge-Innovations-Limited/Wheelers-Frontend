@@ -82,6 +82,7 @@ export function TripsTable({
   const { data, error, loading, refresh } = useAdminData<PagedResponse<TripRow>>(path);
 
   const columns: Array<Column<TripRow>> = [
+    { key: "trip", label: "Trip ID", render: (r) => <span className="admin-trip-id">{r.tripId ?? "—"}</span> },
     {
       key: "when",
       label: status === "completed" ? "Completed" : status === "cancelled" || status === "no_driver" ? "Cancelled" : "Requested",
@@ -128,7 +129,7 @@ export function TripsTable({
   return (
     <Card title={title} padded={false}>
       <div className="admin-toolbar admin-toolbar-inset">
-        <SearchInput value={t.search} onChange={t.setSearch} placeholder="Search address, rider, driver or ride ID" />
+        <SearchInput value={t.search} onChange={t.setSearch} placeholder="Search trip ID (WH-01234), address, rider or driver" />
         {data ? <span className="admin-toolbar-note">{formatNumber(data.total)} rides</span> : null}
       </div>
       <DataTable
