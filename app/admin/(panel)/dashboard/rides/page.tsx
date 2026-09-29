@@ -104,7 +104,11 @@ function RidesTable() {
               <tbody>
                 {data.items.map((r) => (
                   <tr key={r.id}>
-                    <td className="mono admin-trip-id">{r.tripId ?? "—"}</td>
+                    <td className="mono admin-trip-id">
+                      <Link href={`/admin/dashboard/rides/${r.id}`} className="admin-user-link" title="Chat, calls, trip code and Stellar">
+                        {r.tripId ?? "Open"}
+                      </Link>
+                    </td>
                     <td>
                       <span className="admin-stack">
                         <span>{formatDateTime(r.createdAt)}</span>

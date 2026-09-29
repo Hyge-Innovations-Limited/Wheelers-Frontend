@@ -2167,3 +2167,11 @@ html[data-screen-guard="on"] .admin-layout > *:not(.admin-screen-guard) {
     text-align: center;
   }
 }
+
+/* ── a trip's chat, on the admin ride page ─────────────────────────────── */
+.admin-chat-thread { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+.admin-chat-line { display: flex; flex-direction: column; gap: 2px; max-width: 78%; padding: 8px 12px; border-radius: 12px; background: #F6F3F0; }
+.admin-chat-line.driver { align-self: flex-end; background: #FFF0E8; }
+.admin-chat-line.rider { align-self: flex-start; }
+.admin-chat-line.call { align-self: center; max-width: none; background: transparent; text-align: center; }
+.admin-trip-error { color: #FF3333; margin-top: 8px; }

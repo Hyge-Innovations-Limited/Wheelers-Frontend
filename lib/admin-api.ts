@@ -896,3 +896,73 @@ export async function adminDownload(path: string, fallbackName: string): Promise
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/* ── a trip: chat, calls, trip code, Stellar (GET /admin/rides/:id/trip) ── */
+
+export interface AdminStellarTransfer {
+  id?: string;
+  reference?: string;
+  kind: "ACCOUNT_OPEN" | "TOPUP" | "FARE" | "COMMISSION" | "WITHDRAWAL" | string;
+  status: "PENDING" | "SUBMITTED" | "CONFIRMED" | "FAILED" | string;
+  amountXlm: string;
+  amountNgn: number | null;
+  memo: string | null;
+  rideId: string | null;
+  from: string;
+  to: string;
+  txHash: string | null;
+  explorerUrl: string | null;
+  createdAt: string;
+  confirmedAt: string | null;
+  note: string | null;
+}
+
+export interface AdminTripCode {
+  status: "none" | "waiting" | "verified" | "unlocked";
+  wrongTries: number;
+  verifiedAt?: string | null;
+  unlockedBy?: string | null;
+  unlockedAt?: string | null;
+}
+
+export interface AdminTripView {
+  rideId: string;
+  tripId: string | null;
+  status: string;
+  channel: string;
+  chatOpen: boolean;
+  rider: { userId: string; name: string };
+  driver: { userId: string; name: string } | null;
+  tripCode: AdminTripCode;
+  whatsappCardStatus: "live" | "message" | "call" | "none" | null;
+  stellar: AdminStellarTransfer[] | null;
+  messages: Array<{ id: string; senderRole: "RIDER" | "DRIVER"; senderName: string; kind: "text" | "call" | string; content: string; createdAt: string }>;
+  calls: Array<{
+    id: string;
+    caller: { role: "RIDER" | "DRIVER"; name: string };
+    callee: { name: string; channel: "app" | "whatsapp" | string };
+    status: string;
+    endReason: string | null;
+    startedAt: string;
+    answeredAt: string | null;
+    endedAt: string | null;
+    durationSeconds: number | null;
+  }>;
+}
+
+/** Support starts a trip without the rider's code (their phone died). Recorded with the admin's name. */
+export function unlockTripCode(rideId: string): Promise<{ unlocked: boolean; tripCode: AdminTripCode }> {
+  return adminJson(`/admin/rides/${encodeURIComponent(rideId)}/trip-code/unlock`, { method: "POST" });
+}
+
+/* ── Stellar Testnet (GET /admin/stellar) ──────────────────────────────── */
+
+export interface AdminStellarView {
+  enabled: boolean;
+  network?: "testnet";
+  ngnPerXlm?: number;
+  operations?: { publicKey: string; balanceXlm: string; explorerUrl: string } | null;
+  counts?: Array<{ kind: string; status: string; count: number }>;
+  transfers?: AdminStellarTransfer[];
+  nextBefore?: string | null;
+}
