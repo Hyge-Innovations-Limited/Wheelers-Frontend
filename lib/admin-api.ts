@@ -903,9 +903,11 @@ export interface AdminStellarTransfer {
   id?: string;
   reference?: string;
   kind: "ACCOUNT_OPEN" | "TOPUP" | "FARE" | "COMMISSION" | "WITHDRAWAL" | string;
-  status: "PENDING" | "SUBMITTED" | "CONFIRMED" | "FAILED" | string;
+  status: "PENDING" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "SKIPPED" | string;
   amountXlm: string;
+  /** Naira equivalent at the rate the transfer used. */
   amountNgn: number | null;
+  rateNgnPerXlm?: number | null;
   memo: string | null;
   rideId: string | null;
   from: string;
@@ -960,7 +962,8 @@ export function unlockTripCode(rideId: string): Promise<{ unlocked: boolean; tri
 export interface AdminStellarView {
   enabled: boolean;
   network?: "testnet";
-  ngnPerXlm?: number;
+  /** Live naira per XLM; null when no price could be had. */
+  rate?: { ngnPerXlm: number; source: string; at: string } | null;
   operations?: { publicKey: string; balanceXlm: string; explorerUrl: string } | null;
   counts?: Array<{ kind: string; status: string; count: number }>;
   transfers?: AdminStellarTransfer[];

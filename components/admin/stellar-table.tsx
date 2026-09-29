@@ -6,7 +6,7 @@ import { EmptyState, TableWrap } from "@/components/admin/ui";
 
 const TRANSFER_LABEL: Record<string, string> = {
   ACCOUNT_OPEN: "Account opened",
-  TOPUP: "Top-up",
+  TOPUP: "Top-up (earlier design)",
   FARE: "Trip fare",
   COMMISSION: "Commission",
   WITHDRAWAL: "Driver withdrawal",
@@ -27,7 +27,8 @@ export function StellarTable({ transfers }: { transfers: AdminStellarTransfer[] 
             <th>When</th>
             <th>Kind</th>
             <th className="num">XLM</th>
-            <th className="num">Naira value</th>
+            <th className="num">≈ Naira</th>
+            <th className="num">₦ per XLM</th>
             <th>Status</th>
             <th>From → To</th>
             <th>Transaction</th>
@@ -40,8 +41,9 @@ export function StellarTable({ transfers }: { transfers: AdminStellarTransfer[] 
               <td>{TRANSFER_LABEL[t.kind] ?? humanise(t.kind)}{t.memo && t.kind !== "TOPUP" ? <span className="admin-sub"> · {t.memo}</span> : null}</td>
               <td className="num mono">{t.amountXlm}</td>
               <td className="num">{t.amountNgn == null ? "—" : formatNaira(t.amountNgn)}</td>
+              <td className="num">{t.rateNgnPerXlm == null ? "—" : t.rateNgnPerXlm.toLocaleString("en-NG", { maximumFractionDigits: 2 })}</td>
               <td>
-                <span className={statusBadgeClass(t.status === "CONFIRMED" ? "COMPLETED" : t.status === "FAILED" ? "FAILED" : "PENDING")}>{humanise(t.status)}</span>
+                <span className={t.status === "SKIPPED" ? "admin-badge gray" : statusBadgeClass(t.status === "CONFIRMED" ? "COMPLETED" : t.status === "FAILED" ? "FAILED" : "PENDING")}>{humanise(t.status)}</span>
                 {t.note ? <span className="admin-sub"> {t.note}</span> : null}
               </td>
               <td className="mono">{shortKey(t.from)} → {shortKey(t.to)}</td>

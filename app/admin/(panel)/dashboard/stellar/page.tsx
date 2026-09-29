@@ -3,13 +3,13 @@
 import { useState } from "react";
 import type { AdminStellarView } from "@/lib/admin-api";
 import { buildQuery } from "@/lib/admin-api";
-import { formatNaira, humanise } from "@/lib/admin-format";
+import { humanise } from "@/lib/admin-format";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { Card, EmptyState, ErrorState, PageHeader, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 import { StellarTable } from "@/components/admin/stellar-table";
 
-const KINDS = ["", "ACCOUNT_OPEN", "TOPUP", "FARE", "COMMISSION", "WITHDRAWAL"];
-const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", TOPUP: "Top-ups", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals" };
+const KINDS = ["", "ACCOUNT_OPEN", "FARE", "COMMISSION", "WITHDRAWAL"];
+const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals" };
 
 /**
  * Stellar TESTNET (grant deliverable 3): Wheelers' operations account and
@@ -39,12 +39,13 @@ export default function StellarPage() {
   const confirmed = (k: string) => (data.counts ?? []).filter((c) => c.kind === k && c.status === "CONFIRMED").reduce((n, c) => n + c.count, 0);
   const waiting = (data.counts ?? []).filter((c) => c.status === "PENDING" || c.status === "SUBMITTED").reduce((n, c) => n + c.count, 0);
   const failed = (data.counts ?? []).filter((c) => c.status === "FAILED").reduce((n, c) => n + c.count, 0);
+  const skipped = (data.counts ?? []).filter((c) => c.status === "SKIPPED").reduce((n, c) => n + c.count, 0);
 
   return (
     <>
       <PageHeader
         title="Stellar Testnet"
-        subtitle={`Every fare, commission, top-up and driver withdrawal, mirrored on the Stellar test network at ₦${(data.ngnPerXlm ?? 1000).toLocaleString("en-NG")} = 1 XLM. Test XLM has no value.`}
+        subtitle={`Stellar Testnet, its own ledger in test XLM (no real value). Accounts are opened by Friendbot; each wallet trip is paid rider → driver in XLM at the live price, then the commission to operations.${data.rate ? ` Now ₦${data.rate.ngnPerXlm.toLocaleString("en-NG", { maximumFractionDigits: 2 })} per XLM.` : " No live price right now."}`}
       />
 
       {data.operations ? (
@@ -58,7 +59,7 @@ export default function StellarPage() {
         <StatCard label="Trip fares" value={String(confirmed("FARE"))} />
         <StatCard label="Commission transfers" value={String(confirmed("COMMISSION"))} />
         <StatCard label="Accounts opened" value={String(confirmed("ACCOUNT_OPEN"))} />
-        <StatCard label="Waiting / failed" value={`${waiting} / ${failed}`} />
+        <StatCard label="Waiting / failed / skipped" value={`${waiting} / ${failed} / ${skipped}`} hint="Skipped: the rider's account had too little test XLM" />
       </StatGrid>
 
       <Card
@@ -71,7 +72,7 @@ export default function StellarPage() {
         }>
         <StellarTable transfers={data.transfers ?? []} />
       </Card>
-      <p className="admin-sub">Amounts in naira use the demo rate. {formatNaira(data.ngnPerXlm ?? 1000)} = 1 XLM.</p>
+      <p className="admin-sub">Naira amounts are equivalents at the rate each transfer used{data.rate ? ` (live price from ${data.rate.source}, ${new Date(data.rate.at).toLocaleString("en-NG")})` : ""}.</p>
     </>
   );
 }
