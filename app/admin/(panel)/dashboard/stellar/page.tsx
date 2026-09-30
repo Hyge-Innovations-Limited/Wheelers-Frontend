@@ -8,8 +8,8 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { Card, EmptyState, ErrorState, PageHeader, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 import { StellarTable } from "@/components/admin/stellar-table";
 
-const KINDS = ["", "ACCOUNT_OPEN", "FARE", "COMMISSION", "WITHDRAWAL"];
-const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals" };
+const KINDS = ["", "ACCOUNT_OPEN", "FARE", "COMMISSION", "WITHDRAWAL", "OPS_REFILL"];
+const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals", OPS_REFILL: "Operations top-ups" };
 
 /**
  * Stellar TESTNET (grant deliverable 3): Wheelers' operations account and
@@ -45,7 +45,7 @@ export default function StellarPage() {
     <>
       <PageHeader
         title="Stellar Testnet"
-        subtitle={`Stellar Testnet, its own ledger in test XLM (no real value). Accounts are opened by Friendbot; each wallet trip is paid rider → driver in XLM at the live price, then the commission to operations.${data.rate ? ` Now ₦${data.rate.ngnPerXlm.toLocaleString("en-NG", { maximumFractionDigits: 2 })} per XLM.` : " No live price right now."}`}
+        subtitle={`Stellar Testnet, its own ledger in test XLM (no real value). Every rider and driver gets an account with 100 test XLM from operations (topped up from Friendbot); each wallet trip is paid rider → driver in XLM at the live price, then the commission to operations.${data.rate ? ` Now ₦${data.rate.ngnPerXlm.toLocaleString("en-NG", { maximumFractionDigits: 2 })} per XLM.` : " No live price right now."}`}
       />
 
       {data.operations ? (

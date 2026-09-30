@@ -6,6 +6,7 @@ import { EmptyState, TableWrap } from "@/components/admin/ui";
 
 const TRANSFER_LABEL: Record<string, string> = {
   ACCOUNT_OPEN: "Account opened",
+  OPS_REFILL: "Operations top-up (Friendbot)",
   TOPUP: "Top-up (earlier design)",
   FARE: "Trip fare",
   COMMISSION: "Commission",
