@@ -8,8 +8,8 @@ import { useAdminData } from "@/components/admin/use-admin-data";
 import { Card, EmptyState, ErrorState, PageHeader, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 import { StellarTable } from "@/components/admin/stellar-table";
 
-const KINDS = ["", "ACCOUNT_OPEN", "FARE", "COMMISSION", "WITHDRAWAL", "OPS_REFILL"];
-const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals", OPS_REFILL: "Operations top-ups" };
+const KINDS = ["", "ACCOUNT_OPEN", "FARE", "COMMISSION", "WITHDRAWAL", "OPS_REFILL", "RESET"];
+const KIND_LABEL: Record<string, string> = { "": "All", ACCOUNT_OPEN: "Accounts opened", FARE: "Trip fares", COMMISSION: "Commission", WITHDRAWAL: "Withdrawals", OPS_REFILL: "Operations top-ups", RESET: "Resets to 100" };
 
 /**
  * Stellar TESTNET (grant deliverable 3): Wheelers' operations account and
