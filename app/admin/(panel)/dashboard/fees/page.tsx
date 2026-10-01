@@ -85,8 +85,9 @@ function FeeRows({ kind }: { kind: FeeKind | null }) {
       render: (r) => <span className={r.direction === "DEBIT" ? "admin-text-red" : "admin-text-green"}>{r.direction === "DEBIT" ? "−" : "+"}{formatNaira(r.amountNgn)}</span>,
     },
     { key: "commission", label: "Commission", numeric: true, render: (r) => (r.commissionNgn == null ? "" : formatNaira(r.commissionNgn)) },
-    { key: "service", label: "Service fee", numeric: true, render: (r) => (r.serviceFeeNgn == null ? "" : formatNaira(r.serviceFeeNgn)) },
+    { key: "service", label: "Booking fee", numeric: true, render: (r) => (r.serviceFeeNgn == null ? "" : formatNaira(r.serviceFeeNgn)) },
     { key: "levy", label: "State levy", numeric: true, render: (r) => (r.stateLevyNgn == null ? "" : formatNaira(r.stateLevyNgn)) },
+    { key: "vat", label: "VAT", numeric: true, render: (r) => (r.vatNgn == null ? "" : formatNaira(r.vatNgn)) },
     { key: "ref", label: "Reference", render: (r) => <span className="mono admin-cell-ref" title={r.referenceId ?? ""}>{r.referenceId?.slice(0, 8) ?? "—"}</span> },
   ];
   return (
@@ -236,7 +237,7 @@ function FeesBody() {
               href={ledger(null)}
             />
             <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`4% of the fare on ${formatNumber(t.feeRides)} trips`} href={trips()} />
-            <StatCard label="Service fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 on each trip" href={trips()} />
+            <StatCard label="Booking fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 on each trip" href={trips()} />
           </StatGrid>
           <StatGrid cols={2}>
             <StatCard
@@ -256,6 +257,7 @@ function FeesBody() {
           <SectionLabel>Owed, costs and what is left</SectionLabel>
           <StatGrid>
             <StatCard label="State levy" value={formatNairaCompact(t.stateLevyNgn)} hint="₦30 per trip, owed to Lagos State: not income" tone="orange" href={trips()} />
+            <StatCard label="VAT" value={formatNairaCompact(t.vatNgn ?? 0)} hint="7.5% of each driver's share (fare after the booking fee), owed: not income" tone="orange" href={trips()} />
             <StatCard
               label="Platform costs"
               value={narrowed ? "—" : formatNairaCompact(t.costsNgn)}
@@ -286,7 +288,7 @@ function FeesBody() {
                 data={data.points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.commissionNgn, pt.serviceFeeNgn, pt.depositFeesNgn + (pt.withdrawalFeesNgn ?? 0)] }))}
                 series={[
                   { name: "Commission", color: CHART_COLORS.ORANGE },
-                  { name: "Service fee", color: CHART_COLORS.GREEN },
+                  { name: "Booking fee", color: CHART_COLORS.GREEN },
                   { name: "Deposit and withdrawal fees", color: CHART_COLORS.MUTED },
                 ]}
                 formatValue={(n) => formatNairaCompact(n)}

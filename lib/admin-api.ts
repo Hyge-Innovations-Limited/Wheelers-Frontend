@@ -587,6 +587,8 @@ export interface Kpis {
   commissionNgn: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
+  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  vatNgn: number;
   depositFeesNgn: number;
   withdrawalFeesNgn: number;
   platformRevenueNgn: number;
@@ -672,6 +674,8 @@ export interface InsightPoint {
   commissionNgn: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
+  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  vatNgn: number;
   depositFeesNgn: number;
   depositsNgn: number;
   newUsers: number;
@@ -712,6 +716,7 @@ export interface TripRow {
   commissionNgn: number | null;
   serviceFeeNgn: number | null;
   stateLevyNgn: number | null;
+  vatNgn: number | null;
   platformTotalNgn: number | null;
   driverPayoutNgn: number | null;
   feeSplitEstimated: boolean;
@@ -766,6 +771,8 @@ export interface FeeTotals {
   withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
+  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  vatNgn: number;
   depositProviderCostNgn: number;
   transferCostNgn: number;
   otherProviderCostNgn: number;
@@ -786,6 +793,8 @@ export interface FeePoint {
   withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
+  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  vatNgn: number;
   depositProviderCostNgn: number;
   transferCostNgn: number;
   otherProviderCostNgn: number;
@@ -818,6 +827,7 @@ export interface FeeLedgerRow {
   commissionNgn: number | null;
   serviceFeeNgn: number | null;
   stateLevyNgn: number | null;
+  vatNgn: number | null;
 }
 
 export interface DepositRow {

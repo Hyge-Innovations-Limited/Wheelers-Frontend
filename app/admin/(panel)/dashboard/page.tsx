@@ -361,7 +361,7 @@ function DashboardBody() {
             <StatCard
               label="Commission"
               value={formatNairaCompact(k.commissionNgn)}
-              hint={<Hint text={`4% · plus ${formatNaira(k.serviceFeeNgn)} service fees`} now={k.commissionNgn} before={p.commissionNgn} />}
+              hint={<Hint text={`4% of drivers' share · plus ${formatNaira(k.serviceFeeNgn)} booking fees · ${formatNaira(k.vatNgn ?? 0)} VAT owed`} now={k.commissionNgn} before={p.commissionNgn} />}
               href={feesHref()}
             />
             <StatCard
@@ -551,7 +551,7 @@ function DashboardBody() {
                 data={points.map((pt) => ({ label: bucketLabel(pt.bucket, bucket), values: [pt.commissionNgn, pt.serviceFeeNgn, pt.depositFeesNgn] }))}
                 series={[
                   { name: "Commission", color: CHART_COLORS.ORANGE },
-                  { name: "Service fee", color: CHART_COLORS.GREEN },
+                  { name: "Booking fee", color: CHART_COLORS.GREEN },
                   { name: "Deposit fees", color: CHART_COLORS.MUTED },
                 ]}
                 formatValue={(n) => formatNairaCompact(n)}

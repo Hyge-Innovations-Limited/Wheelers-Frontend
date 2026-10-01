@@ -102,8 +102,9 @@ export function TripsTable({
     ...(feeColumns
       ? [
           { key: "commission", label: "Commission", numeric: true, sortKey: "commission", render: (r: TripRow) => money(r.commissionNgn) },
-          { key: "service", label: "Service fee", numeric: true, render: (r: TripRow) => money(r.serviceFeeNgn) },
+          { key: "service", label: "Booking fee", numeric: true, render: (r: TripRow) => money(r.serviceFeeNgn) },
           { key: "levy", label: "State levy", numeric: true, render: (r: TripRow) => money(r.stateLevyNgn) },
+          { key: "vat", label: "VAT", numeric: true, render: (r: TripRow) => money(r.vatNgn) },
           {
             key: "total",
             label: "Platform total",
