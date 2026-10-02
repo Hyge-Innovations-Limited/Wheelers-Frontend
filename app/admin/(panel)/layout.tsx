@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { fetchAlertCounts } from "@/lib/admin-api";
+import { clearSession, endSession, fetchAlertCounts, sessionExpiresAt } from "@/lib/admin-api";
 import { ScreenGuard } from "@/components/admin/screen-guard";
 import "../../../styles/admin.css";
 
@@ -170,6 +170,24 @@ export default function AdminPanelLayout({
     setReady(true);
   }, [router]);
 
+  // Two hours from login, out: on the dot while the tab is open, and the
+  // moment a tab that slept through it comes back.
+  useEffect(() => {
+    if (!ready) return;
+    const expiresAt = sessionExpiresAt();
+    if (expiresAt === null) return;
+    const check = () => {
+      if (Date.now() >= expiresAt) endSession();
+    };
+    check();
+    const timer = setTimeout(check, Math.max(0, expiresAt - Date.now()) + 500);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [ready]);
+
   useEffect(() => {
     if (!ready) return;
 
@@ -193,8 +211,7 @@ export default function AdminPanelLayout({
   }, [ready]);
 
   function handleLogout() {
-    localStorage.removeItem("wheelers_admin_token");
-    localStorage.removeItem("wheelers_admin_user");
+    clearSession();
     router.replace("/admin/login");
   }
 

@@ -5,10 +5,47 @@ export function getToken(): string | null {
   return localStorage.getItem("wheelers_admin_token");
 }
 
+/** An admin login lasts two hours (the API refuses the token after that too). */
+export const ADMIN_SESSION_MS = 2 * 60 * 60 * 1000;
+const EXPIRES_KEY = "wheelers_admin_expires_at";
+
 export function clearSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem("wheelers_admin_token");
   localStorage.removeItem("wheelers_admin_user");
+  localStorage.removeItem(EXPIRES_KEY);
+}
+
+export function saveSession(token: string, admin: unknown, expiresAt?: string): void {
+  localStorage.setItem("wheelers_admin_token", token);
+  localStorage.setItem("wheelers_admin_user", JSON.stringify(admin));
+  const at = expiresAt ? Date.parse(expiresAt) : NaN;
+  localStorage.setItem(EXPIRES_KEY, String(Number.isFinite(at) ? at : Date.now() + ADMIN_SESSION_MS));
+}
+
+/**
+ * When this login ends, in ms. A session from before sessions were short has
+ * no stored time: two hours from when its token was issued.
+ */
+export function sessionExpiresAt(): number | null {
+  if (typeof window === "undefined") return null;
+  const stored = Number(localStorage.getItem(EXPIRES_KEY));
+  if (Number.isFinite(stored) && stored > 0) return stored;
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.iat === "number" ? payload.iat * 1000 + ADMIN_SESSION_MS : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Out to the login page, which says the session ended. */
+export function endSession(): void {
+  if (typeof window === "undefined") return;
+  clearSession();
+  window.location.replace("/admin/login?ended=1");
 }
 
 export async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
@@ -21,7 +58,10 @@ export async function adminFetch(path: string, init?: RequestInit): Promise<Resp
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  return fetch(`${API_BASE}${path}`, { ...init, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  // The API no longer accepts this login (two hours are up): back to sign-in.
+  if (res.status === 401 && token && path !== "/admin/login") endSession();
+  return res;
 }
 
 /** Thrown for any non-2xx response, carrying the backend's own message. */

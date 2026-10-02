@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { adminFetch } from "@/lib/admin-api";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { adminFetch, saveSession } from "@/lib/admin-api";
 import "../../../styles/admin.css";
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginForm />
+    </Suspense>
+  );
+}
+
+function AdminLoginForm() {
   const router = useRouter();
+  // Sent here because the two-hour session ran out.
+  const ended = useSearchParams().get("ended") === "1";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,11 +44,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      localStorage.setItem("wheelers_admin_token", data.accessToken);
-      localStorage.setItem(
-        "wheelers_admin_user",
-        JSON.stringify(data.admin)
-      );
+      saveSession(data.accessToken, data.admin, data.expiresAt);
 
       router.push("/admin/dashboard");
     } catch {
@@ -57,6 +63,9 @@ export default function AdminLoginPage() {
         <h1>Admin Panel</h1>
         <p className="subtitle">Sign in to manage your platform</p>
 
+        {ended && !error && (
+          <div className="admin-login-error">Your session ended after 2 hours. Sign in again to continue.</div>
+        )}
         {error && <div className="admin-login-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="admin-login-form">
