@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin-api";
+import { kycFieldLabel } from "@/lib/kyc-fields";
 
 interface DriverAnalytics {
   totalDrivers: number;
@@ -33,6 +34,11 @@ interface PendingDriver {
   vehicleYear: number | null;
   status: string;
   submittedAt: string | null;
+  reviewedAt?: string | null;
+  /** Under review again after a fix: only these were resent. */
+  resubmittedFields?: string[];
+  /** Sent back to the driver: what they have to fix. */
+  rejectedFields?: string[];
 }
 
 function formatNaira(value: string) {
@@ -68,6 +74,7 @@ function getStatusBadge(status: string) {
 export default function AdminDriversPage() {
   const [analytics, setAnalytics] = useState<DriverAnalytics | null>(null);
   const [pending, setPending] = useState<PendingDriver[]>([]);
+  const [sentBack, setSentBack] = useState<PendingDriver[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -76,9 +83,10 @@ export default function AdminDriversPage() {
 
   async function fetchData() {
     try {
-      const [analyticsRes, pendingRes] = await Promise.all([
+      const [analyticsRes, pendingRes, sentBackRes] = await Promise.all([
         adminFetch("/admin/analytics/drivers"),
         adminFetch("/admin/drivers"),
+        adminFetch("/admin/drivers?status=REJECTED"),
       ]);
 
       if (analyticsRes.ok) {
@@ -87,6 +95,10 @@ export default function AdminDriversPage() {
       if (pendingRes.ok) {
         const data = await pendingRes.json();
         setPending(data.drivers ?? []);
+      }
+      if (sentBackRes.ok) {
+        const data = await sentBackRes.json();
+        setSentBack(data.drivers ?? []);
       }
     } catch {
       // ignore
@@ -162,7 +174,16 @@ export default function AdminDriversPage() {
                     onClick={() => window.location.href = `/admin/dashboard/drivers/${d.driverId}`}
                     style={{ cursor: "pointer" }}
                   >
-                    <td>{d.name || "—"}</td>
+                    <td>
+                      {d.name || "—"}
+                      {d.resubmittedFields && d.resubmittedFields.length > 0 && (
+                        <div style={{ marginTop: 4 }}>
+                          <span className="admin-badge blue">
+                            Resubmitted: {d.resubmittedFields.map(kycFieldLabel).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                    </td>
                     <td>{d.phone || d.email || "—"}</td>
                     <td>
                       {d.vehicleMake} {d.vehicleModel}{" "}
@@ -182,6 +203,48 @@ export default function AdminDriversPage() {
                         className="admin-review-link"
                       >
                         Review
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Sent back to the driver, waiting on their fix */}
+      {sentBack.length > 0 && (
+        <div className="admin-table-card">
+          <div className="admin-table-header">
+            <h2>Sent back to driver</h2>
+            <span className="count">{sentBack.length} waiting on a fix</span>
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>To fix</th>
+                  <th>Sent back</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sentBack.map((d) => (
+                  <tr key={d.driverId}>
+                    <td>{d.name || "—"}</td>
+                    <td>{d.phone || d.email || "—"}</td>
+                    <td>{(d.rejectedFields ?? []).map(kycFieldLabel).join(", ") || "Everything"}</td>
+                    <td>
+                      {d.reviewedAt
+                        ? new Date(d.reviewedAt).toLocaleDateString("en-NG", { dateStyle: "medium" })
+                        : "—"}
+                    </td>
+                    <td>
+                      <Link href={`/admin/dashboard/drivers/${d.driverId}`} className="admin-review-link">
+                        View
                       </Link>
                     </td>
                   </tr>

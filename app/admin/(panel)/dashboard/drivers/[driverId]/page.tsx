@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminFetch, getToken } from "@/lib/admin-api";
+import { QUICK_REASONS, kycFieldLabel } from "@/lib/kyc-fields";
 
 interface FieldStatus {
   status: "approved" | "rejected";
@@ -27,10 +28,15 @@ interface DriverDetail {
     vehicleYear: number | null;
     ninImageUrl: string | null;
     licenceImageUrl: string | null;
+    /** "application/pdf" when the licence is a PDF (older ones were saved as .jpg). */
+    licenceFileType?: string | null;
     selfieUrl: string | null;
     vehicleImageUrls: string[];
     rejectionReason: string | null;
     rejectedFields: string[];
+    /** Under review again after a fix: only these were resent; the rest was approved before. */
+    resubmittedFields?: string[];
+    previousRejectionReason?: string | null;
     fieldStatuses: Record<string, FieldStatus>;
   };
 }
@@ -39,8 +45,62 @@ const REVIEW_FIELDS = [
   { key: "nin", label: "NIN Card", imageKey: "ninImageUrl" },
   { key: "licence", label: "Driver's Licence", imageKey: "licenceImageUrl" },
   { key: "selfie", label: "Selfie", imageKey: "selfieUrl" },
-  { key: "vehicle", label: "Vehicle Info", imageKey: null },
+  { key: "vehicle", label: "Vehicle Details", imageKey: null },
+  { key: "vehiclePhotos", label: "Vehicle Photos", imageKey: null },
 ];
+
+/** A document as the driver sent it: a photo, or a PDF shown as a document. */
+function DocumentView({ url, label, isPdf }: { url: string; label: string; isPdf: boolean }) {
+  if (isPdf) {
+    return (
+      <div>
+        <iframe
+          src={url}
+          title={label}
+          style={{ width: "100%", height: 420, border: "none", display: "block", background: "#f5ead8" }}
+        />
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          style={{ display: "inline-block", padding: "8px 12px", fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}
+        >
+          Open PDF in a new tab
+        </a>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={label}
+      style={{ width: "100%", maxHeight: 300, objectFit: "contain", display: "block", background: "#f5ead8", cursor: "zoom-in" }}
+      onClick={() => window.open(url, "_blank")}
+    />
+  );
+}
+
+function VehiclePhotoGrid({ urls }: { urls: string[] }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginTop: 12 }}>
+      {urls.map((url, i) => (
+        <div key={i} style={{ border: "2px solid #E8DDD3", borderRadius: 8, overflow: "hidden" }}>
+          <img
+            src={url}
+            alt={`Vehicle photo ${i + 1}`}
+            style={{ width: "100%", height: 120, objectFit: "cover", display: "block", cursor: "pointer" }}
+            onClick={() => window.open(url, "_blank")}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function errorText(res: Response, fallback: string): Promise<string> {
+  const body = await res.json().catch(() => null);
+  return (body && typeof body.error === "string" && body.error) || fallback;
+}
 
 export default function DriverReviewPage() {
   const params = useParams();
@@ -53,6 +113,7 @@ export default function DriverReviewPage() {
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [showRejectInput, setShowRejectInput] = useState<string | null>(null);
   const [finalLoading, setFinalLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -84,6 +145,7 @@ export default function DriverReviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ field, status: "approved" }),
       });
+      setActionError(res.ok ? null : await errorText(res, "Could not save that decision."));
       if (res.ok) {
         const data = await res.json();
         setDriver((prev) =>
@@ -113,6 +175,7 @@ export default function DriverReviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ field, status: "rejected", reason }),
       });
+      setActionError(res.ok ? null : await errorText(res, "Could not save that decision."));
       if (res.ok) {
         const data = await res.json();
         setDriver((prev) =>
@@ -137,9 +200,14 @@ export default function DriverReviewPage() {
   async function handleFinalApprove() {
     setFinalLoading(true);
     try {
-      await adminFetch(`/admin/drivers/${driverId}/approve`, {
+      const res = await adminFetch(`/admin/drivers/${driverId}/approve`, {
         method: "POST",
       });
+      // Only leave when it worked: a failed approval used to look like a success.
+      if (!res.ok) {
+        setActionError(await errorText(res, "Could not approve this driver."));
+        return;
+      }
       router.push("/admin/dashboard/drivers");
     } finally {
       setFinalLoading(false);
@@ -153,13 +221,14 @@ export default function DriverReviewPage() {
     const rejectedFields = Object.entries(fs)
       .filter(([, v]) => v.status === "rejected")
       .map(([k]) => k);
+    // The server writes the driver's message from each item's reason; this is its fallback.
     const reasons = Object.entries(fs)
       .filter(([, v]) => v.status === "rejected" && v.reason)
-      .map(([k, v]) => `${k}: ${v.reason}`)
-      .join("; ");
+      .map(([k, v]) => `${kycFieldLabel(k)}: ${v.reason}`)
+      .join(". ");
 
     try {
-      await adminFetch(`/admin/drivers/${driverId}/reject`, {
+      const res = await adminFetch(`/admin/drivers/${driverId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,6 +236,10 @@ export default function DriverReviewPage() {
           rejectedFields,
         }),
       });
+      if (!res.ok) {
+        setActionError(await errorText(res, "Could not send this back to the driver."));
+        return;
+      }
       router.push("/admin/dashboard/drivers");
     } finally {
       setFinalLoading(false);
@@ -178,6 +251,8 @@ export default function DriverReviewPage() {
 
   const sub = driver.submission;
   const fs = sub.fieldStatuses || {};
+  const resubmitted = sub.resubmittedFields ?? [];
+  const licenceIsPdf = sub.licenceFileType === "application/pdf";
 
   // Check review progress
   const allFieldsReviewed = REVIEW_FIELDS.every((f) => fs[f.key]);
@@ -186,9 +261,14 @@ export default function DriverReviewPage() {
 
   function getFieldBadge(field: string) {
     const s = fs[field];
-    if (!s) return null;
-    if (s.status === "approved")
-      return <span className="admin-badge green">Approved</span>;
+    if (!s) {
+      return resubmitted.includes(field) ? <span className="admin-badge blue">Resubmitted</span> : null;
+    }
+    if (s.status === "approved") {
+      // Kept from the last review: the driver only resent the other items.
+      const before = resubmitted.length > 0 && !resubmitted.includes(field);
+      return <span className="admin-badge green">{before ? "Approved before" : "Approved"}</span>;
+    }
     return <span className="admin-badge red">Rejected</span>;
   }
 
@@ -253,6 +333,26 @@ export default function DriverReviewPage() {
           </span>
         </div>
       </div>
+
+      {actionError && (
+        <div className="admin-info-card" style={{ borderColor: "#FF3333", background: "#FFF0F0", color: "#B00020", marginBottom: 16 }}>
+          {actionError}
+        </div>
+      )}
+
+      {sub.status === "SUBMITTED" && resubmitted.length > 0 && (
+        <div className="admin-info-card" style={{ borderColor: "#3366FF", background: "#F3F7FF", marginBottom: 16 }}>
+          <strong>Resubmitted after a fix:</strong> {resubmitted.map(kycFieldLabel).join(", ")}.
+          {sub.previousRejectionReason && (
+            <div style={{ marginTop: 6, fontSize: 13, color: "#786F68" }}>
+              Last time: {sub.previousRejectionReason}
+            </div>
+          )}
+          <div style={{ marginTop: 6, fontSize: 13, color: "#786F68" }}>
+            Everything else was approved before; only the resent items need a decision.
+          </div>
+        </div>
+      )}
 
       {/* Quick overall actions */}
       {sub.status === "SUBMITTED" && (
@@ -338,17 +438,7 @@ export default function DriverReviewPage() {
                       marginBottom: 12,
                     }}
                   >
-                    <img
-                      src={imageUrl}
-                      alt={field.label}
-                      style={{
-                        width: "100%",
-                        maxHeight: 300,
-                        objectFit: "contain",
-                        display: "block",
-                        background: "#f5ead8",
-                      }}
-                    />
+                    <DocumentView url={imageUrl} label={field.label} isPdf={field.key === "licence" && licenceIsPdf} />
                   </div>
                 )}
 
@@ -373,41 +463,13 @@ export default function DriverReviewPage() {
                     <div>
                       <strong>Plate:</strong> {sub.vehiclePlate || "—"}
                     </div>
-                    {sub.vehicleImageUrls?.length > 0 && (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                          gap: 8,
-                          marginTop: 12,
-                        }}
-                      >
-                        {sub.vehicleImageUrls.map((url, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              border: "2px solid #E8DDD3",
-                              borderRadius: 8,
-                              overflow: "hidden",
-                            }}
-                          >
-                            <img
-                              src={url}
-                              alt={`Vehicle photo ${i + 1}`}
-                              style={{
-                                width: "100%",
-                                height: 120,
-                                objectFit: "cover",
-                                display: "block",
-                                cursor: "pointer",
-                              }}
-                              onClick={() => window.open(url, "_blank")}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
+                )}
+
+                {field.key === "vehiclePhotos" && (
+                  sub.vehicleImageUrls?.length > 0
+                    ? <VehiclePhotoGrid urls={sub.vehicleImageUrls} />
+                    : <p style={{ fontSize: 13, color: "#786F68" }}>No photos.</p>
                 )}
 
                 {/* Show rejection reason if rejected */}
@@ -456,11 +518,28 @@ export default function DriverReviewPage() {
                           flex: 1,
                           minWidth: 200,
                           alignItems: "center",
+                          flexWrap: "wrap",
                         }}
                       >
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", width: "100%" }}>
+                          {(QUICK_REASONS[field.key] ?? []).map((reason) => (
+                            <button
+                              key={reason}
+                              type="button"
+                              onClick={() => setRejectReasons((prev) => ({ ...prev, [field.key]: reason }))}
+                              style={{
+                                height: 30, padding: "0 10px", borderRadius: 999, fontSize: 12, cursor: "pointer",
+                                border: rejectReasons[field.key] === reason ? "2px solid #FF3333" : "1px solid #E8DDD3",
+                                background: rejectReasons[field.key] === reason ? "#FFF0F0" : "#fff",
+                              }}
+                            >
+                              {reason}
+                            </button>
+                          ))}
+                        </div>
                         <input
                           type="text"
-                          placeholder="Reason for rejection..."
+                          placeholder="Reason the driver will read, e.g. photo is blurry"
                           value={rejectReasons[field.key] || ""}
                           onChange={(e) =>
                             setRejectReasons((prev) => ({
@@ -596,11 +675,15 @@ export default function DriverReviewPage() {
             {sub.licenceImageUrl && (
               <div className="admin-doc-card">
                 <p className="admin-doc-label">Driver&apos;s Licence</p>
-                <img
-                  src={sub.licenceImageUrl}
-                  alt="Licence"
-                  className="admin-doc-img"
-                />
+                {licenceIsPdf ? (
+                  <DocumentView url={sub.licenceImageUrl} label="Licence" isPdf />
+                ) : (
+                  <img
+                    src={sub.licenceImageUrl}
+                    alt="Licence"
+                    className="admin-doc-img"
+                  />
+                )}
               </div>
             )}
             {sub.selfieUrl && (
@@ -614,6 +697,20 @@ export default function DriverReviewPage() {
               </div>
             )}
           </div>
+          {sub.vehicleImageUrls?.length > 0 && (
+            <div className="admin-info-card">
+              <p className="admin-doc-label">Vehicle photos</p>
+              <VehiclePhotoGrid urls={sub.vehicleImageUrls} />
+            </div>
+          )}
+          {sub.status === "REJECTED" && sub.rejectedFields?.length > 0 && (
+            <div className="admin-info-card" style={{ borderColor: "#FF3333" }}>
+              <div className="admin-info-row" style={{ borderBottom: "none" }}>
+                <span className="admin-info-label">Sent back to fix</span>
+                <span>{sub.rejectedFields.map(kycFieldLabel).join(", ")}</span>
+              </div>
+            </div>
+          )}
           {sub.rejectionReason && (
             <div
               className="admin-info-card"
