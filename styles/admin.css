@@ -2175,3 +2175,37 @@ html[data-screen-guard="on"] .admin-layout > *:not(.admin-screen-guard) {
 .admin-chat-line.rider { align-self: flex-start; }
 .admin-chat-line.call { align-self: center; max-width: none; background: transparent; text-align: center; }
 .admin-trip-error { color: #FF3333; margin-top: 8px; }
+
+/* ── Health ───────────────────────────────────────────────────────────── */
+.health-banner { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 14px; border: 1px solid var(--adm-line); background: var(--adm-paper); margin-bottom: 20px; }
+.health-banner.up { border-color: #B8EBD9; background: #F2FCF8; }
+.health-banner.degraded { border-color: #FFD3B8; background: #FFF7F1; }
+.health-banner.down { border-color: #FFC2C2; background: #FFF4F4; }
+.health-banner-title { font-size: 18px; font-weight: 800; color: var(--adm-ink); }
+.health-banner-sub { font-size: 13px; color: var(--adm-muted); }
+.health-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background: #C9C1B8; }
+.health-dot.big { width: 18px; height: 18px; }
+.health-dot.up { background: var(--adm-green); box-shadow: 0 0 0 4px rgba(0, 196, 140, 0.15); }
+.health-dot.degraded { background: var(--adm-orange); box-shadow: 0 0 0 4px rgba(255, 92, 0, 0.15); }
+.health-dot.down { background: var(--adm-red); box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.15); }
+.health-rows { display: flex; flex-direction: column; }
+.health-row { display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(220px, 2fr) 96px; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--adm-line-soft); }
+.health-row:first-child { border-top: 0; }
+.health-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.health-name strong { font-size: 14px; color: var(--adm-ink); display: block; }
+.health-name span { font-size: 12px; color: var(--adm-muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.health-bars { display: flex; gap: 2px; height: 28px; align-items: stretch; min-width: 0; }
+.health-bar { flex: 1; min-width: 1px; border-radius: 2px; background: #E9E3DC; }
+.health-bar.up { background: var(--adm-green); }
+.health-bar.degraded { background: var(--adm-orange); }
+.health-bar.down { background: var(--adm-red); }
+.health-uptime { text-align: right; font-size: 14px; font-weight: 700; color: var(--adm-ink); font-variant-numeric: tabular-nums; }
+.health-uptime small { display: block; font-size: 11px; font-weight: 500; color: var(--adm-muted); }
+.health-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.health-legend { display: flex; gap: 14px; font-size: 12px; color: var(--adm-muted); }
+.health-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+@media (max-width: 900px) {
+  .health-charts { grid-template-columns: minmax(0, 1fr); }
+  .health-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .health-uptime { text-align: left; }
+}

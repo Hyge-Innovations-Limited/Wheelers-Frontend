@@ -60,6 +60,13 @@ function Icon({ name }: { name: string }) {
           <path d="M20.5 20v-1.4a3.2 3.2 0 0 0-2.6-3.1" />
         </svg>
       );
+    case "health":
+      return (
+        <svg {...props}>
+          <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />
+          <path d="M3.5 12h4l2-3 3 6 2-3h6" />
+        </svg>
+      );
     case "stellar":
       return (
         <svg {...props}>
@@ -129,6 +136,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
+  { href: "/admin/dashboard/health", label: "Health", icon: "health" },
 ];
 
 export default function AdminPanelLayout({

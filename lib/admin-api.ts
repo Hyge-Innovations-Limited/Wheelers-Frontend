@@ -1019,3 +1019,58 @@ export interface AdminStellarView {
   transfers?: AdminStellarTransfer[];
   nextBefore?: string | null;
 }
+
+/* ── Health ───────────────────────────────────────────────────────────── */
+
+export type HealthStatus = "up" | "degraded" | "down";
+export type HealthRange = "1h" | "24h" | "7d";
+
+export interface HealthComponent {
+  key: string;
+  label: string;
+  status: HealthStatus;
+  latencyMs: number | null;
+  detail: string;
+  core: boolean;
+  uptimePct: number | null;
+  checks: number;
+  bars: Array<HealthStatus | "none">;
+}
+
+export interface HealthPoint {
+  at: number;
+  requests: number;
+  errors: number;
+  httpP95: number | null;
+  queries: number;
+  dbErrors: number;
+  dbP95: number | null;
+  slowQueries: number;
+  dbPingMs: number | null;
+  redisPingMs: number | null;
+}
+
+export interface HealthReport {
+  range: HealthRange;
+  generatedAt: number;
+  overall: HealthStatus;
+  components: HealthComponent[];
+  summary: {
+    requests: number;
+    errors: number;
+    errorRatePct: number;
+    httpP95: number | null;
+    httpAvgMs: number | null;
+    queries: number;
+    dbErrors: number;
+    dbP95: number | null;
+    dbAvgMs: number | null;
+    slowQueries: number;
+  };
+  points: HealthPoint[];
+  spikes: Array<{ metric: string; label: string; unit: "ms" | "count"; from: number; to: number; peak: number; usual: number }>;
+  incidents: Array<{ key: string; label: string; status: HealthStatus; from: number; to: number; minutes: number; ongoing: boolean }>;
+  queries: Array<{ name: string; count: number; sumMs: number; slow: number; errors: number; avgMs: number }>;
+  instances: Array<{ instanceId: string; pid: number; startedAt: number; at: number; rssMb: number; heapMb: number; loopP99Ms: number; sockets: number; uptimeMs: number }>;
+  services: Array<{ key: string; label: string; calls: number; failed: number; avgMs: number | null }>;
+}
