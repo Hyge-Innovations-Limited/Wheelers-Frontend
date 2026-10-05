@@ -140,10 +140,11 @@ export default function TeamPage() {
   }
 
   if (admin && !isOwner) {
+    // Said the way any missing page is: no hint that a role keeps it from them.
     return (
       <>
-        <PageHeader title="Team" />
-        <EmptyState>Only owners can see the team.</EmptyState>
+        <PageHeader title="Page not found" />
+        <EmptyState>This page doesn&apos;t exist.</EmptyState>
       </>
     );
   }
