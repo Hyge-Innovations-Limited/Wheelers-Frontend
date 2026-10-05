@@ -330,7 +330,8 @@ export default function AdminPanelLayout({
             </div>
             <div className="admin-user-info">
               <span className="admin-user-name">{admin?.name}</span>
-              <span className="admin-user-role">{admin?.role === "OWNER" ? "Owner" : admin?.role === "STAFF" ? "Staff" : "Admin"}</span>
+              {/* Everyone reads "Admin": roles are not shown to the people who have them. */}
+              <span className="admin-user-role">Admin</span>
             </div>
           </div>
           <button onClick={handleLogout} className="admin-logout-btn">
