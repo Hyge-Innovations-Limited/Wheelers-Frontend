@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { useAdminSession } from "@/lib/admin-session";
 import Link from "next/link";
 import type {
   BreakdownRow,
@@ -254,6 +255,8 @@ function NumbersCheck({ query }: { query: string }) {
 }
 
 function DashboardBody() {
+  // The Excel export is for owners only (the server refuses staff too).
+  const { isOwner } = useAdminSession();
   const { filters, bucket, hrefWith } = useInsightParams();
   const query = filtersQuery(filters);
   const [downloading, setDownloading] = useState(false);
@@ -307,9 +310,11 @@ function DashboardBody() {
         subtitle={period}
         actions={
           <div className="admin-header-actions">
-            <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
-              {downloading ? "Preparing Excel…" : "Download Excel"}
-            </button>
+            {isOwner ? (
+              <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
+                {downloading ? "Preparing Excel…" : "Download Excel"}
+              </button>
+            ) : null}
             <RefreshButton busy={summary.loading || series.loading || overview.loading} onClick={refreshAll} />
           </div>
         }

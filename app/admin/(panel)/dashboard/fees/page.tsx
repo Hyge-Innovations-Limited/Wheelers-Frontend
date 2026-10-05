@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useAdminSession } from "@/lib/admin-session";
 import Link from "next/link";
 import type { DepositRow, FeeKind, FeeLedgerRow, FeesSummary, PagedResponse, WithdrawalRow } from "@/lib/admin-api";
 import { adminDownload } from "@/lib/admin-api";
@@ -180,6 +181,8 @@ function FeeLedger() {
 }
 
 function FeesBody() {
+  // The Excel export is for owners only (the server refuses staff too).
+  const { isOwner } = useAdminSession();
   const { filters, bucket, hrefWith } = useInsightParams();
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -211,9 +214,11 @@ function FeesBody() {
         subtitle={describeRange(filters.from, filters.to)}
         actions={
           <div className="admin-header-actions">
-            <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
-              {downloading ? "Preparing Excel…" : "Download Excel"}
-            </button>
+            {isOwner ? (
+              <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
+                {downloading ? "Preparing Excel…" : "Download Excel"}
+              </button>
+            ) : null}
             <RefreshButton busy={loading} onClick={refresh} />
           </div>
         }

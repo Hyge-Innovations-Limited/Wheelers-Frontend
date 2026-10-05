@@ -1,233 +1,99 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { adminFetch } from "@/lib/admin-api";
 
 /**
- * Screenshot protection for the admin panel, as far as a web page can go.
+ * Quiet watch over the admin panel. Nothing is blocked and nothing on screen
+ * says it is there: pages work as any website does. Instead,
  *
- * A browser cannot stop the operating system from taking a screenshot: that
- * power belongs to native apps (Android's FLAG_SECURE, a desktop window's
- * content protection). What a page can do is take its content off the screen
- * before the capture happens, keep it off for as long as a capture could still
- * be running, and make sure anything that does get out names who took it.
+ *  - every page opened is recorded for the owners' Team activity page;
+ *  - screenshot shortcuts the browser can see (Print Screen, Cmd+Shift+3/4/5,
+ *    Win+Shift+S, print) are recorded and flagged, and the owners are emailed
+ *    when it was staff (the server decides);
+ *  - a mark too faint to notice covers the content: this admin's code and the
+ *    time. A screenshot or photo that turns up anywhere, however it was taken,
+ *    can be traced to the session it came from (owners: Team → Trace a mark).
  *
- *  - Off the screen, not blurred. The panel's content is set to
- *    `visibility: hidden` by an attribute on <html>, written in the same tick
- *    as the key press, so there is nothing legible under the cover.
- *  - Capture shortcuts LOCK the page. Cmd+Shift (macOS 3/4/5, and Win+Shift+S),
- *    Print Screen, Ctrl+Shift+S, print and save: the page stays hidden for
- *    LOCK_MS, longer than the longest timed capture (10 s), and then waits for
- *    a click. Cmd+Shift followed by an ordinary key (reload, reopen tab) is
- *    let go at once.
- *  - Leaving the window hides it; coming back shows it.
- *  - Every attempt is reported to the server with the admin's name.
- *  - Watermark: the admin's name, the date and the time across every screen,
- *    so a photo or a capture that gets out says whose session it came from
- *    and when.
- *
- * What none of this stops: a phone's hardware screenshot buttons (a mobile
- * browser is told nothing), a capture tool started with the mouse on a timer,
- * a browser extension, or a camera pointed at the monitor. The watermark and
- * the record of attempts are the answer to those.
+ * A page cannot see a phone's screenshot buttons, screen recording or a camera
+ * pointed at the monitor. The mark is the answer to those.
  */
 
-const LOCK_MS = 12_000;
 const CAPTURE_DIGITS = new Set(["3", "4", "5", "6", "#", "$", "%", "^"]);
 const MODIFIERS = new Set(["Meta", "Shift", "Control", "Alt", "OS", "CapsLock"]);
 
-type Reason = "away" | "capture";
-
-function setCover(on: boolean) {
-  if (on) document.documentElement.setAttribute("data-screen-guard", "on");
-  else document.documentElement.removeAttribute("data-screen-guard");
+function report(body: Record<string, unknown>) {
+  void adminFetch("/admin/activity", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive: true,
+  }).catch(() => undefined);
 }
 
-export function ScreenGuard({ viewer }: { viewer: string }) {
-  const [reason, setReason] = useState<Reason | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
+export function ScreenGuard({ markCode }: { markCode: string | null }) {
+  const pathname = usePathname();
+  const lastCapture = useRef(0);
   const [minute, setMinute] = useState(() => Math.floor(Date.now() / 60_000));
-  const lockedUntil = useRef(0);
-  const lastReport = useRef(0);
+
+  // A page opened.
+  useEffect(() => {
+    if (pathname) report({ kind: "page", page: pathname });
+  }, [pathname]);
 
   useEffect(() => {
-    let tick: ReturnType<typeof setInterval> | undefined;
     let pendingCombo: ReturnType<typeof setTimeout> | undefined;
-
-    const away = () => document.visibilityState !== "visible" || !document.hasFocus();
-
-    const report = (kind: string) => {
+    const capture = (key: string) => {
       const now = Date.now();
-      if (now - lastReport.current < 10_000) return;
-      lastReport.current = now;
-      void adminFetch("/admin/security/capture-attempt", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ kind, page: window.location.pathname }),
-        keepalive: true,
-      }).catch(() => undefined);
-    };
-
-    const startCountdown = () => {
-      clearInterval(tick);
-      const update = () => {
-        const left = Math.max(0, Math.ceil((lockedUntil.current - Date.now()) / 1000));
-        setSecondsLeft(left);
-        if (left === 0) clearInterval(tick);
-      };
-      update();
-      tick = setInterval(update, 500);
-    };
-
-    /** Hidden now, and for LOCK_MS more, whatever happens to focus in between. */
-    const lock = (kind: string) => {
-      setCover(true); // before React, before the next paint
-      lockedUntil.current = Date.now() + LOCK_MS;
-      setReason("capture");
-      startCountdown();
-      report(kind);
-    };
-
-    const hideWhileAway = () => {
-      setCover(true);
-      setReason((current) => current ?? "away");
-    };
-
-    const showIfAllowed = () => {
-      if (Date.now() < lockedUntil.current || away()) return;
-      setReason((current) => {
-        // A capture lock is only ever lifted by the click on the cover.
-        if (current === "capture") return current;
-        setCover(false);
-        return null;
-      });
+      if (now - lastCapture.current < 5_000) return;
+      lastCapture.current = now;
+      report({ kind: "capture", key, page: window.location.pathname });
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key;
       const lower = key.length === 1 ? key.toLowerCase() : key;
-
-      if (key === "PrintScreen") return lock("print-screen");
-
+      if (key === "PrintScreen") return capture("PrintScreen");
       if (event.metaKey && event.shiftKey) {
         if (MODIFIERS.has(key)) {
-          // The start of every macOS capture shortcut, and of Win+Shift+S. The
-          // system swallows the key that follows, so the page never sees it:
-          // hide now, and lock unless an ordinary key turns up straight after.
-          setCover(true);
-          setReason((current) => current ?? "away");
+          // macOS swallows the digit of a capture shortcut: a Cmd+Shift with
+          // nothing straight after is most likely one.
           clearTimeout(pendingCombo);
-          pendingCombo = setTimeout(() => lock("capture-shortcut"), 350);
+          pendingCombo = setTimeout(() => capture("Meta+Shift"), 400);
           return;
         }
-        if (CAPTURE_DIGITS.has(key) || lower === "s") {
-          clearTimeout(pendingCombo);
-          return lock("capture-shortcut");
-        }
-        // Cmd+Shift+R, Cmd+Shift+T and friends: not a capture.
         clearTimeout(pendingCombo);
-        if (Date.now() >= lockedUntil.current) showIfAllowed();
+        if (CAPTURE_DIGITS.has(key) || lower === "s") capture(`Meta+Shift+${key}`);
         return;
       }
-
-      const command = event.metaKey || event.ctrlKey;
-      if (command && event.shiftKey && lower === "s") return lock("browser-capture");
-      if (command && (lower === "p" || lower === "s")) {
-        event.preventDefault();
-        return lock(lower === "p" ? "print" : "save-page");
-      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && lower === "s") capture("Ctrl+Shift+S");
     };
-
     const onKeyUp = (event: KeyboardEvent) => {
-      // Windows only tells the page about Print Screen when the key comes up,
-      // after the capture: the clipboard is overwritten so it cannot be pasted.
-      if (event.key === "PrintScreen") {
-        lock("print-screen");
-        void navigator.clipboard?.writeText("Screenshots of the Wheelers admin are not allowed.").catch(() => undefined);
-      }
+      if (event.key === "PrintScreen") capture("PrintScreen");
     };
+    const onBeforePrint = () => capture("print");
 
-    const onBeforePrint = () => lock("print");
-    const onContextMenu = (event: MouseEvent) => event.preventDefault();
-    const onDragStart = (event: DragEvent) => event.preventDefault();
-    const onVisibility = () => (away() ? hideWhileAway() : showIfAllowed());
-
-    window.addEventListener("blur", hideWhileAway);
-    window.addEventListener("focus", showIfAllowed);
-    document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("beforeprint", onBeforePrint);
-    document.addEventListener("contextmenu", onContextMenu);
-    document.addEventListener("dragstart", onDragStart);
-
-    const clock = setInterval(() => setMinute(Math.floor(Date.now() / 60_000)), 15_000);
-    if (away()) hideWhileAway();
-
+    const clock = setInterval(() => setMinute(Math.floor(Date.now() / 60_000)), 30_000);
     return () => {
-      clearInterval(tick);
-      clearInterval(clock);
       clearTimeout(pendingCombo);
-      setCover(false);
-      window.removeEventListener("blur", hideWhileAway);
-      window.removeEventListener("focus", showIfAllowed);
-      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(clock);
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("beforeprint", onBeforePrint);
-      document.removeEventListener("contextmenu", onContextMenu);
-      document.removeEventListener("dragstart", onDragStart);
     };
   }, []);
 
-  const reveal = () => {
-    if (Date.now() < lockedUntil.current) return;
-    if (document.visibilityState !== "visible" || !document.hasFocus()) return;
-    setCover(false);
-    setReason(null);
-  };
+  if (!markCode) return null;
 
-  // A faint line of text, far apart and tilted, over the content only: it should
-  // read as the texture of the page, not as a pattern the eye keeps catching.
-  // The exact time lives in one small corner label instead of in every line.
+  // The mark: code, date and time, in ink so faint it reads as nothing on the
+  // page, but comes up when a picture of it is darkened.
   const stamp = new Date(minute * 60_000);
-  const day = stamp.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
-  const time = stamp.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const who = viewer.replace(/[<&>"']/g, "");
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='520' height='300'><text x='40' y='170' transform='rotate(-18 260 150)' font-family='sans-serif' font-size='16' font-weight='500' letter-spacing='0.4' fill='rgba(13,13,13,0.045)'>${who} · ${day} · Wheelers admin</text></svg>`;
-  const tile = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
-
-  const locked = reason === "capture" && secondsLeft > 0;
-
-  return (
-    <>
-      <div className="admin-watermark" style={{ backgroundImage: tile }} aria-hidden />
-      <div className="admin-watermark-stamp" aria-hidden>
-        {who} · {day} {time}
-      </div>
-      <div className="admin-print-notice" aria-hidden>
-        Printing the Wheelers admin is disabled.
-      </div>
-      {reason ? (
-        <button type="button" className="admin-screen-guard" onClick={reveal} disabled={locked}>
-          <span className="admin-screen-guard-card">
-            {reason === "capture" ? (
-              <>
-                <strong>Screenshots are not allowed</strong>
-                <span>
-                  This attempt has been recorded against {viewer}.{" "}
-                  {locked ? `The admin will be available again in ${secondsLeft}s.` : "Click to continue."}
-                </span>
-              </>
-            ) : (
-              <>
-                <strong>Content hidden</strong>
-                <span>The admin is hidden while this window is not in use. Click to continue.</span>
-              </>
-            )}
-          </span>
-        </button>
-      ) : null}
-    </>
-  );
+  const when = stamp.toLocaleString("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).replace(",", "");
+  const text = `WH ${markCode.replace(/[^0-9A-Z]/g, "")} ${when.replace(/[^0-9: -]/g, "")}`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='180'><text x='16' y='96' transform='rotate(-14 180 90)' font-family='monospace' font-size='13' fill='rgba(13,13,13,0.022)'>${text}</text></svg>`;
+  return <div className="admin-mark" style={{ backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")` }} aria-hidden />;
 }

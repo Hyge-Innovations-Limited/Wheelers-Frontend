@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { clearSession, endSession, fetchAlertCounts, sessionExpiresAt } from "@/lib/admin-api";
+import { adminJson, clearSession, endSession, fetchAlertCounts, sessionExpiresAt } from "@/lib/admin-api";
+import { AdminSessionProvider, type AdminSessionUser } from "@/lib/admin-session";
 import { ScreenGuard } from "@/components/admin/screen-guard";
 import "../../../styles/admin.css";
 
-interface AdminUser {
-  id: string;
-  username: string;
-  name: string;
-}
+type AdminUser = Partial<AdminSessionUser> & { username: string; name: string };
 
 function Icon({ name }: { name: string }) {
   const props = {
@@ -58,6 +55,13 @@ function Icon({ name }: { name: string }) {
           <circle cx="16.5" cy="9.5" r="2.6" />
           <path d="M3.5 20v-1.6A3.9 3.9 0 0 1 7.4 14.5h3.2a3.9 3.9 0 0 1 3.9 3.9V20" />
           <path d="M20.5 20v-1.4a3.2 3.2 0 0 0-2.6-3.1" />
+        </svg>
+      );
+    case "team":
+      return (
+        <svg {...props}>
+          <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" />
+          <path d="M9.5 12.5l1.8 1.8 3.6-3.8" />
         </svg>
       );
     case "health":
@@ -137,6 +141,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
   { href: "/admin/dashboard/health", label: "Health", icon: "health" },
+  { href: "/admin/dashboard/team", label: "Team", icon: "team", badge: "flags", ownerOnly: true },
 ];
 
 export default function AdminPanelLayout({
@@ -158,6 +163,8 @@ export default function AdminPanelLayout({
    * pressed the button — without having to think to go and look.
    */
   const [liveAlerts, setLiveAlerts] = useState(0);
+  // Owners: flagged team events (screenshots, blocked downloads) in the last day.
+  const [teamFlags, setTeamFlags] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("wheelers_admin_token");
@@ -218,6 +225,33 @@ export default function AdminPanelLayout({
     };
   }, [ready]);
 
+  // Who is signed in, from the server: the role decides what is shown.
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    adminJson<AdminSessionUser>("/admin/me")
+      .then((me) => {
+        if (cancelled) return;
+        setAdmin(me);
+        localStorage.setItem("wheelers_admin_user", JSON.stringify(me));
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [ready]);
+
+  const isOwner = admin?.role === "OWNER";
+
+  useEffect(() => {
+    if (!ready || !isOwner) return;
+    let cancelled = false;
+    const poll = () => adminJson<{ last24h: number }>("/admin/team/flags")
+      .then((r) => { if (!cancelled) setTeamFlags(r.last24h); })
+      .catch(() => undefined);
+    void poll();
+    const timer = setInterval(() => void poll(), 60_000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [ready, isOwner]);
+
   function handleLogout() {
     clearSession();
     router.replace("/admin/login");
@@ -266,7 +300,7 @@ export default function AdminPanelLayout({
         </div>
 
         <nav className="admin-sidebar-nav">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter((item) => !("ownerOnly" in item && item.ownerOnly) || isOwner).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -280,6 +314,11 @@ export default function AdminPanelLayout({
                   {liveAlerts > 99 ? "99+" : liveAlerts}
                 </span>
               ) : null}
+              {item.badge === "flags" && teamFlags > 0 ? (
+                <span className="admin-nav-badge">
+                  {teamFlags > 99 ? "99+" : teamFlags}
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>
@@ -291,7 +330,7 @@ export default function AdminPanelLayout({
             </div>
             <div className="admin-user-info">
               <span className="admin-user-name">{admin?.name}</span>
-              <span className="admin-user-role">Admin</span>
+              <span className="admin-user-role">{admin?.role === "OWNER" ? "Owner" : admin?.role === "STAFF" ? "Staff" : "Admin"}</span>
             </div>
           </div>
           <button onClick={handleLogout} className="admin-logout-btn">
@@ -301,8 +340,15 @@ export default function AdminPanelLayout({
         </div>
       </aside>
 
-      <main className="admin-main">{children}</main>
-      <ScreenGuard viewer={admin?.username ?? admin?.name ?? "admin"} />
+      <AdminSessionProvider
+        value={{
+          admin: admin ? { id: admin.id ?? null, username: admin.username, name: admin.name, role: admin.role ?? "STAFF", markCode: admin.markCode ?? null } : null,
+          isOwner,
+        }}
+      >
+        <main className="admin-main">{children}</main>
+      </AdminSessionProvider>
+      <ScreenGuard markCode={admin?.markCode ?? null} />
     </div>
   );
 }
