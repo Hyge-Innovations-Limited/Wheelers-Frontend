@@ -93,6 +93,6 @@ export function ScreenGuard({ markCode }: { markCode: string | null }) {
   const stamp = new Date(minute * 60_000);
   const when = stamp.toLocaleString("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).replace(",", "");
   const text = `WH ${markCode.replace(/[^0-9A-Z]/g, "")} ${when.replace(/[^0-9: -]/g, "")}`;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='180'><text x='16' y='96' transform='rotate(-14 180 90)' font-family='monospace' font-size='13' fill='rgba(13,13,13,0.022)'>${text}</text></svg>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='180'><text x='16' y='96' transform='rotate(-14 180 90)' font-family='monospace' font-size='13' fill='rgba(13,13,13,0.009)'>${text}</text></svg>`;
   return <div className="admin-mark" style={{ backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")` }} aria-hidden />;
 }
