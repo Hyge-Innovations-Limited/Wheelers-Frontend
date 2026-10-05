@@ -10,8 +10,7 @@ import { adminFetch } from "@/lib/admin-api";
  *
  *  - every page opened is recorded for the owners' Team activity page;
  *  - screenshot shortcuts the browser can see (Print Screen, Cmd+Shift+3/4/5,
- *    Win+Shift+S, print) are recorded and flagged, and the owners are emailed
- *    when it was staff (the server decides);
+ *    Win+Shift+S, print) are recorded and flagged red on the Team page;
  *  - a mark too faint to notice covers the content: this admin's code and the
  *    time. A screenshot or photo that turns up anywhere, however it was taken,
  *    can be traced to the session it came from (owners: Team → Trace a mark).
