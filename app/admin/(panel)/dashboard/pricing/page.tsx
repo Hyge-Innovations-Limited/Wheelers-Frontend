@@ -26,7 +26,7 @@ interface Settings {
   trafficOn: boolean;
   demandOn: boolean;
   modelOn: boolean;
-  model: { trainedAt: string; rows: number } | null;
+  model: { trainedAt: string; rows: number; seeded?: boolean } | null;
   liftCap: number;
 }
 interface ExampleSide {
@@ -173,7 +173,7 @@ export default function PricingSettingsPage() {
               <Switch
                 label="The model"
                 hint={draft.model
-                  ? `Trained ${new Date(draft.model.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${draft.model.rows.toLocaleString("en-NG")} trips. Off, its number is only recorded beside each quote.`
+                  ? `Trained ${new Date(draft.model.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${draft.model.rows.toLocaleString("en-NG")} real trips${draft.model.seeded ? ", the rest made up from our assumptions: it has not yet learned from riders" : ""}. Off, its number is only recorded beside each quote.`
                   : "There is no trained model yet. It is trained from real trips once enough are logged."}
                 on={draft.modelOn}
                 disabled={!draft.model}
