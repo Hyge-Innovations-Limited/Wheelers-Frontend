@@ -627,7 +627,7 @@ export interface Kpis {
   commissionNgn: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
-  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  /** 7.5% of the trip fare. Owed: not income. */
   vatNgn: number;
   depositFeesNgn: number;
   withdrawalFeesNgn: number;
@@ -714,7 +714,7 @@ export interface InsightPoint {
   commissionNgn: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
-  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  /** 7.5% of the trip fare. Owed: not income. */
   vatNgn: number;
   depositFeesNgn: number;
   depositsNgn: number;
@@ -753,6 +753,10 @@ export interface TripRow {
   driverName: string | null;
   driverPhone: string | null;
   fareNgn: number | null;
+  /** What the driver priced (rate per km × distance): the fare without the booking fee and, in pricing 2, the VAT. */
+  tripFareNgn?: number | null;
+  /** 1: 4% commission, VAT from the driver. 2 (since 10 Oct 2026): 10% commission, VAT in the rider's fare. */
+  pricingVersion?: 1 | 2;
   commissionNgn: number | null;
   serviceFeeNgn: number | null;
   stateLevyNgn: number | null;
@@ -811,7 +815,7 @@ export interface FeeTotals {
   withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
-  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  /** 7.5% of the trip fare. Owed: not income. */
   vatNgn: number;
   depositProviderCostNgn: number;
   transferCostNgn: number;
@@ -833,7 +837,7 @@ export interface FeePoint {
   withdrawalFeesNgn: number;
   incomeNgn: number;
   stateLevyNgn: number;
-  /** 7.5% of the driver's share, since 1 Oct 2026. Owed: not income. */
+  /** 7.5% of the trip fare. Owed: not income. */
   vatNgn: number;
   depositProviderCostNgn: number;
   transferCostNgn: number;

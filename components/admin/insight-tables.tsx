@@ -101,10 +101,24 @@ export function TripsTable({
     { key: "fare", label: "Fare", numeric: true, sortKey: "fare", render: (r) => money(r.fareNgn) },
     ...(feeColumns
       ? [
-          { key: "commission", label: "Commission", numeric: true, sortKey: "commission", render: (r: TripRow) => money(r.commissionNgn) },
+          // The fare taken apart in the order it is built: what the driver
+          // priced, then what is added for the rider, then what comes off the driver.
+          { key: "tripFare", label: "Trip fare", numeric: true, render: (r: TripRow) => money(r.tripFareNgn ?? null) },
           { key: "service", label: "Booking fee", numeric: true, render: (r: TripRow) => money(r.serviceFeeNgn) },
-          { key: "levy", label: "State levy", numeric: true, render: (r: TripRow) => money(r.stateLevyNgn) },
           { key: "vat", label: "VAT", numeric: true, render: (r: TripRow) => money(r.vatNgn) },
+          {
+            key: "commission",
+            label: "Commission",
+            numeric: true,
+            sortKey: "commission",
+            render: (r: TripRow) => (
+              <>
+                {money(r.commissionNgn)}
+                {r.commissionNgn != null && r.pricingVersion === 1 ? <span className="admin-estimated" title="Agreed before 10 Oct 2026: 4% commission, VAT taken from the driver">4%</span> : null}
+              </>
+            ),
+          },
+          { key: "levy", label: "State levy", numeric: true, render: (r: TripRow) => money(r.stateLevyNgn) },
           {
             key: "total",
             label: "Platform total",

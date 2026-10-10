@@ -17,8 +17,9 @@ import { Badge, Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshBut
 /**
  * What Wheelers earns and what it pays to earn it, for a period.
  *
- * Income is the 4% commission and the ₦375 service fee on each wallet ride, and
- * the ₦30 deposit fee. The ₦30 state levy is collected on each ride for Lagos
+ * Income is the commission (10% of the trip fare; 4% on trips agreed before
+ * 10 Oct 2026) and the ₦375 booking fee on each wallet ride, and the ₦30
+ * deposit fee. The ₦30 state levy is collected on each ride for Lagos
  * State, so it is shown on its own and never counted as income. Costs are
  * what the platform pays to take in deposits and to send out withdrawals.
  */
@@ -241,8 +242,8 @@ function FeesBody() {
               tone="green"
               href={ledger(null)}
             />
-            <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`4% of the fare on ${formatNumber(t.feeRides)} trips`} href={trips()} />
-            <StatCard label="Booking fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 on each trip" href={trips()} />
+            <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`10% of the trip fare (4% before 10 Oct 2026) on ${formatNumber(t.feeRides)} trips`} href={trips()} />
+            <StatCard label="Booking fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 in each rider's fare" href={trips()} />
           </StatGrid>
           <StatGrid cols={2}>
             <StatCard
@@ -259,10 +260,18 @@ function FeesBody() {
             />
           </StatGrid>
 
+          <SectionLabel>How a fare is built (since 10 Oct 2026)</SectionLabel>
+          <StatGrid>
+            <StatCard label="Trip fare" value="Rate × km" hint="The driver's price per km times the distance. Recommended rate ₦375 a km" />
+            <StatCard label="Added for the rider" value="7.5% + ₦375" hint="VAT on the trip fare and the booking fee. The rider sees one fare, rounded up to ₦50" />
+            <StatCard label="Taken from the driver" value="10% + ₦30" hint="Commission on the trip fare and the Lagos levy. The driver keeps the rest" />
+            <StatCard label="Offer limits" value="90% to 135%" hint="Of the recommended rate: a rider can go no lower, a driver no higher" />
+          </StatGrid>
+
           <SectionLabel>Owed, costs and what is left</SectionLabel>
           <StatGrid>
             <StatCard label="State levy" value={formatNairaCompact(t.stateLevyNgn)} hint="₦30 per trip, owed to Lagos State: not income" tone="orange" href={trips()} />
-            <StatCard label="VAT" value={formatNairaCompact(t.vatNgn ?? 0)} hint="7.5% of each driver's share (fare after the booking fee), owed: not income" tone="orange" href={trips()} />
+            <StatCard label="VAT" value={formatNairaCompact(t.vatNgn ?? 0)} hint="7.5% of each trip fare, paid by the rider in the fare (by the driver before 10 Oct 2026). Owed: not income" tone="orange" href={trips()} />
             <StatCard
               label="Platform costs"
               value={narrowed ? "—" : formatNairaCompact(t.costsNgn)}
