@@ -265,7 +265,7 @@ function FeesBody() {
             <StatCard label="Trip fare" value="Rate × km" hint="The driver's price per km times the distance. Recommended rate ₦375 a km" />
             <StatCard label="Added for the rider" value="7.5% + ₦375" hint="VAT on the trip fare and the booking fee. The rider sees one fare, rounded up to ₦50" />
             <StatCard label="Taken from the driver" value="10% + ₦30" hint="Commission on the trip fare and the Lagos levy. The driver keeps the rest" />
-            <StatCard label="Offer limits" value="90% to 135%" hint="Of the recommended rate: a rider can go no lower, a driver no higher" />
+            <StatCard label="Offer limits" value="90% to 150%" hint="Of the recommended rate: a rider can go no lower, a driver no higher" />
           </StatGrid>
 
           <SectionLabel>Owed, costs and what is left</SectionLabel>
