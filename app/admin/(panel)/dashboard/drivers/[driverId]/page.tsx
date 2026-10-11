@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminFetch, getToken } from "@/lib/admin-api";
+import { DriverPapersPanel } from "@/components/admin/driver-papers-panel";
 import { QUICK_REASONS, kycFieldLabel } from "@/lib/kyc-fields";
 
 interface FieldStatus {
@@ -724,6 +725,9 @@ export default function DriverReviewPage() {
           )}
         </>
       )}
+
+      {/* The papers for the car, and the name and licence details: reviewed one by one, apart from verification. */}
+      <DriverPapersPanel driverId={driverId} />
     </div>
   );
 }

@@ -138,6 +138,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/stellar", label: "Stellar", icon: "stellar" },
   { href: "/admin/dashboard/group-rides", label: "Group rides", icon: "group" },
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
+  { href: "/admin/dashboard/driver-papers", label: "Driver papers", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
   { href: "/admin/dashboard/health", label: "Health", icon: "health" },
