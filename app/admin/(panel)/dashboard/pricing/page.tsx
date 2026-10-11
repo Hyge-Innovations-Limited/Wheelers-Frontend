@@ -10,11 +10,12 @@ import { useAdminSession } from "@/lib/admin-session";
 /**
  * Pricing: how a fare is suggested. Owners only.
  *
- * A trip is suggested at the highest of three numbers: the floor (what the
- * other app charges for it, plus the premium), the rules (our rate per km,
- * lifted by traffic and a busy area) and, once switched on, the model. The
- * other app's figures are typed in here from sampled quotes; nothing reads
- * them from its app.
+ * A trip starts at the higher of two numbers: the floor (what the other app
+ * charges for it, plus the premium) and the rules (our rate per km, lifted by
+ * traffic and a busy area). Switched on, the model then moves that a little:
+ * usually a few hundred naira down, never closer to the other app than it is
+ * allowed. The other app's figures are typed in here from sampled quotes;
+ * nothing reads them from its app.
  */
 
 interface Formula { baseNgn: number; perKmNgn: number; perMinuteNgn: number }
@@ -28,6 +29,9 @@ interface Settings {
   modelOn: boolean;
   model: { trainedAt: string; rows: number; seeded?: boolean } | null;
   liftCap: number;
+  maxDiscountNgn: number;
+  modelPremiumNgn: number;
+  rideValueNgn: number;
 }
 interface ExampleSide {
   marketFareNgn: number | null; suggestedFareNgn: number; minOfferNgn: number; maxOfferNgn: number;
@@ -37,6 +41,8 @@ interface PricingPage {
   settings: Settings;
   updatedAt: string | null;
   updatedBy: string | null;
+  /** The model this build of the server prices with. Null when it has none. */
+  trainedModel?: { trainedAt: string; rows: number; source: string } | null;
   fixed: { serviceChargeNgn: number; commissionRate: number; vatRate: number; stateLevyNgn: number; baseRatePerKmNgn: number };
   examples: Array<{ label: string; distanceKm: number; minutes: number; quiet: ExampleSide; rush: ExampleSide }>;
   busyness: Array<{ zone: string; requests: number; drivers: number; ratio: number | null; factor: number; at: string }>;
@@ -172,13 +178,24 @@ export default function PricingSettingsPage() {
               />
               <Switch
                 label="The model"
-                hint={draft.model
-                  ? `Trained ${new Date(draft.model.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${draft.model.rows.toLocaleString("en-NG")} real trips${draft.model.seeded ? ", the rest made up from our assumptions: it has not yet learned from riders" : ""}. Off, its number is only recorded beside each quote.`
-                  : "There is no trained model yet. It is trained from real trips once enough are logged."}
+                hint={page.trainedModel
+                  ? `Trained ${new Date(page.trainedModel.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${page.trainedModel.rows.toLocaleString("en-NG")} ${page.trainedModel.source === "simulated" ? "made-up quotes from a simulated market: it has not yet learned from real riders" : "quotes"}. On, it moves each price a little, usually down, to the one it expects to be worth most. Off, its number is only recorded beside each quote.`
+                  : draft.model
+                    ? `A small fitted model, trained ${new Date(draft.model.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}. It may lift a fare, never lower it.`
+                    : "There is no trained model yet."}
                 on={draft.modelOn}
-                disabled={!draft.model}
+                disabled={!page.trainedModel && !draft.model}
                 onChange={(v) => setDraft({ ...draft, modelOn: v })}
               />
+              {page.trainedModel ? (
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingLeft: 26 }}>
+                  <Num label="Most it may take off ₦" value={draft.maxDiscountNgn} onChange={(v) => setDraft({ ...draft, maxDiscountNgn: v })} step={50} />
+                  <Num label="Stays above the other app by ₦" value={draft.modelPremiumNgn} onChange={(v) => setDraft({ ...draft, modelPremiumNgn: v })} step={50} />
+                  <p style={{ margin: 0, fontSize: 12.5, color: "#786F68", flexBasis: "100%" }}>
+                    A cut is also never more than a tenth of the fare. With the model on, a rider can bargain away only the second amount, so no offer goes under the other app.
+                  </p>
+                </div>
+              ) : null}
               <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                 <button type="button" className="admin-btn-primary" onClick={() => void save()} disabled={!changed || saving}>
                   {saving ? "Saving…" : "Save pricing"}
