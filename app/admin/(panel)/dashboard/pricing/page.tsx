@@ -32,6 +32,7 @@ interface Settings {
   maxDiscountNgn: number;
   modelPremiumNgn: number;
   rideValueNgn: number;
+  trialShare: number;
 }
 interface ExampleSide {
   marketFareNgn: number | null; suggestedFareNgn: number; minOfferNgn: number; maxOfferNgn: number;
@@ -42,7 +43,7 @@ interface PricingPage {
   updatedAt: string | null;
   updatedBy: string | null;
   /** The model this build of the server prices with. Null when it has none. */
-  trainedModel?: { trainedAt: string; rows: number; source: string } | null;
+  trainedModel?: { trainedAt: string; rows: number; source: string; realRows?: number } | null;
   fixed: { serviceChargeNgn: number; commissionRate: number; vatRate: number; stateLevyNgn: number; baseRatePerKmNgn: number };
   examples: Array<{ label: string; distanceKm: number; minutes: number; quiet: ExampleSide; rush: ExampleSide }>;
   busyness: Array<{ zone: string; requests: number; drivers: number; ratio: number | null; factor: number; at: string }>;
@@ -53,7 +54,7 @@ interface PricingPage {
 }
 
 const naira = (v: number | null | undefined) => (v == null ? "—" : `₦${Math.round(v).toLocaleString("en-NG")}`);
-const SET_BY: Record<string, string> = { floor: "Floor", rules: "Rules", model: "Model" };
+const SET_BY: Record<string, string> = { floor: "Floor", rules: "Rules", model: "Model", trial: "Trial price" };
 const input: React.CSSProperties = { height: 38, borderRadius: 10, border: "1px solid #E8DDD3", padding: "0 10px", fontSize: 14, width: 110 };
 
 function Num({ label, value, onChange, step = 1 }: { label: string; value: number; onChange: (v: number) => void; step?: number }) {
@@ -179,7 +180,7 @@ export default function PricingSettingsPage() {
               <Switch
                 label="The model"
                 hint={page.trainedModel
-                  ? `Trained ${new Date(page.trainedModel.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${page.trainedModel.rows.toLocaleString("en-NG")} ${page.trainedModel.source === "simulated" ? "made-up quotes from a simulated market: it has not yet learned from real riders" : "quotes"}. On, it moves each price a little, usually down, to the one it expects to be worth most. Off, its number is only recorded beside each quote.`
+                  ? `Trained ${new Date(page.trainedModel.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} on ${page.trainedModel.rows.toLocaleString("en-NG")} ${page.trainedModel.source === "simulated" ? "made-up quotes from a simulated market: it has not yet learned from real riders" : `made-up quotes, corrected on ${(page.trainedModel.realRows ?? 0).toLocaleString("en-NG")} real Wheelers quotes`}. On, it moves each price a little, usually down, to the one it expects to be worth most. Off, its number is only recorded beside each quote.`
                   : draft.model
                     ? `A small fitted model, trained ${new Date(draft.model.trainedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}. It may lift a fare, never lower it.`
                     : "There is no trained model yet."}
@@ -191,8 +192,9 @@ export default function PricingSettingsPage() {
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingLeft: 26 }}>
                   <Num label="Most it may take off ₦" value={draft.maxDiscountNgn} onChange={(v) => setDraft({ ...draft, maxDiscountNgn: v })} step={50} />
                   <Num label="Stays above the other app by ₦" value={draft.modelPremiumNgn} onChange={(v) => setDraft({ ...draft, modelPremiumNgn: v })} step={50} />
+                  <Num label="Trial prices, trips in 100" value={Math.round(draft.trialShare * 100)} onChange={(v) => setDraft({ ...draft, trialShare: Math.min(50, Math.max(0, v)) / 100 })} />
                   <p style={{ margin: 0, fontSize: 12.5, color: "#786F68", flexBasis: "100%" }}>
-                    A cut is also never more than a tenth of the fare. With the model on, a rider can bargain away only the second amount, so no offer goes under the other app.
+                    A cut is also never more than a tenth of the fare. With the model on, a rider can bargain away only the second amount, so no offer goes under the other app. Trial prices: that many trips are shown another price from the same range (never above the price without the model), so the model has something to learn from; 0 switches them off.
                   </p>
                 </div>
               ) : null}
@@ -243,7 +245,7 @@ export default function PricingSettingsPage() {
           <StatGrid>
             <StatCard label="Prices shown" value={week!.quotes.toLocaleString("en-NG")} hint={`${week!.ridesRequested.toLocaleString("en-NG")} rides requested · ${week!.ridesCompleted.toLocaleString("en-NG")} completed`} />
             <StatCard label="Above the other app" value={naira(week!.medianAboveMarketNgn)} hint="Median of our suggested fare less their estimated fare" />
-            <StatCard label="What set the price" value={`${share("floor")} floor`} hint={`${share("rules")} rules · ${share("model")} model`} />
+            <StatCard label="What set the price" value={`${share("floor")} floor`} hint={`${share("rules")} rules · ${share("model")} model · ${share("trial")} trial`} />
             <StatCard
               label="The model, watching"
               value={week!.quotesWithModel > 0 ? naira(week!.medianModelMinusQuoteNgn) : "—"}
