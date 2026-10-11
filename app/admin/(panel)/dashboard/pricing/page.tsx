@@ -31,6 +31,8 @@ interface Settings {
   liftCap: number;
   maxDiscountNgn: number;
   modelPremiumNgn: number;
+  /** How far under the suggested price a rider may offer. Absent on older servers. */
+  minOfferGapNgn?: number;
   rideValueNgn: number;
   trialShare: number;
 }
@@ -157,6 +159,7 @@ export default function PricingSettingsPage() {
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <Num label="Premium ₦ per trip" value={draft.premiumNgn} onChange={(v) => setDraft({ ...draft, premiumNgn: v })} step={50} />
+                <Num label="Rider's minimum: ₦ under the suggested price" value={draft.minOfferGapNgn ?? 850} onChange={(v) => setDraft({ ...draft, minOfferGapNgn: v })} step={50} />
                 <Num label="Highest lift ×" value={draft.liftCap} onChange={(v) => setDraft({ ...draft, liftCap: v })} step={0.1} />
               </div>
             </div>
