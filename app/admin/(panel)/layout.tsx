@@ -140,6 +140,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
   { href: "/admin/dashboard/driver-papers", label: "Driver papers", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
+  { href: "/admin/dashboard/support", label: "Support", icon: "activity", badge: "support" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
   { href: "/admin/dashboard/health", label: "Health", icon: "health" },
   { href: "/admin/dashboard/pricing", label: "Pricing", icon: "fees", ownerOnly: true },
@@ -165,6 +166,7 @@ export default function AdminPanelLayout({
    * pressed the button — without having to think to go and look.
    */
   const [liveAlerts, setLiveAlerts] = useState(0);
+  const [supportWaiting, setSupportWaiting] = useState(0);
   // Owners: flagged team events (screenshots, blocked downloads) in the last day.
   const [teamFlags, setTeamFlags] = useState(0);
 
@@ -213,6 +215,13 @@ export default function AdminPanelLayout({
       try {
         const counts = await fetchAlertCounts();
         if (!cancelled) setLiveAlerts(counts.live);
+      } catch {
+        // A failed poll leaves the last known count alone.
+      }
+      try {
+        // Chats waiting for an answer from support.
+        const support = await adminJson<{ counts: { waiting: number } }>("/admin/support/conversations?countsOnly=1");
+        if (!cancelled) setSupportWaiting(support.counts.waiting);
       } catch {
         // A failed poll leaves the last known count alone. Zeroing the badge on
         // a network blip would be worse than showing a slightly stale number.
@@ -315,6 +324,9 @@ export default function AdminPanelLayout({
                 <span className="admin-nav-badge">
                   {liveAlerts > 99 ? "99+" : liveAlerts}
                 </span>
+              ) : null}
+              {item.badge === "support" && supportWaiting > 0 ? (
+                <span className="admin-nav-badge">{supportWaiting > 9 ? "9+" : supportWaiting}</span>
               ) : null}
               {item.badge === "flags" && teamFlags > 0 ? (
                 <span className="admin-nav-badge">
