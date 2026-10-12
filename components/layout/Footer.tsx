@@ -26,6 +26,7 @@ const footerColumns = [
       { label: "Help Center", href: "#" },
       { label: "Safety", href: "#" },
       { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
       { label: "Terms of Service", href: "#" },
       { label: "Contact", href: "#" },
     ],
