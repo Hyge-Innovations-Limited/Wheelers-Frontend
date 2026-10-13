@@ -126,9 +126,9 @@ function Icon({ name }: { name: string }) {
   }
 }
 
-// "Riders" and "Activity" are gone: riders were only ever a top-10 leaderboard,
-// and Activity was a dead page until you pasted a raw user id into it. Both now
-// live where they belong — inside the user directory and each user's profile.
+// "Riders" is gone: it was only ever a top-10 leaderboard, and lives in the user
+// directory now. "Activity" is back as a different page: what people tried in
+// the app and what stopped them, for everyone, with no id to paste.
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Overview", icon: "dashboard" },
   { href: "/admin/dashboard/live-map", label: "Live map", icon: "map" },
@@ -141,6 +141,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/driver-papers", label: "Driver papers", icon: "drivers" },
   { href: "/admin/dashboard/alerts", label: "Alerts", icon: "alerts", badge: "alerts" },
   { href: "/admin/dashboard/support", label: "Support", icon: "activity", badge: "support" },
+  { href: "/admin/dashboard/activity", label: "Activity", icon: "activity" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
   { href: "/admin/dashboard/health", label: "Health", icon: "health" },
   { href: "/admin/dashboard/pricing", label: "Pricing", icon: "fees", ownerOnly: true },
