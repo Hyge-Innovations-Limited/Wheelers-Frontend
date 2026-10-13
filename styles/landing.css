@@ -338,18 +338,16 @@
   box-shadow: 12px 12px 0 var(--wh-ink), 0 0 0 3px var(--wh-ink);
 }
 .wh-phone-screen {
-  position: relative;
-  background: #0B141A;
+  background: #EFE7DC;
   border-radius: 34px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 720px;
 }
-.wh-wa-header { background: #1F2C34; color: #E9EDEF; padding: 34px 18px 12px; display: flex; align-items: center; gap: 12px; }
+.wh-wa-header { background: #075E54; color: var(--wh-cream); padding: 34px 18px 12px; display: flex; align-items: center; gap: 12px; }
 .wh-wa-header .wh-wa-back { font-size: 18px; opacity: .9; }
-.wh-wa-header img { width: 36px; height: 36px; border-radius: 50%; }
-.wh-wa-more { margin-left: auto; font-size: 20px; opacity: .9; }
+.wh-wa-header img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--wh-cream); }
 .wh-wa-header-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
 .wh-wa-header-text strong { font-weight: 700; font-size: 15px; }
 .wh-wa-header-text small { font-size: 11px; opacity: .8; }
@@ -360,12 +358,12 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 12px;
-  background-color: #0B141A;
-  background-image: radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px);
+  background-color: #EFE7DC;
+  background-image: radial-gradient(rgba(20, 18, 16, .07) 1px, transparent 1px);
   background-size: 14px 14px;
   overflow: hidden;
 }
-.wh-wa-day { align-self: center; background: #1F2C34; border-radius: 8px; padding: 5px 10px; font-size: 11px; color: #8696A0; }
+.wh-wa-day { align-self: center; background: var(--wh-cream); border-radius: 8px; padding: 5px 10px; font-size: 11px; color: var(--wh-muted-2); box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .wh-wa-row { display: flex; animation: wh-pop .32s ease-out both; }
 .wh-wa-row--rider { justify-content: flex-end; }
 .wh-wa-row--bot { justify-content: flex-start; }
@@ -374,22 +372,20 @@
   padding: 8px 10px 6px;
   font-size: 13.5px;
   line-height: 1.4;
-  color: #E9EDEF;
+  color: var(--wh-ink);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .1);
   white-space: pre-line;
 }
-.wh-wa-row--rider .wh-wa-bubble { background: #005C4B; border-radius: 12px 2px 12px 12px; }
-.wh-wa-row--bot .wh-wa-bubble { background: #1F2C34; border-radius: 2px 12px 12px 12px; }
-.wh-wa-bubble strong { font-weight: 700; }
-/* The button under a message: Quick Actions, Choose, Accept. */
-.wh-wa-action { display: block; margin: 8px -10px -6px; padding: 10px; border-top: 1px solid rgba(255, 255, 255, .1); text-align: center; color: #25D366; font-weight: 600; font-size: 13.5px; }
-.wh-wa-time { display: block; text-align: right; font-size: 10px; color: #8696A0; margin-top: 3px; }
-.wh-wa-typing { background: #1F2C34; border-radius: 2px 12px 12px 12px; padding: 10px 14px; display: flex; gap: 5px; box-shadow: 0 1px 0 rgba(0, 0, 0, .1); }
-.wh-wa-typing span { width: 7px; height: 7px; border-radius: 50%; background: #8696A0; display: block; animation: wh-dot 1.2s infinite; }
+.wh-wa-row--rider .wh-wa-bubble { background: #DCF8C6; border-radius: 12px 2px 12px 12px; }
+.wh-wa-row--bot .wh-wa-bubble { background: #FFFFFF; border-radius: 2px 12px 12px 12px; }
+.wh-wa-time { display: block; text-align: right; font-size: 10px; color: #6B635A; margin-top: 3px; }
+.wh-wa-typing { background: #FFFFFF; border-radius: 2px 12px 12px 12px; padding: 10px 14px; display: flex; gap: 5px; box-shadow: 0 1px 0 rgba(0, 0, 0, .1); }
+.wh-wa-typing span { width: 7px; height: 7px; border-radius: 50%; background: #6B635A; display: block; animation: wh-dot 1.2s infinite; }
 .wh-wa-typing span:nth-child(2) { animation-delay: .2s; }
 .wh-wa-typing span:nth-child(3) { animation-delay: .4s; }
-.wh-wa-input { background: #0B141A; padding: 8px 10px 18px; display: flex; gap: 8px; align-items: center; }
-.wh-wa-input-field { flex: 1; background: #1F2C34; border-radius: 20px; padding: 10px 14px; font-size: 13px; color: #8696A0; }
-.wh-wa-send { width: 38px; height: 38px; border-radius: 50%; background: #00A884; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+.wh-wa-input { background: #F6F1E8; padding: 8px 10px 18px; display: flex; gap: 8px; align-items: center; }
+.wh-wa-input-field { flex: 1; background: #FFFFFF; border-radius: 20px; padding: 10px 14px; font-size: 13px; color: var(--wh-sand-2); }
+.wh-wa-send { width: 38px; height: 38px; border-radius: 50%; background: #128C7E; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
 
 /* driver toast */
 .wh-toast {
@@ -717,46 +713,26 @@
 }
 
 
-/* The WhatsApp chat inside the How it works phone. */
+/* The WhatsApp chat inside the How it works phone: WhatsApp in dark mode,
+   as the real chat was photographed. The phone at the top keeps its own look. */
 .wh-dphone-screen--wa { background: #0B141A; color: #E9EDEF; }
+.wh-dphone-screen--wa .wh-wa-header { background: #1F2C34; color: #E9EDEF; }
+.wh-dphone-screen--wa .wh-wa-header img { border: 0; }
+.wh-wa-more { margin-left: auto; font-size: 20px; opacity: .9; }
+.wh-dphone-screen--wa .wh-wa-body { background-color: #0B141A; background-image: radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px); }
+.wh-dphone-screen--wa .wh-wa-day { background: #1F2C34; color: #8696A0; box-shadow: none; }
+.wh-dphone-screen--wa .wh-wa-bubble { color: #E9EDEF; box-shadow: none; }
+.wh-dphone-screen--wa .wh-wa-row--rider .wh-wa-bubble { background: #005C4B; }
+.wh-dphone-screen--wa .wh-wa-row--bot .wh-wa-bubble { background: #1F2C34; }
+.wh-dphone-screen--wa .wh-wa-time { color: #8696A0; }
+.wh-dphone-screen--wa .wh-wa-input { background: #0B141A; }
+.wh-dphone-screen--wa .wh-wa-input-field { background: #1F2C34; color: #8696A0; }
+.wh-dphone-screen--wa .wh-wa-send { background: #00A884; }
+.wh-wa-bubble strong { font-weight: 700; }
+/* The button under a message: Quick Actions, Choose, Accept. */
+.wh-wa-action { display: block; margin: 8px -10px -6px; padding: 10px; border-top: 1px solid rgba(20, 18, 16, .12); text-align: center; color: #128C7E; font-weight: 600; font-size: 13.5px; }
+.wh-dphone-screen--wa .wh-wa-action { border-top-color: rgba(255, 255, 255, .1); color: #25D366; }
 .wh-dphone-screen--wa .wh-wa-header { padding-top: 26px; }
 .wh-dphone-screen--wa .wh-wa-bubble { font-size: 13px; }
 /* Rows that framer brings in: the stylesheet's own pop animation would fight it. */
 .wh-wa-row--plain { animation: none; }
-
-/* ─── the driver's app, in the phone at the top of the page ─ */
-@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
-@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
-.wh-phone-screen--drv { background: #F3F0EA; }
-.wh-drv { position: absolute; inset: 0; font-family: "Clash Display Local", "Clash Display", system-ui, sans-serif; font-weight: 500; color: #0D0D0D; }
-.wh-drv b { font-weight: 700; }
-.wh-drv small { display: block; font-size: 12px; color: #786F68; }
-.wh-drv-map { position: absolute; inset: 0; }
-.wh-drv-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.wh-drv-car { position: absolute; left: 44%; top: 46%; width: 18px; height: 18px; border-radius: 50%; background: #FF7700; border: 3px solid #0D0D0D; box-shadow: 0 0 0 8px rgba(255, 119, 0, .2); }
-.wh-drv-pickup { position: absolute; left: 65%; top: 27%; width: 14px; height: 14px; border-radius: 3px; background: #0D0D0D; border: 2px solid #fff; }
-.wh-drv-top { position: absolute; left: 16px; right: 16px; top: 40px; display: flex; justify-content: flex-end; }
-.wh-drv-pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 2.5px solid #0D0D0D; border-radius: 999px; background: #fff; box-shadow: 3px 3px 0 #0D0D0D; font-weight: 600; font-size: 13px; }
-.wh-drv-bottom { position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
-.wh-drv-sheet { padding: 16px; border: 2.5px solid #0D0D0D; border-radius: 18px; background: #FEFAEF; box-shadow: 5px 5px 0 #0D0D0D; }
-.wh-drv-metrics { display: grid; grid-template-columns: repeat(3, 1fr); padding: 14px 6px; border: 2.5px solid #0D0D0D; border-radius: 16px; background: #fff; box-shadow: 4px 4px 0 #0D0D0D; text-align: center; }
-.wh-drv-metrics > div + div { border-left: 1.5px solid #E6DFD2; }
-.wh-drv-metrics b { font-size: 18px; }
-.wh-drv-metrics--flat { box-shadow: none; border-width: 1.5px; border-color: #E6DFD2; }
-.wh-drv-orange { color: #FF7700; }
-.wh-drv-red { color: #C0392B; }
-.wh-drv-wait { align-self: center; padding: 8px 14px; border-radius: 999px; background: rgba(13, 13, 13, .82); color: #FEFAEF; font-size: 12.5px; }
-.wh-drv-btn { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 14px; border: 2.5px solid #0D0D0D; border-radius: 12px; background: #FF7700; box-shadow: 3px 3px 0 #0D0D0D; font-weight: 600; font-size: 14.5px; }
-.wh-drv-btn--ghost { background: #fff; }
-.wh-drv-actions { display: flex; gap: 10px; }
-.wh-drv-tag { align-self: flex-start; padding: 5px 10px; border-radius: 6px; background: #0D0D0D; color: #FEFAEF; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.wh-drv-tag--on { background: #0B7A55; }
-.wh-drv-route { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-.wh-drv-route > div { display: flex; align-items: center; gap: 10px; }
-.wh-drv-dot { width: 10px; height: 10px; border-radius: 50%; background: #0D0D0D; flex: none; }
-.wh-drv-dot--to { border-radius: 2px; background: #FF7700; }
-.wh-drv-earn { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 12px; background: #0D0D0D; color: #FEFAEF; font-size: 14px; }
-.wh-drv-earn b { font-size: 20px; color: #FF7700; }
-.wh-drv-rider { display: flex; align-items: center; gap: 12px; font-size: 15px; }
-.wh-drv-avatar { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2.5px solid #0D0D0D; border-radius: 50%; background: #FF7700; font-weight: 700; }
