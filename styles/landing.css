@@ -15,9 +15,13 @@
   --wh-sand: #C9BFB2;
   --wh-sand-2: #8A8177;
 
-  --wh-sans: var(--font-archivo), system-ui, sans-serif;
-  --wh-serif: var(--font-instrument-serif), Georgia, serif;
-  --wh-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  /* The rider app's type: Bricolage Grotesque for headings and prices, Hanken
+     Grotesk for everything else. --wh-serif (the orange word in a heading) and
+     --wh-mono (small capital labels) keep their names and take the same two. */
+  --wh-sans: var(--font-hanken), system-ui, sans-serif;
+  --wh-display: var(--font-bricolage), var(--font-hanken), system-ui, sans-serif;
+  --wh-serif: var(--wh-display);
+  --wh-mono: var(--wh-sans);
 
   min-height: 100vh;
   background: var(--wh-cream);
@@ -70,8 +74,8 @@
 
 .wh-serif {
   font-family: var(--wh-serif);
-  font-style: italic;
-  font-weight: 400;
+  font-style: normal;
+  font-weight: inherit;
   color: var(--wh-orange);
 }
 
@@ -89,13 +93,13 @@
 .wh-eyebrow::before { content: ""; width: 32px; height: 3px; background: var(--wh-orange); display: inline-block; }
 
 .wh-h2 {
-  font-weight: 900;
-  font-size: clamp(40px, 5.2vw, 72px);
-  line-height: .95;
-  letter-spacing: -.035em;
+  font-family: var(--wh-display); font-weight: 800;
+  font-size: clamp(28px, 3.3vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -.02em;
   text-wrap: balance;
 }
-.wh-h2 .wh-serif { letter-spacing: -.02em; }
+.wh-h2 .wh-serif { letter-spacing: inherit; }
 
 .wh-section-head { display: flex; flex-direction: column; gap: 14px; }
 
@@ -174,7 +178,7 @@
   border-radius: 10px;
   box-shadow: 3px 3px 0 var(--wh-ink);
 }
-.wh-nav-brand span { font-weight: 900; font-size: 20px; letter-spacing: -.02em; }
+.wh-nav-brand span { font-family: var(--wh-display); font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
 .wh-nav-links {
   display: flex;
   gap: 28px;
@@ -281,13 +285,13 @@
 .wh-chip-peach { background: var(--wh-peach); color: var(--wh-ink); }
 .wh-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--wh-wa); display: inline-block; animation: wh-blink 1.6s ease-in-out infinite; }
 .wh-h1 {
-  font-weight: 900;
-  font-size: clamp(48px, 7vw, 96px);
-  line-height: .92;
-  letter-spacing: -.04em;
+  font-family: var(--wh-display); font-weight: 800;
+  font-size: clamp(34px, 4.4vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -.025em;
   text-wrap: balance;
 }
-.wh-h1 .wh-serif { letter-spacing: -.02em; }
+.wh-h1 .wh-serif { letter-spacing: inherit; }
 .wh-hero-wa { display: flex; flex-wrap: wrap; gap: 14px; }
 .wh-btn-hero-wa {
   gap: 12px;
@@ -418,14 +422,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-family: var(--wh-display); font-weight: 800;
   font-size: 24px;
 }
 .wh-side-badge--wa { background: var(--wh-wa); }
 .wh-side-badge--orange { background: var(--wh-orange); }
 .wh-side-index { font-family: var(--wh-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--wh-muted-2); }
-.wh-side h3 { font-weight: 900; font-size: clamp(30px, 3vw, 42px); letter-spacing: -.03em; line-height: 1; }
-.wh-side p { font-size: 17px; line-height: 1.55; color: var(--wh-muted); text-wrap: pretty; }
+.wh-side h3 { font-family: var(--wh-display); font-weight: 800; font-size: clamp(22px, 2.1vw, 28px); letter-spacing: -.015em; line-height: 1.12; }
+.wh-side p { font-size: 16px; line-height: 1.55; color: var(--wh-muted); text-wrap: pretty; }
 .wh-bullets { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--wh-ink); }
 .wh-bullets li { display: flex; gap: 12px; align-items: baseline; }
 .wh-bullets li::before { content: ""; width: 8px; height: 8px; background: var(--wh-orange); border: 1.5px solid var(--wh-ink); flex: none; transform: translateY(-1px); }
@@ -468,7 +472,7 @@
 }
 .wh-step--active .wh-step-num { background: var(--wh-orange); }
 .wh-step-text { display: flex; flex-direction: column; gap: 6px; }
-.wh-step-text strong { font-weight: 900; font-size: 20px; letter-spacing: -.02em; }
+.wh-step-text strong { font-family: var(--wh-display); font-weight: 800; font-size: 17px; letter-spacing: -.02em; }
 .wh-step-text span { font-size: 15px; line-height: 1.5; color: var(--wh-muted); }
 
 /* driver app phone */
@@ -511,7 +515,7 @@
   gap: 4px;
 }
 .wh-dphone-earn-label { font-family: var(--wh-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
-.wh-dphone-earn-amt { font-weight: 900; font-size: 38px; letter-spacing: -.04em; line-height: 1; }
+.wh-dphone-earn-amt { font-family: var(--wh-display); font-weight: 800; font-size: 30px; letter-spacing: -.02em; line-height: 1.05; }
 .wh-dphone-earn-delta { font-size: 12px; font-weight: 700; }
 .wh-dphone-map {
   flex: 1;
@@ -533,7 +537,7 @@
 .wh-dphone-req { margin: 14px 16px 22px; background: var(--wh-cream); color: var(--wh-ink); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .wh-dphone-req-top { display: flex; justify-content: space-between; align-items: baseline; }
 .wh-dphone-req-label { font-family: var(--wh-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--wh-orange); }
-.wh-dphone-req-fare { font-weight: 900; font-size: 18px; letter-spacing: -.02em; }
+.wh-dphone-req-fare { font-family: var(--wh-display); font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
 .wh-dphone-req-route { font-weight: 700; font-size: 15px; }
 .wh-dphone-req-meta { font-size: 12px; color: var(--wh-muted-2); }
 .wh-dphone-req-actions { display: flex; gap: 8px; margin-top: 4px; }
@@ -564,7 +568,7 @@
   background: var(--wh-cream);
   padding: 5px 9px;
 }
-.wh-feature strong { font-weight: 900; font-size: 22px; letter-spacing: -.02em; line-height: 1.15; }
+.wh-feature strong { font-family: var(--wh-display); font-weight: 800; font-size: 18px; letter-spacing: -.02em; line-height: 1.15; }
 .wh-feature span:not(.wh-feature-num) { font-size: 15px; line-height: 1.55; color: var(--wh-muted); text-wrap: pretty; }
 
 /* ─── match band ─────────────────────────────────────────── */
@@ -598,7 +602,7 @@
 .wh-band-tag { align-self: flex-start; background: var(--wh-ink); color: var(--wh-cream); padding: 8px 14px; font-family: var(--wh-mono); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .wh-band-copy .wh-h2 { color: var(--wh-cream); }
 .wh-band-copy .wh-h2 .wh-serif { color: var(--wh-ink); }
-.wh-band-copy p { max-width: 520px; font-size: 18px; line-height: 1.5; color: var(--wh-cream); text-wrap: pretty; }
+.wh-band-copy p { max-width: 520px; font-size: 16px; line-height: 1.5; color: var(--wh-cream); text-wrap: pretty; }
 .wh-band-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
 .wh-band-ctas .wh-btn { padding: 14px 20px; font-weight: 700; font-size: 15px; }
 .wh-band-panel-wrap { display: flex; justify-content: flex-end; min-width: 0; }
@@ -627,12 +631,12 @@
   border-bottom: 1.5px solid rgba(20, 18, 16, .15);
   animation: wh-pop .4s ease-out both;
 }
-.wh-driver-avatar { width: 44px; height: 44px; color: var(--wh-ink); border: 2px solid var(--wh-ink); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; letter-spacing: -.02em; }
+.wh-driver-avatar { width: 44px; height: 44px; color: var(--wh-ink); border: 2px solid var(--wh-ink); display: flex; align-items: center; justify-content: center; font-family: var(--wh-display); font-weight: 800; font-size: 16px; letter-spacing: -.02em; }
 .wh-driver-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .wh-driver-name { font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
 .wh-driver-car { font-size: 12.5px; color: var(--wh-muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wh-driver-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.wh-driver-eta { font-weight: 900; font-size: 16px; color: var(--wh-orange); letter-spacing: -.02em; }
+.wh-driver-eta { font-family: var(--wh-display); font-weight: 800; font-size: 16px; color: var(--wh-orange); letter-spacing: -.02em; }
 .wh-driver-stats { font-family: var(--wh-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--wh-muted-2); }
 .wh-panel-foot { padding: 12px 20px; font-family: var(--wh-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--wh-muted-2); }
 .wh-panel-empty { min-height: 296px; }
@@ -649,7 +653,7 @@
 .wh-footer-brand { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .wh-footer-logo { display: flex; align-items: center; gap: 12px; }
 .wh-footer-logo img { width: 40px; height: 40px; border-radius: 10px; }
-.wh-footer-logo span { font-weight: 900; font-size: 26px; letter-spacing: -.03em; }
+.wh-footer-logo span { font-family: var(--wh-display); font-weight: 800; font-size: 22px; letter-spacing: -.03em; }
 .wh-footer-tag { font-family: var(--wh-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--wh-orange); }
 .wh-footer-brand p { max-width: 320px; font-size: 15px; line-height: 1.55; color: var(--wh-sand); text-wrap: pretty; }
 .wh-footer-col { display: flex; flex-direction: column; gap: 12px; font-size: 15px; }

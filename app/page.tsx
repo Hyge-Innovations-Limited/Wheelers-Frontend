@@ -1,28 +1,22 @@
 import type { Metadata } from "next";
-import { Archivo, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import LandingPage from "@/components/landing/LandingPage";
 
 import "../styles/landing.css";
 
-const archivo = Archivo({
+// The rider app's type, so the site and the app read as one product:
+// Bricolage Grotesque for headings and prices, Hanken Grotesk for everything else.
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
-  variable: "--font-archivo",
+  weight: ["700", "800"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
-const instrumentSerif = Instrument_Serif({
+const hanken = Hanken_Grotesk({
   subsets: ["latin"],
-  weight: "400",
-  style: "italic",
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["500", "700"],
-  variable: "--font-jetbrains-mono",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-hanken",
   display: "swap",
 });
 
@@ -49,6 +43,6 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LandingPage className={`${archivo.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`} />
+    <LandingPage className={`${bricolage.variable} ${hanken.variable}`} />
   );
 }
