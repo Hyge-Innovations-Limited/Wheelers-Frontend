@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
+import { Poppins } from "next/font/google";
 import LandingPage from "@/components/landing/LandingPage";
 
 import "../styles/landing.css";
 
-// The rider app's type, so the site and the app read as one product:
-// Bricolage Grotesque for headings and prices, Hanken Grotesk for everything else.
-const bricolage = Bricolage_Grotesque({
+// One clean, round sans for the whole page: headings in bold, the rest regular.
+const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["700", "800"],
-  variable: "--font-bricolage",
-  display: "swap",
-});
-
-const hanken = Hanken_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-hanken",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
   display: "swap",
 });
 
@@ -43,6 +35,6 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LandingPage className={`${bricolage.variable} ${hanken.variable}`} />
+    <LandingPage className={poppins.variable} />
   );
 }
