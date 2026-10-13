@@ -34,11 +34,11 @@ const CHAT: Msg[] = [
     time: "2:37 PM",
     button: "Quick Actions",
   },
-  { step: 1, from: "rider", text: "I want to go from Ilemere Road to University of Lagos", time: "2:41 PM" },
+  { step: 1, from: "rider", text: "I want to go from Sabo, Yaba to Tafawa Balewa Square", time: "2:41 PM" },
   {
     step: 1,
     from: "bot",
-    text: "Pickup: *Ilemere Rd, Ikorodu*\n\nI found 3 places called \"University of Lagos\". Tap *Choose* and pick your destination.",
+    text: "Pickup: *Sabo Bus Stop, Yaba*\n\nI found 3 places called \"Tafawa Balewa Square\". Tap *Choose* and pick your destination.",
     time: "2:41 PM",
     button: "Choose",
   },
