@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AnimatePresence,
   motion,
   useAnimationFrame,
   useMotionValue,
@@ -11,7 +12,7 @@ import {
   useVelocity,
   type Variants,
 } from "framer-motion";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * The landing page's motion, in one vocabulary. The page is hard edges, thick
@@ -207,37 +208,134 @@ export function RollingStrip({ children }: { children: ReactNode }) {
   );
 }
 
+const FARES = [5000, 5500, 6000, 6500, 7000, 7500, 8000];
+const naira = (amount: number) => `₦${amount.toLocaleString("en-NG")}`;
+
+function Car({ color, width }: { color: string; width: number }) {
+  return (
+    <svg viewBox="86 236 204 100" width={width} height={(width * 100) / 204} aria-hidden="true">
+      <path
+        d="M102 318h170c7 0 12-5 12-12v-9c0-7-5-12-12-13l-26-5-19-21c-4-4-9-6-14-6h-54c-6 0-11 3-14 8l-13 19-23 5c-7 2-12 7-12 14v8c0 7 5 12 12 12z"
+        fill={color}
+      />
+      <path d="M152 262h30v20h-44zM190 262h23l17 20h-40z" fill="#2B2B2B" />
+      <rect fill="#FFFFFF" height="7" rx="3" width="14" x="262" y="292" />
+      {[140, 242].map((cx) => (
+        <g key={cx}>
+          <circle cx={cx} cy={320} fill="#2B2B2B" r={15} />
+          <circle cx={cx} cy={320} fill="#FFFFFF" r={7} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 /**
- * A strip of road between two sections, with the Wheelers car on it. The car
- * is driven by the scroll: it enters as the road comes into view and has
- * crossed the page by the time the road leaves.
+ * A strip of road between two sections that plays Wheelers out, over and
+ * over, whatever the page is doing: the car is driving, the rider names a
+ * price, the driver takes it, and the money lands. Then the next fare.
+ *
+ *   0  driving            1  "You offer ₦6,500"
+ *   2  "Driver accepts"   3  the cash: +₦6,500 off the car, "Paid" on the road
  */
 export function RoadDivider() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.5 });
-  const left = useTransform(smooth, [0, 1], ["-18%", "104%"]);
-  const dashes = useTransform(smooth, [0, 1], [0, -260]);
+  const still = useReducedMotion();
+  const [beat, setBeat] = useState(still ? 3 : 0);
+  const [fare, setFare] = useState(6500);
+
+  useEffect(() => {
+    if (still) return;
+    const waits = [900, 1300, 1100, 2200];
+    const timer = setTimeout(() => {
+      if (beat === 3) setFare((last) => FARES.filter((f) => f !== last)[Math.floor(Math.random() * (FARES.length - 1))]);
+      setBeat((current) => (current + 1) % 4);
+    }, waits[beat]);
+    return () => clearTimeout(timer);
+  }, [beat, still]);
+
+  const pop = {
+    initial: { opacity: 0, y: 14, scale: 0.8 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: -10, scale: 0.9, transition: { duration: 0.18 } },
+    transition: { type: "spring" as const, stiffness: 520, damping: 24 },
+  };
 
   return (
-    <div ref={ref} className="wh-road" aria-hidden="true">
-      <motion.div className="wh-road-dashes" style={{ x: dashes }} />
-      <motion.div className="wh-road-car" style={{ left }}>
-        <svg viewBox="86 236 204 100" width="132" height="65">
-          <path
-            d="M102 318h170c7 0 12-5 12-12v-9c0-7-5-12-12-13l-26-5-19-21c-4-4-9-6-14-6h-54c-6 0-11 3-14 8l-13 19-23 5c-7 2-12 7-12 14v8c0 7 5 12 12 12z"
-            fill="#FF7700"
-          />
-          <path d="M152 262h30v20h-44zM190 262h23l17 20h-40z" fill="#2B2B2B" />
-          <rect fill="#FFFFFF" height="7" rx="3" width="14" x="262" y="292" />
-          {[140, 242].map((cx) => (
-            <g key={cx}>
-              <circle cx={cx} cy={320} fill="#2B2B2B" r={15} />
-              <circle cx={cx} cy={320} fill="#FFFFFF" r={7} />
-            </g>
-          ))}
-        </svg>
-      </motion.div>
+    <div className="wh-road" aria-hidden="true">
+      <div className="wh-road-sky">
+        {/* Other cars on the road: Wheelers is not one car. */}
+        <div className="wh-road-passer wh-road-passer--a">
+          <Car color="#3A352F" width={84} />
+        </div>
+        <div className="wh-road-passer wh-road-passer--b">
+          <Car color="#5B534A" width={64} />
+        </div>
+
+        <div className="wh-road-scene">
+          <div className="wh-road-talk">
+            <AnimatePresence>
+              {beat >= 1 && beat <= 2 ? (
+                <motion.span key={`offer-${fare}`} className="wh-road-bubble wh-road-bubble--offer" {...pop}>
+                  <small>You offer</small>
+                  <b>{naira(fare)}</b>
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+            <AnimatePresence>
+              {beat === 2 ? (
+                <motion.span key={`deal-${fare}`} className="wh-road-bubble wh-road-bubble--deal" {...pop}>
+                  ✓ <b>Driver accepts</b>
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          <motion.div
+            className="wh-road-car"
+            animate={still ? undefined : { y: [0, -2.5, 0] }}
+            transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}>
+            <Car color="#FF7700" width={150} />
+            {/* The cash: it bursts off the car the moment the driver accepts. */}
+            <AnimatePresence>
+              {beat === 3
+                ? [0, 1, 2, 3, 4].map((note) => (
+                    <motion.span
+                      key={`cash-${fare}-${note}`}
+                      className="wh-road-cash"
+                      initial={{ opacity: 0, x: 0, y: 0, scale: 0.4, rotate: 0 }}
+                      animate={{
+                        opacity: [0, 1, 1, 0],
+                        x: (note - 2) * 46,
+                        y: -70 - (note % 2) * 26,
+                        scale: 1,
+                        rotate: (note - 2) * 14,
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 1.5, delay: note * 0.07, ease: [0.2, 0.9, 0.2, 1] }}>
+                      ₦
+                    </motion.span>
+                  ))
+                : null}
+            </AnimatePresence>
+            <AnimatePresence>
+              {beat === 3 ? (
+                <motion.span
+                  key={`paid-${fare}`}
+                  className="wh-road-paid"
+                  initial={{ opacity: 0, scale: 2.2, rotate: -14 }}
+                  animate={{ opacity: 1, scale: 1, rotate: -6 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  transition={{ type: "spring", stiffness: 600, damping: 18 }}>
+                  +{naira(fare)}
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </div>
+      <div className="wh-road-tar">
+        <div className="wh-road-dashes" />
+      </div>
     </div>
   );
 }
