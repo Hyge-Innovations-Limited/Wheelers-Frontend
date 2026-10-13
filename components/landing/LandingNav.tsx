@@ -17,9 +17,8 @@ export default function LandingNav() {
     <header className="wh-nav">
       <div className="wh-container wh-nav-row">
         <a href="#top" className="wh-nav-brand" onClick={close}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/wheelers-mark.svg" alt="Wheelers" width={40} height={40} />
-          <span>Wheelers</span>
+          {/* The wordmark as the app shows it: the W and "wheelers" as one mark, in orange. */}
+          <span className="wh-wordmark" role="img" aria-label="Wheelers" />
         </a>
 
         <nav className="wh-nav-links" aria-label="Primary">

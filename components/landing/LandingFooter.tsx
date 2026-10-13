@@ -7,9 +7,7 @@ export default function LandingFooter() {
       <div className="wh-container wh-footer-grid" data-wh-reveal="1">
         <div className="wh-footer-brand">
           <div className="wh-footer-logo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/wheelers-mark.svg" alt="Wheelers" width={40} height={40} />
-            <span>Wheelers</span>
+            <span className="wh-wordmark wh-wordmark--lg" role="img" aria-label="Wheelers" />
           </div>
           <span className="wh-footer-tag">Ride. Earn. Own.</span>
           <p>

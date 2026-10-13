@@ -169,6 +169,17 @@
   justify-content: space-between;
   gap: 24px;
 }
+/* The Wheelers wordmark from the app (the W and "wheelers" as one mark),
+   drawn in orange through its own shape so the edges stay clean at any size. */
+.wh-wordmark {
+  display: block;
+  width: 148px;
+  aspect-ratio: 787 / 165;
+  background: var(--wh-orange);
+  -webkit-mask: url("/wheelers-wordmark.png") center / contain no-repeat;
+  mask: url("/wheelers-wordmark.png") center / contain no-repeat;
+}
+.wh-wordmark--lg { width: 172px; }
 .wh-nav-brand { display: flex; align-items: center; gap: 12px; }
 .wh-nav-brand:hover { color: var(--wh-ink); }
 .wh-nav-brand img {
