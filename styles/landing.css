@@ -338,6 +338,7 @@
   box-shadow: 12px 12px 0 var(--wh-ink), 0 0 0 3px var(--wh-ink);
 }
 .wh-phone-screen {
+  position: relative;
   background: #0B141A;
   border-radius: 34px;
   overflow: hidden;
@@ -716,76 +717,46 @@
 }
 
 
-/* ─── how it works: the phone shows the Wheelers app itself ─ */
-.wh-app {
-  --app-cream: #FEFAEF; --app-ink: #0D0D0D; --app-orange: #FF7700; --app-muted: #786F68; --app-line: #E6DFD2;
-  background: var(--app-cream) !important;
-  color: var(--app-ink) !important;
-  font-family: var(--font-hanken), system-ui, sans-serif;
-  position: relative;
-}
-.wh-app b, .wh-app strong { font-weight: 700; }
-.wh-app small { display: block; font-size: 11.5px; color: var(--app-muted); }
-.wh-app-view { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.wh-app-view--pad { padding: 38px 16px 18px; gap: 12px; }
-.wh-app-title { font-family: var(--font-bricolage), var(--font-hanken), sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -.02em; line-height: 1.1; }
-.wh-app-title--sm { font-size: 19px; }
-.wh-app-label { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--app-muted); }
-.wh-app-row { display: flex; gap: 8px; }
-.wh-app-cta { margin-top: auto; padding: 14px; border-radius: 16px; background: var(--app-orange); color: var(--app-ink); text-align: center; font-weight: 700; font-size: 15px; }
+/* The WhatsApp chat inside the How it works phone. */
+.wh-dphone-screen--wa { background: #0B141A; color: #E9EDEF; }
+.wh-dphone-screen--wa .wh-wa-header { padding-top: 26px; }
+.wh-dphone-screen--wa .wh-wa-bubble { font-size: 13px; }
+/* Rows that framer brings in: the stylesheet's own pop animation would fight it. */
+.wh-wa-row--plain { animation: none; }
 
-/* Home */
-.wh-app-map { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-.wh-app-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.wh-app-place { position: absolute; font-size: 12px; font-weight: 600; color: #3E3831; }
-.wh-app-me { position: absolute; left: 56%; top: 62%; width: 12px; height: 12px; border-radius: 50%; background: #2F6BFF; border: 2px solid #fff; box-shadow: 0 0 0 6px rgba(47, 107, 255, .2); }
-.wh-app-tile { position: absolute; left: 14px; top: 40px; width: 40px; height: 40px; border-radius: 10px; }
-.wh-app-wallet { position: absolute; right: 14px; top: 42px; display: flex; align-items: center; gap: 6px; padding: 9px 13px; border-radius: 999px; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; }
-.wh-app-sheet { display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 12px; margin-top: -16px; border-radius: 22px 22px 0 0; background: var(--app-cream); position: relative; }
-.wh-app-handle { align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #B8AE9E; }
-.wh-app-search { flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 2px solid var(--app-ink); border-radius: 14px; background: #fff; font-size: 13px; color: var(--app-muted); }
-.wh-app-later { display: flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 14px; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; }
-.wh-app-chip { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; font-size: 13px; }
-.wh-app-chip small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wh-app-chip--ink { background: var(--app-ink); border-color: var(--app-ink); }
-.wh-app-chip--ink b { color: var(--app-orange); }
-.wh-app-chip--ink small { color: #CFC6B8; }
-.wh-app-tabs { display: flex; justify-content: space-around; padding: 8px 8px 14px; border-top: 1px solid var(--app-line); background: var(--app-cream); }
-.wh-app-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; color: var(--app-muted); }
-.wh-app-tab i { width: 18px; height: 18px; border-radius: 6px; border: 2px solid currentColor; }
-.wh-app-tab--on { color: var(--app-ink); }
-.wh-app-tab--on i { background: var(--app-ink); }
-
-/* Plan your trip */
-.wh-app-head { display: flex; align-items: center; gap: 10px; justify-content: flex-start; }
-.wh-app-back { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 2px solid var(--app-ink); border-radius: 50%; font-size: 18px; line-height: 1; }
-.wh-app-fields { border: 2px solid var(--app-ink); border-radius: 16px; background: #fff; padding: 2px 12px; }
-.wh-app-field { display: flex; align-items: center; gap: 10px; min-height: 42px; font-size: 13.5px; border-bottom: 1px solid var(--app-line); }
-.wh-app-field:last-child { border-bottom: 0; }
-.wh-app-field small { width: 38px; font-weight: 700; letter-spacing: .06em; font-size: 10px; }
-.wh-app-field--on { border-bottom: 2px solid var(--app-orange) !important; }
-.wh-app-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--app-ink); flex: none; }
-.wh-app-dot--to { border-radius: 2px; background: var(--app-orange); }
-.wh-app-caret { display: inline-block; width: 2px; height: 14px; margin-left: 1px; vertical-align: -2px; background: var(--app-orange); animation: wh-blink 1s step-end infinite; }
-.wh-app-result { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--app-line); font-size: 13.5px; }
-.wh-app-pin { width: 30px; height: 30px; border-radius: 50%; background: #FFF0E0; border: 2px solid var(--app-orange); flex: none; }
-
-/* Set your price */
-.wh-app-trip { padding: 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; }
-.wh-app-price { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 12px; border-radius: 18px; background: var(--app-ink); }
-.wh-app-price strong { font-family: var(--font-bricolage), sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -.02em; color: var(--app-orange); }
-.wh-app-step { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3A3A3A; color: var(--app-cream); font-size: 20px; }
-.wh-app-suggest { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; font-size: 13.5px; }
-.wh-app-note { text-align: center; }
-
-/* Driver offers */
-.wh-app-head .wh-app-yours { margin-left: auto; padding: 6px 10px; border-radius: 999px; background: var(--app-ink); color: var(--app-cream); font-size: 11.5px; font-weight: 700; }
-.wh-app-offer { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--app-line); border-radius: 18px; background: #fff; }
-.wh-app-offer--best { border: 2px solid var(--app-ink); }
-.wh-app-offer-top { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.wh-app-offer-top > div { flex: 1; min-width: 0; }
-.wh-app-offer-top > strong { font-family: var(--font-bricolage), sans-serif; font-weight: 800; font-size: 19px; }
-.wh-app-avatar { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; flex: none; }
-.wh-app-offer-actions { display: flex; gap: 8px; }
-.wh-app-accept { flex: 2; padding: 10px; border-radius: 12px; background: var(--app-orange); text-align: center; font-weight: 700; font-size: 13.5px; }
-.wh-app-decline { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid var(--app-ink); text-align: center; font-weight: 700; font-size: 13.5px; }
+/* ─── the driver's app, in the phone at the top of the page ─ */
+@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Clash Display Local"; src: url("/fonts/ClashDisplay-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+.wh-phone-screen--drv { background: #F3F0EA; }
+.wh-drv { position: absolute; inset: 0; font-family: "Clash Display Local", "Clash Display", system-ui, sans-serif; font-weight: 500; color: #0D0D0D; }
+.wh-drv b { font-weight: 700; }
+.wh-drv small { display: block; font-size: 12px; color: #786F68; }
+.wh-drv-map { position: absolute; inset: 0; }
+.wh-drv-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wh-drv-car { position: absolute; left: 44%; top: 46%; width: 18px; height: 18px; border-radius: 50%; background: #FF7700; border: 3px solid #0D0D0D; box-shadow: 0 0 0 8px rgba(255, 119, 0, .2); }
+.wh-drv-pickup { position: absolute; left: 65%; top: 27%; width: 14px; height: 14px; border-radius: 3px; background: #0D0D0D; border: 2px solid #fff; }
+.wh-drv-top { position: absolute; left: 16px; right: 16px; top: 40px; display: flex; justify-content: flex-end; }
+.wh-drv-pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 2.5px solid #0D0D0D; border-radius: 999px; background: #fff; box-shadow: 3px 3px 0 #0D0D0D; font-weight: 600; font-size: 13px; }
+.wh-drv-bottom { position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+.wh-drv-sheet { padding: 16px; border: 2.5px solid #0D0D0D; border-radius: 18px; background: #FEFAEF; box-shadow: 5px 5px 0 #0D0D0D; }
+.wh-drv-metrics { display: grid; grid-template-columns: repeat(3, 1fr); padding: 14px 6px; border: 2.5px solid #0D0D0D; border-radius: 16px; background: #fff; box-shadow: 4px 4px 0 #0D0D0D; text-align: center; }
+.wh-drv-metrics > div + div { border-left: 1.5px solid #E6DFD2; }
+.wh-drv-metrics b { font-size: 18px; }
+.wh-drv-metrics--flat { box-shadow: none; border-width: 1.5px; border-color: #E6DFD2; }
+.wh-drv-orange { color: #FF7700; }
+.wh-drv-red { color: #C0392B; }
+.wh-drv-wait { align-self: center; padding: 8px 14px; border-radius: 999px; background: rgba(13, 13, 13, .82); color: #FEFAEF; font-size: 12.5px; }
+.wh-drv-btn { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 14px; border: 2.5px solid #0D0D0D; border-radius: 12px; background: #FF7700; box-shadow: 3px 3px 0 #0D0D0D; font-weight: 600; font-size: 14.5px; }
+.wh-drv-btn--ghost { background: #fff; }
+.wh-drv-actions { display: flex; gap: 10px; }
+.wh-drv-tag { align-self: flex-start; padding: 5px 10px; border-radius: 6px; background: #0D0D0D; color: #FEFAEF; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.wh-drv-tag--on { background: #0B7A55; }
+.wh-drv-route { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.wh-drv-route > div { display: flex; align-items: center; gap: 10px; }
+.wh-drv-dot { width: 10px; height: 10px; border-radius: 50%; background: #0D0D0D; flex: none; }
+.wh-drv-dot--to { border-radius: 2px; background: #FF7700; }
+.wh-drv-earn { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 12px; background: #0D0D0D; color: #FEFAEF; font-size: 14px; }
+.wh-drv-earn b { font-size: 20px; color: #FF7700; }
+.wh-drv-rider { display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.wh-drv-avatar { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2.5px solid #0D0D0D; border-radius: 50%; background: #FF7700; font-weight: 700; }
