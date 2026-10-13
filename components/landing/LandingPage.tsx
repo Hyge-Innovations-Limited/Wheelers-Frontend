@@ -1,5 +1,6 @@
 "use client";
 
+import { MotionConfig } from "framer-motion";
 import { useEffect } from "react";
 import LandingNav from "./LandingNav";
 import LandingTicker from "./LandingTicker";
@@ -9,6 +10,7 @@ import HowItWorks from "./HowItWorks";
 import LandingFeatures from "./LandingFeatures";
 import MatchBand from "./MatchBand";
 import LandingFooter from "./LandingFooter";
+import { RoadDivider, ScrollProgress } from "./motion";
 
 export default function LandingPage({ className = "" }: { className?: string }) {
   useEffect(() => {
@@ -33,17 +35,22 @@ export default function LandingPage({ className = "" }: { className?: string }) 
   }, []);
 
   return (
-    <div className={`wh ${className}`.trim()}>
-      <LandingNav />
-      <LandingTicker />
-      <main>
-        <LandingHero />
-        <TwoSides />
-        <HowItWorks />
-        <LandingFeatures />
-        <MatchBand />
-      </main>
-      <LandingFooter />
-    </div>
+    // Anyone who has asked their device for less motion gets a page that holds still.
+    <MotionConfig reducedMotion="user">
+      <div className={`wh ${className}`.trim()}>
+        <ScrollProgress />
+        <LandingNav />
+        <LandingTicker />
+        <main>
+          <LandingHero />
+          <RoadDivider />
+          <TwoSides />
+          <HowItWorks />
+          <LandingFeatures />
+          <MatchBand />
+        </main>
+        <LandingFooter />
+      </div>
+    </MotionConfig>
   );
 }

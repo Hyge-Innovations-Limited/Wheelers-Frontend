@@ -3,6 +3,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+import { Lines, Stamp } from "./motion";
+
 /**
  * How it works: four steps on the left, a WhatsApp chat with Wheelers on the
  * right. The heading says it starts with "hi", so that is what the phone
@@ -79,15 +81,20 @@ export default function HowItWorks() {
     <section id="how" className="wh-section wh-how">
       <div className="wh-container wh-how-inner">
         <div className="wh-how-copy">
-          <div className="wh-section-head" data-wh-reveal="1">
-            <span className="wh-eyebrow">How it works</span>
-            <h2 className="wh-h2">
-              From &ldquo;hi&rdquo; to
-              <br />
-              <span className="wh-serif">picked up</span>
-              <br />
-              in four steps
-            </h2>
+          <div className="wh-section-head">
+            <Stamp>
+              <span className="wh-eyebrow">How it works</span>
+            </Stamp>
+            <Lines
+              className="wh-h2"
+              lines={[
+                <>From &ldquo;hi&rdquo; to</>,
+                <span key="p" className="wh-serif">
+                  picked up
+                </span>,
+                "in four steps",
+              ]}
+            />
           </div>
 
           <ol

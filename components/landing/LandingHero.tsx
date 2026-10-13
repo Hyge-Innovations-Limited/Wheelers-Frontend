@@ -1,7 +1,9 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { WHATSAPP_URL } from "@/lib/landing-links";
+import { Drift, Lines, Stagger, StaggerItem, Stamp } from "./motion";
 import StoreBadges from "./StoreBadges";
 import { WhatsAppIcon } from "./icons";
 
@@ -54,39 +56,63 @@ export default function LandingHero() {
   return (
     <section id="top" className="wh-hero wh-grid-bg">
       <div className="wh-container wh-hero-inner">
-        <div className="wh-hero-copy" data-wh-reveal="1">
-          <div className="wh-chips">
-            <span className="wh-chip wh-chip-dark">A product of HYGE Innovations Limited</span>
-            <span className="wh-chip wh-chip-peach">
-              <span className="wh-live-dot" />
-              Live in Lagos
-            </span>
-          </div>
+        <div className="wh-hero-copy">
+          {/* The opening: the two tags are stamped down, the headline comes up line by line, then the ways in. */}
+          <Stagger className="wh-chips" gap={0.09} onLoad>
+            <StaggerItem>
+              <span className="wh-chip wh-chip-dark">A product of HYGE Innovations Limited</span>
+            </StaggerItem>
+            <StaggerItem>
+              <span className="wh-chip wh-chip-peach">
+                <span className="wh-live-dot" />
+                Live in Lagos
+              </span>
+            </StaggerItem>
+          </Stagger>
 
-          <h1 className="wh-h1">
-            Ride from
-            <br />
-            WhatsApp or
-            <br />
-            the app. <span className="wh-serif">Drive</span>
-            <br />
-            and earn.
-          </h1>
+          <Lines
+            as="h1"
+            className="wh-h1"
+            delay={0.18}
+            onLoad
+            lines={[
+              "Ride from",
+              "WhatsApp or",
+              <>
+                the app. <span className="wh-serif">Drive</span>
+              </>,
+              "and earn.",
+            ]}
+          />
 
-          <StoreBadges />
+          <Stamp delay={0.62} onLoad>
+            <StoreBadges />
+          </Stamp>
 
-          <div className="wh-hero-wa">
+          <Stamp className="wh-hero-wa" delay={0.76} onLoad>
             <a href={WHATSAPP_URL} className="wh-btn wh-btn-hero-wa" target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon />
               Book a ride on WhatsApp
             </a>
-          </div>
+          </Stamp>
         </div>
 
-        <div className="wh-hero-visual" data-wh-reveal="1" style={{ "--wh-d": "150ms" } as React.CSSProperties}>
-          <div className="wh-hero-slab" />
+        <div className="wh-hero-visual">
+          {/* The orange slab swings into place behind the phone, then drifts against the scroll. */}
+          <Drift className="wh-hero-slab-drift" distance={-90} turn={5}>
+            <motion.div
+              className="wh-hero-slab"
+              initial={{ opacity: 0, rotate: -22, scale: 0.8 }}
+              animate={{ opacity: 1, rotate: -4, scale: 1 }}
+              transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.5 }}
+            />
+          </Drift>
 
-          <div className="wh-phone">
+          <motion.div
+            className="wh-phone"
+            initial={{ opacity: 0, y: 90, rotate: 5 }}
+            animate={{ opacity: 1, y: 0, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 110, damping: 17, delay: 0.3 }}>
             <div className="wh-phone-screen">
               <div className="wh-wa-header">
                 <span className="wh-wa-back">‹</span>
@@ -125,9 +151,14 @@ export default function LandingHero() {
                 <div className="wh-wa-send">➤</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="wh-toast" aria-hidden="true">
+          <motion.div
+            className="wh-toast"
+            aria-hidden="true"
+            initial={{ opacity: 0, x: -50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, delay: 1.3 }}>
             <span className="wh-toast-label">Driver app · new request</span>
             <span className="wh-toast-route">Lekki → Victoria Island</span>
             <span className="wh-toast-meta">Rider offers ₦5,500 · 18 km · 2 min to pickup</span>
@@ -135,7 +166,7 @@ export default function LandingHero() {
               <span className="wh-toast-accept">Accept</span>
               <span className="wh-toast-skip">Skip</span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

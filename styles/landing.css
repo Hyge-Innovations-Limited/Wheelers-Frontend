@@ -736,3 +736,42 @@
 .wh-dphone-screen--wa .wh-wa-bubble { font-size: 13px; }
 /* Rows that framer brings in: the stylesheet's own pop animation would fight it. */
 .wh-wa-row--plain { animation: none; }
+
+/* ─── motion ──────────────────────────────────────────────── */
+/* How far down the page you are. */
+.wh-progress { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--wh-orange); transform-origin: 0 50%; z-index: 40; }
+
+/* A heading's lines rise from behind their own baseline. */
+.wh-line { display: block; overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
+.wh-line-in { display: block; will-change: transform; }
+
+/* The strip of words is moved by the page, not by a clock. */
+.wh-ticker-track--driven { animation: none; }
+
+/* The slab is positioned by its drifting wrapper. */
+.wh-hero-slab-drift { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+
+/* A strip of road between sections, with the car the scroll drives. */
+.wh-road { position: relative; height: 84px; background: var(--wh-ink); border-top: 3px solid var(--wh-ink); overflow: hidden; }
+.wh-road-dashes {
+  position: absolute; left: -300px; right: -300px; top: 50%; height: 5px; margin-top: 12px;
+  background: repeating-linear-gradient(90deg, var(--wh-cream) 0 38px, transparent 38px 76px);
+  opacity: .9;
+}
+.wh-road-car { position: absolute; bottom: 9px; width: 132px; will-change: left; }
+.wh-road-car svg { display: block; }
+
+/* Hovering a feature: it lifts off the grid and its number lights up. */
+.wh-feature { position: relative; transition: background .25s, transform .2s cubic-bezier(.2, .9, .2, 1), box-shadow .2s cubic-bezier(.2, .9, .2, 1); }
+.wh-feature:hover { transform: translate(-4px, -4px); box-shadow: 7px 7px 0 var(--wh-ink); z-index: 1; }
+.wh-feature-num { transition: background .2s, color .2s, transform .2s; }
+.wh-feature:hover .wh-feature-num { background: var(--wh-orange); color: var(--wh-ink); transform: rotate(-6deg) scale(1.08); }
+
+/* The R and D badges tip over when their side is pointed at. */
+.wh-side-badge { transition: transform .25s cubic-bezier(.2, .9, .2, 1); }
+.wh-side:hover .wh-side-badge { transform: rotate(-8deg) scale(1.06); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wh-feature, .wh-feature-num, .wh-side-badge { transition: none; }
+  .wh-feature:hover, .wh-feature:hover .wh-feature-num, .wh-side:hover .wh-side-badge { transform: none; }
+}

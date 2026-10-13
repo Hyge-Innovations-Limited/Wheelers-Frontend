@@ -1,7 +1,9 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { WHATSAPP_URL } from "@/lib/landing-links";
+import { Lines } from "./motion";
 
 const POOL = [
   { name: "Adebayo F.", car: "Toyota Camry", plate: "KJA-482-XY" },
@@ -82,11 +84,15 @@ export default function MatchBand() {
       <div className="wh-container wh-band-inner">
         <div className="wh-band-copy" data-wh-reveal="1">
           <span className="wh-band-tag">Drivers near you</span>
-          <h2 className="wh-h2">
-            Match in <span className="wh-serif">30 seconds.</span>
-            <br />
-            Every single time.
-          </h2>
+          <Lines
+            className="wh-h2"
+            lines={[
+              <>
+                Match in <span className="wh-serif">30 seconds.</span>
+              </>,
+              "Every single time.",
+            ]}
+          />
           <p>
             Your WhatsApp message pings every verified driver in that hub. The first to accept on the Driver app is
             locked to you before you blink. Lagos-wide, always live.
@@ -108,8 +114,16 @@ export default function MatchBand() {
               <span className="wh-panel-zone">{zone}</span>
             </div>
             {drivers.length === 0 && <div className="wh-panel-empty" />}
-            {drivers.map((d) => (
-              <div key={d.key} className="wh-driver-row">
+            {/* Each refresh, the old list drops out and the nearest drivers slide in, closest first. */}
+            <AnimatePresence mode="popLayout" initial={false}>
+            {drivers.map((d, index) => (
+              <motion.div
+                key={d.key}
+                className="wh-driver-row"
+                initial={{ opacity: 0, x: 36 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
+                transition={{ type: "spring", stiffness: 380, damping: 28, delay: index * 0.07 }}>
                 <span className="wh-driver-avatar" style={{ background: d.avatarBg }}>
                   {d.initials}
                 </span>
@@ -125,8 +139,9 @@ export default function MatchBand() {
                     {d.rating}★ · {d.trips}
                   </span>
                 </span>
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
             <span className="wh-panel-foot">Live from the Driver app · refreshes every few seconds</span>
           </div>
         </div>

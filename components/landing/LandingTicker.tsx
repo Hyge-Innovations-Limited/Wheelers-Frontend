@@ -1,3 +1,7 @@
+"use client";
+
+import { RollingStrip } from "./motion";
+
 const ITEMS = [
   "Ride on WhatsApp or in the app",
   "Name your price, choose your driver",
@@ -7,26 +11,15 @@ const ITEMS = [
   "Lagos-wide · always live",
 ];
 
-function Group({ hidden = false }: { hidden?: boolean }) {
+export default function LandingTicker() {
   return (
-    <span className="wh-ticker-group" aria-hidden={hidden || undefined}>
+    <RollingStrip>
       {ITEMS.map((t) => (
         <span key={t} style={{ display: "contents" }}>
           <span>{t}</span>
           <span>●</span>
         </span>
       ))}
-    </span>
-  );
-}
-
-export default function LandingTicker() {
-  return (
-    <div className="wh-ticker">
-      <div className="wh-ticker-track">
-        <Group />
-        <Group hidden />
-      </div>
-    </div>
+    </RollingStrip>
   );
 }

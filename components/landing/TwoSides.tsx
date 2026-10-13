@@ -1,21 +1,31 @@
+"use client";
+
 import { WHATSAPP_URL } from "@/lib/landing-links";
+import { Lines, PullIn, Stamp } from "./motion";
 import StoreBadges from "./StoreBadges";
 
 export default function TwoSides() {
   return (
     <section id="riders" className="wh-section" style={{ background: "#FFF8EC" }}>
       <div className="wh-container wh-section-inner">
-        <div className="wh-section-head" data-wh-reveal="1">
-          <span className="wh-eyebrow">Who it&rsquo;s for</span>
-          <h2 className="wh-h2">
-            Two sides of
-            <br />
-            the <span className="wh-serif">same road</span>
-          </h2>
+        <div className="wh-section-head">
+          <Stamp>
+            <span className="wh-eyebrow">Who it&rsquo;s for</span>
+          </Stamp>
+          <Lines
+            className="wh-h2"
+            lines={[
+              "Two sides of",
+              <>
+                the <span className="wh-serif">same road</span>
+              </>,
+            ]}
+          />
         </div>
 
-        <div className="wh-sides" data-wh-reveal="1" style={{ "--wh-d": "120ms" } as React.CSSProperties}>
-          <div className="wh-side wh-side--riders">
+        {/* Riders pull in from the left, drivers from the right, and meet in the middle. */}
+        <div className="wh-sides">
+          <PullIn className="wh-side wh-side--riders" from="left">
             <div className="wh-side-top">
               <span className="wh-side-badge wh-side-badge--wa">R</span>
               <span className="wh-side-index">01 · WhatsApp or app</span>
@@ -39,9 +49,9 @@ export default function TwoSides() {
             >
               Message Wheelers →
             </a>
-          </div>
+          </PullIn>
 
-          <div id="drivers" className="wh-side wh-side--drivers">
+          <PullIn id="drivers" className="wh-side wh-side--drivers" from="right" delay={0.08}>
             <div className="wh-side-top">
               <span className="wh-side-badge wh-side-badge--orange">D</span>
               <span className="wh-side-index">02 · iOS + Android</span>
@@ -58,7 +68,7 @@ export default function TwoSides() {
               <li>Referral income on every driver you bring in</li>
             </ul>
             <StoreBadges small />
-          </div>
+          </PullIn>
         </div>
       </div>
     </section>
