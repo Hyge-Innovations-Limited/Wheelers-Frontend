@@ -11,7 +11,7 @@ import {
   formatNaira,
   formatNumber,
   formatWhen,
-  humanise,
+  driverVerificationWords, humanise,
   initialsOf,
   statusBadgeClass,
 } from "@/lib/admin-format";
@@ -146,7 +146,7 @@ function UsersDirectory() {
                       {u.isDriver ? (
                         <span className="admin-stack">
                           <span className={statusBadgeClass(u.driverStatus)}>{humanise(u.driverStatus)}</span>
-                          <em>KYC {humanise(u.driverKycStatus)}</em>
+                          <em>{driverVerificationWords(u.driverKycStatus)}</em>
                         </span>
                       ) : (
                         <span className={statusBadgeClass(u.riderKycStatus === "VERIFIED" ? "VERIFIED" : "")}>

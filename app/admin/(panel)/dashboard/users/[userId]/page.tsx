@@ -11,7 +11,7 @@ import {
   formatNaira,
   formatNumber,
   formatWhen,
-  humanise,
+  driverVerificationWords, humanise,
   initialsOf,
   statusBadgeClass,
 } from "@/lib/admin-format";
@@ -58,7 +58,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
               {isDriver ? `Driver · ${humanise(driver!.status)}` : "Rider"}
             </span>
             {isDriver ? (
-              <span className={statusBadgeClass(driver!.kycStatus)}>KYC {humanise(driver!.kycStatus)}</span>
+              <span className={statusBadgeClass(driver!.kycStatus)}>{driverVerificationWords(driver!.kycStatus)}</span>
             ) : (
               <span className={statusBadgeClass(user.riderKycStatus)}>
                 {user.riderKycStatus === "VERIFIED" ? "Identity verified" : `KYC ${humanise(user.riderKycStatus)}`}
@@ -81,10 +81,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end" }}>
-          {isDriver ? (
+          {isDriver && driver!.kycStatus !== "PENDING" ? (
             <Link href={`/admin/dashboard/drivers/${driver!.id}`} className="admin-btn-primary">
               Review KYC documents
             </Link>
+          ) : null}
+          {/* Signed up as a driver and sent nothing: there is nothing to review, and they cannot drive. */}
+          {isDriver && driver!.kycStatus === "PENDING" ? (
+            <span style={{ maxWidth: 320, textAlign: "right", fontSize: 13, color: "#7A7167" }}>
+              Chose Drive and created an account, but has not sent any documents. They are held on the verification screens and cannot go online.
+            </span>
           ) : null}
           <SignOutEverywhere userId={user.id} name={user.name ?? user.username ?? user.phone ?? "this person"} />
         </div>

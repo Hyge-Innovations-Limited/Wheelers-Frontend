@@ -248,7 +248,13 @@ export default function DriverReviewPage() {
   }
 
   if (loading) return <div className="admin-loading">Loading driver...</div>;
-  if (!driver) return <div className="admin-empty">Driver not found.</div>;
+  if (!driver) {
+    return (
+      <div className="admin-empty">
+        Nothing to review. This person has not sent any documents yet, or the link is to a driver who no longer exists. A driver who has sent nothing cannot go online.
+      </div>
+    );
+  }
 
   const sub = driver.submission;
   const fs = sub.fieldStatuses || {};

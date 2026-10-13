@@ -132,6 +132,26 @@ export function humanise(value: string | null | undefined): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/**
+ * Where a driver's verification stands, in words nobody has to decode.
+ * PENDING is the one that misleads: it is not "waiting on us", it is a person
+ * who signed up as a driver and has sent nothing. They cannot go online.
+ */
+export function driverVerificationWords(status: string | null | undefined): string {
+  switch (status) {
+    case "PENDING":
+      return "No documents sent";
+    case "SUBMITTED":
+      return "Documents waiting for review";
+    case "APPROVED":
+      return "Verified";
+    case "REJECTED":
+      return "Sent back to fix";
+    default:
+      return humanise(status);
+  }
+}
+
 export function initialsOf(name: string | null | undefined, fallback = "?"): string {
   const trimmed = (name ?? "").trim();
   if (!trimmed) return fallback;
