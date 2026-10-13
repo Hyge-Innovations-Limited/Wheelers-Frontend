@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Bricolage_Grotesque, Hanken_Grotesk, Poppins } from "next/font/google";
 import LandingPage from "@/components/landing/LandingPage";
 
 import "../styles/landing.css";
@@ -11,6 +11,11 @@ const poppins = Poppins({
   variable: "--font-poppins",
   display: "swap",
 });
+
+// The app's own type, used only inside the phone that shows the app, so the
+// screens on the page look like the screens on a phone.
+const bricolage = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-bricolage", display: "swap" });
+const hanken = Hanken_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-hanken", display: "swap" });
 
 const title = "Ride from WhatsApp. Drive from the app.";
 const description =
@@ -35,6 +40,6 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LandingPage className={poppins.variable} />
+    <LandingPage className={`${poppins.variable} ${bricolage.variable} ${hanken.variable}`} />
   );
 }

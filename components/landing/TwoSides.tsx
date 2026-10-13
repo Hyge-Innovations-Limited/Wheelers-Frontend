@@ -22,12 +22,12 @@ export default function TwoSides() {
             </div>
             <h3>For riders</h3>
             <p>
-              Book in the Wheelers app or on WhatsApp, whichever you prefer. Send your pickup and destination, and a
-              fixed fare comes back before you commit. Confirm once and you&rsquo;re booked.
+              Book in the Wheelers app or on WhatsApp, whichever you prefer. Say where you&rsquo;re going, name the
+              price you want to pay, and pick from the drivers who answer.
             </p>
             <ul className="wh-bullets">
               <li>In the app, or on any phone that runs WhatsApp</li>
-              <li>Fixed fare, locked before you book — no surge</li>
+              <li>You name the price; drivers accept it or make an offer</li>
               <li>Live tracking and driver details, in the app or the chat</li>
               <li>Pay with wallet, card or USDT</li>
             </ul>

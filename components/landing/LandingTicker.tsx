@@ -1,7 +1,7 @@
 const ITEMS = [
-  "No app for riders · book on WhatsApp",
-  "Fixed fare before you say yes",
-  "Driver app on iOS + Android",
+  "Ride on WhatsApp or in the app",
+  "Name your price, choose your driver",
+  "One app for riders and drivers",
   "KYC-verified drivers only",
   "Pay NGN, card or USDT",
   "Lagos-wide · always live",

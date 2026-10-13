@@ -338,16 +338,17 @@
   box-shadow: 12px 12px 0 var(--wh-ink), 0 0 0 3px var(--wh-ink);
 }
 .wh-phone-screen {
-  background: #EFE7DC;
+  background: #0B141A;
   border-radius: 34px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 720px;
 }
-.wh-wa-header { background: #075E54; color: var(--wh-cream); padding: 34px 18px 12px; display: flex; align-items: center; gap: 12px; }
+.wh-wa-header { background: #1F2C34; color: #E9EDEF; padding: 34px 18px 12px; display: flex; align-items: center; gap: 12px; }
 .wh-wa-header .wh-wa-back { font-size: 18px; opacity: .9; }
-.wh-wa-header img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--wh-cream); }
+.wh-wa-header img { width: 36px; height: 36px; border-radius: 50%; }
+.wh-wa-more { margin-left: auto; font-size: 20px; opacity: .9; }
 .wh-wa-header-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
 .wh-wa-header-text strong { font-weight: 700; font-size: 15px; }
 .wh-wa-header-text small { font-size: 11px; opacity: .8; }
@@ -358,12 +359,12 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 12px;
-  background-color: #EFE7DC;
-  background-image: radial-gradient(rgba(20, 18, 16, .07) 1px, transparent 1px);
+  background-color: #0B141A;
+  background-image: radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px);
   background-size: 14px 14px;
   overflow: hidden;
 }
-.wh-wa-day { align-self: center; background: var(--wh-cream); border-radius: 8px; padding: 5px 10px; font-size: 11px; color: var(--wh-muted-2); box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
+.wh-wa-day { align-self: center; background: #1F2C34; border-radius: 8px; padding: 5px 10px; font-size: 11px; color: #8696A0; }
 .wh-wa-row { display: flex; animation: wh-pop .32s ease-out both; }
 .wh-wa-row--rider { justify-content: flex-end; }
 .wh-wa-row--bot { justify-content: flex-start; }
@@ -372,20 +373,22 @@
   padding: 8px 10px 6px;
   font-size: 13.5px;
   line-height: 1.4;
-  color: var(--wh-ink);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, .1);
+  color: #E9EDEF;
   white-space: pre-line;
 }
-.wh-wa-row--rider .wh-wa-bubble { background: #DCF8C6; border-radius: 12px 2px 12px 12px; }
-.wh-wa-row--bot .wh-wa-bubble { background: #FFFFFF; border-radius: 2px 12px 12px 12px; }
-.wh-wa-time { display: block; text-align: right; font-size: 10px; color: #6B635A; margin-top: 3px; }
-.wh-wa-typing { background: #FFFFFF; border-radius: 2px 12px 12px 12px; padding: 10px 14px; display: flex; gap: 5px; box-shadow: 0 1px 0 rgba(0, 0, 0, .1); }
-.wh-wa-typing span { width: 7px; height: 7px; border-radius: 50%; background: #6B635A; display: block; animation: wh-dot 1.2s infinite; }
+.wh-wa-row--rider .wh-wa-bubble { background: #005C4B; border-radius: 12px 2px 12px 12px; }
+.wh-wa-row--bot .wh-wa-bubble { background: #1F2C34; border-radius: 2px 12px 12px 12px; }
+.wh-wa-bubble strong { font-weight: 700; }
+/* The button under a message: Quick Actions, Choose, Accept. */
+.wh-wa-action { display: block; margin: 8px -10px -6px; padding: 10px; border-top: 1px solid rgba(255, 255, 255, .1); text-align: center; color: #25D366; font-weight: 600; font-size: 13.5px; }
+.wh-wa-time { display: block; text-align: right; font-size: 10px; color: #8696A0; margin-top: 3px; }
+.wh-wa-typing { background: #1F2C34; border-radius: 2px 12px 12px 12px; padding: 10px 14px; display: flex; gap: 5px; box-shadow: 0 1px 0 rgba(0, 0, 0, .1); }
+.wh-wa-typing span { width: 7px; height: 7px; border-radius: 50%; background: #8696A0; display: block; animation: wh-dot 1.2s infinite; }
 .wh-wa-typing span:nth-child(2) { animation-delay: .2s; }
 .wh-wa-typing span:nth-child(3) { animation-delay: .4s; }
-.wh-wa-input { background: #F6F1E8; padding: 8px 10px 18px; display: flex; gap: 8px; align-items: center; }
-.wh-wa-input-field { flex: 1; background: #FFFFFF; border-radius: 20px; padding: 10px 14px; font-size: 13px; color: var(--wh-sand-2); }
-.wh-wa-send { width: 38px; height: 38px; border-radius: 50%; background: #128C7E; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+.wh-wa-input { background: #0B141A; padding: 8px 10px 18px; display: flex; gap: 8px; align-items: center; }
+.wh-wa-input-field { flex: 1; background: #1F2C34; border-radius: 20px; padding: 10px 14px; font-size: 13px; color: #8696A0; }
+.wh-wa-send { width: 38px; height: 38px; border-radius: 50%; background: #00A884; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
 
 /* driver toast */
 .wh-toast {
@@ -522,7 +525,7 @@
   padding: 12px;
   box-shadow: 10px 10px 0 var(--wh-orange), 0 0 0 3px var(--wh-ink);
 }
-.wh-dphone-screen { background: #1E1B18; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; height: 540px; color: var(--wh-cream); }
+.wh-dphone-screen { background: #1E1B18; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; height: 600px; color: var(--wh-cream); }
 .wh-dphone-top { padding: 30px 20px 14px; display: flex; justify-content: space-between; align-items: center; }
 .wh-dphone-brand { display: flex; align-items: center; gap: 10px; }
 .wh-dphone-brand img { width: 30px; height: 30px; border-radius: 8px; }
@@ -713,23 +716,76 @@
 }
 
 
-/* ─── how it works: what the phone shows for each step ───── */
-.wh-dphone-stage { position: relative; flex: 1; min-height: 0; padding: 4px 18px 18px; display: flex; flex-direction: column; }
-.wh-dstep { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
-.wh-dstep .wh-dphone-earn, .wh-dstep .wh-dphone-req, .wh-dstep .wh-dphone-map { margin: 0; }
-.wh-dstep-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--wh-sand); }
-.wh-dstep-door { display: flex; flex-direction: column; gap: 2px; padding: 16px; border: 2px solid #3A352F; border-radius: 16px; background: #26221E; }
-.wh-dstep-door strong { font-weight: 700; font-size: 16px; }
-.wh-dstep-door span { font-size: 13px; color: var(--wh-sand); }
-.wh-dstep-door--app { border-color: var(--wh-orange); }
-.wh-dstep-door--wa { border-color: var(--wh-wa); }
-.wh-dstep-bubble { align-self: flex-end; margin-top: auto; padding: 10px 16px; border-radius: 16px 16px 4px 16px; background: var(--wh-wa); color: var(--wh-ink); font-weight: 700; font-size: 15px; }
-.wh-dstep-route { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--wh-cream); color: var(--wh-ink); }
-.wh-dstep-stop { display: flex; align-items: center; gap: 12px; }
-.wh-dstep-stop small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wh-muted-2); }
-.wh-dstep-stop strong { font-weight: 700; font-size: 15px; }
-.wh-dstep-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wh-ink); flex: none; }
-.wh-dstep-dot--to { border-radius: 3px; background: var(--wh-orange); }
-.wh-dphone-map--short { flex: 1; min-height: 160px; }
-.wh-dstep-confirm { padding: 14px; border-radius: 14px; background: var(--wh-cream); color: var(--wh-ink); text-align: center; font-weight: 700; font-size: 15px; }
-.wh-dstep-note { font-size: 13px; color: var(--wh-sand); text-align: center; }
+/* ─── how it works: the phone shows the Wheelers app itself ─ */
+.wh-app {
+  --app-cream: #FEFAEF; --app-ink: #0D0D0D; --app-orange: #FF7700; --app-muted: #786F68; --app-line: #E6DFD2;
+  background: var(--app-cream) !important;
+  color: var(--app-ink) !important;
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  position: relative;
+}
+.wh-app b, .wh-app strong { font-weight: 700; }
+.wh-app small { display: block; font-size: 11.5px; color: var(--app-muted); }
+.wh-app-view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.wh-app-view--pad { padding: 38px 16px 18px; gap: 12px; }
+.wh-app-title { font-family: var(--font-bricolage), var(--font-hanken), sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -.02em; line-height: 1.1; }
+.wh-app-title--sm { font-size: 19px; }
+.wh-app-label { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--app-muted); }
+.wh-app-row { display: flex; gap: 8px; }
+.wh-app-cta { margin-top: auto; padding: 14px; border-radius: 16px; background: var(--app-orange); color: var(--app-ink); text-align: center; font-weight: 700; font-size: 15px; }
+
+/* Home */
+.wh-app-map { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.wh-app-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wh-app-place { position: absolute; font-size: 12px; font-weight: 600; color: #3E3831; }
+.wh-app-me { position: absolute; left: 56%; top: 62%; width: 12px; height: 12px; border-radius: 50%; background: #2F6BFF; border: 2px solid #fff; box-shadow: 0 0 0 6px rgba(47, 107, 255, .2); }
+.wh-app-tile { position: absolute; left: 14px; top: 40px; width: 40px; height: 40px; border-radius: 10px; }
+.wh-app-wallet { position: absolute; right: 14px; top: 42px; display: flex; align-items: center; gap: 6px; padding: 9px 13px; border-radius: 999px; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; }
+.wh-app-sheet { display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 12px; margin-top: -16px; border-radius: 22px 22px 0 0; background: var(--app-cream); position: relative; }
+.wh-app-handle { align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #B8AE9E; }
+.wh-app-search { flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 2px solid var(--app-ink); border-radius: 14px; background: #fff; font-size: 13px; color: var(--app-muted); }
+.wh-app-later { display: flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 14px; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; }
+.wh-app-chip { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; font-size: 13px; }
+.wh-app-chip small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wh-app-chip--ink { background: var(--app-ink); border-color: var(--app-ink); }
+.wh-app-chip--ink b { color: var(--app-orange); }
+.wh-app-chip--ink small { color: #CFC6B8; }
+.wh-app-tabs { display: flex; justify-content: space-around; padding: 8px 8px 14px; border-top: 1px solid var(--app-line); background: var(--app-cream); }
+.wh-app-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; color: var(--app-muted); }
+.wh-app-tab i { width: 18px; height: 18px; border-radius: 6px; border: 2px solid currentColor; }
+.wh-app-tab--on { color: var(--app-ink); }
+.wh-app-tab--on i { background: var(--app-ink); }
+
+/* Plan your trip */
+.wh-app-head { display: flex; align-items: center; gap: 10px; justify-content: flex-start; }
+.wh-app-back { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 2px solid var(--app-ink); border-radius: 50%; font-size: 18px; line-height: 1; }
+.wh-app-fields { border: 2px solid var(--app-ink); border-radius: 16px; background: #fff; padding: 2px 12px; }
+.wh-app-field { display: flex; align-items: center; gap: 10px; min-height: 42px; font-size: 13.5px; border-bottom: 1px solid var(--app-line); }
+.wh-app-field:last-child { border-bottom: 0; }
+.wh-app-field small { width: 38px; font-weight: 700; letter-spacing: .06em; font-size: 10px; }
+.wh-app-field--on { border-bottom: 2px solid var(--app-orange) !important; }
+.wh-app-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--app-ink); flex: none; }
+.wh-app-dot--to { border-radius: 2px; background: var(--app-orange); }
+.wh-app-caret { display: inline-block; width: 2px; height: 14px; margin-left: 1px; vertical-align: -2px; background: var(--app-orange); animation: wh-blink 1s step-end infinite; }
+.wh-app-result { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--app-line); font-size: 13.5px; }
+.wh-app-pin { width: 30px; height: 30px; border-radius: 50%; background: #FFF0E0; border: 2px solid var(--app-orange); flex: none; }
+
+/* Set your price */
+.wh-app-trip { padding: 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; }
+.wh-app-price { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 12px; border-radius: 18px; background: var(--app-ink); }
+.wh-app-price strong { font-family: var(--font-bricolage), sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -.02em; color: var(--app-orange); }
+.wh-app-step { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3A3A3A; color: var(--app-cream); font-size: 20px; }
+.wh-app-suggest { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--app-line); border-radius: 14px; background: #fff; font-size: 13.5px; }
+.wh-app-note { text-align: center; }
+
+/* Driver offers */
+.wh-app-head .wh-app-yours { margin-left: auto; padding: 6px 10px; border-radius: 999px; background: var(--app-ink); color: var(--app-cream); font-size: 11.5px; font-weight: 700; }
+.wh-app-offer { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--app-line); border-radius: 18px; background: #fff; }
+.wh-app-offer--best { border: 2px solid var(--app-ink); }
+.wh-app-offer-top { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.wh-app-offer-top > div { flex: 1; min-width: 0; }
+.wh-app-offer-top > strong { font-family: var(--font-bricolage), sans-serif; font-weight: 800; font-size: 19px; }
+.wh-app-avatar { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--app-ink); color: var(--app-cream); font-weight: 700; font-size: 13px; flex: none; }
+.wh-app-offer-actions { display: flex; gap: 8px; }
+.wh-app-accept { flex: 2; padding: 10px; border-radius: 12px; background: var(--app-orange); text-align: center; font-weight: 700; font-size: 13.5px; }
+.wh-app-decline { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid var(--app-ink); text-align: center; font-weight: 700; font-size: 13.5px; }

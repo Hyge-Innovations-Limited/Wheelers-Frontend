@@ -6,18 +6,18 @@ import { useEffect, useState } from "react";
 /**
  * How it works: four steps on the left, a phone on the right. The steps take
  * turns: every few seconds the next one lights up and the phone shows what
- * that step looks like (opening Wheelers, the trip, the fare, the driver's
- * side accepting it). Pointing at a step holds it; clicking one picks it.
+ * that step looks like in the Wheelers app itself: Home, Plan your trip,
+ * Set your price, and the drivers' offers. Pointing at a step holds it; clicking one picks it.
  * With reduced motion on, nothing moves by itself and the last step shows.
  */
 const STEPS = [
   { n: "01", title: "Open Wheelers", body: "In the app or on WhatsApp. Either way, your phone number is your account." },
   { n: "02", title: "Say where you're going", body: "Type pickup and destination, or drop a location pin." },
-  { n: "03", title: "Get a fixed fare", body: "Price, distance and ETA come back in seconds. Confirm to lock it." },
+  { n: "03", title: "Name your price", body: "See the suggested price, then offer what you want to pay. Drivers reply with their offers." },
   {
     n: "04",
-    title: "Driver matched",
-    body: "A verified driver accepts on their side. You get their name, plate and live tracking, in the app or the chat.",
+    title: "Choose your driver",
+    body: "Each offer shows the driver's name, car and rating. Accept the one you want and track them to your door.",
   },
 ];
 
@@ -102,126 +102,193 @@ export default function HowItWorks() {
 
         <div id="driverapp" className="wh-driver-visual" data-wh-reveal="1" style={{ "--wh-d": "200ms" } as React.CSSProperties}>
           <div className="wh-dphone">
-            <div className="wh-dphone-screen">
-              <div className="wh-dphone-top">
-                {/* The wordmark as the app shows it, in place of the old square tile. */}
-                <span className="wh-wordmark wh-wordmark--sm" role="img" aria-label="Wheelers" />
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.span key={active === 3 ? "driver" : "rider"} className="wh-dphone-online" {...swap}>
-                    <span className="wh-live-dot" />
-                    {active === 3 ? "Driver · online" : "Rider"}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
+            {/* The rider's screens as the app draws them: cream, ink and orange, the app's own type. */}
+            <div className="wh-dphone-screen wh-app">
+              <AnimatePresence mode="wait" initial={false}>
+                {active === 0 ? (
+                  <motion.div key="home" className="wh-app-view" {...swap}>
+                    <div className="wh-app-map">
+                      <svg viewBox="0 0 320 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                        <rect width="320" height="300" fill="#F3F0EA" />
+                        <path d="M0 232 C 60 205, 120 250, 190 228 S 290 205, 320 222 L320 300 L0 300 Z" fill="#A9D7EA" />
+                        <path d="M170 150 c22 -16 52 -6 56 16 c4 22 -22 38 -44 30 c-20 -8 -28 -32 -12 -46 Z" fill="#A9D7EA" />
+                        <path d="M-10 70 L120 96 L210 60 L330 88" stroke="#FFFFFF" strokeWidth="7" fill="none" />
+                        <path d="M60 -10 L88 110 L70 210" stroke="#FFFFFF" strokeWidth="5" fill="none" />
+                        <path d="M230 -10 L214 120 L250 200" stroke="#FFFFFF" strokeWidth="5" fill="none" />
+                        <path d="M120 96 L150 170" stroke="#FFFFFF" strokeWidth="4" fill="none" />
+                      </svg>
+                      <span className="wh-app-place" style={{ left: "14%", top: "52%" }}>Ibeshe</span>
+                      <span className="wh-app-place" style={{ left: "50%", top: "70%" }}>Ilemere</span>
+                      <span className="wh-app-me" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="wh-app-tile" src="/wheelers-mark.svg" alt="" width={40} height={40} />
+                      <span className="wh-app-wallet">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FF7700" strokeWidth="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M16 12.5h2" /></svg>
+                        ₦4,200
+                      </span>
+                    </div>
+                    <div className="wh-app-sheet">
+                      <span className="wh-app-handle" />
+                      <strong className="wh-app-title">Where are you going?</strong>
+                      <div className="wh-app-row">
+                        <span className="wh-app-search">
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                          Search destination
+                        </span>
+                        <span className="wh-app-later">Later</span>
+                      </div>
+                      <span className="wh-app-label">Last ride</span>
+                      <div className="wh-app-row">
+                        <span className="wh-app-chip wh-app-chip--ink">
+                          <b>Repeat</b>
+                          <small>Ilemere Rd to Ikorodu…</small>
+                        </span>
+                        <span className="wh-app-chip">
+                          <b>Reverse</b>
+                          <small>Ikorodu Garage to Ile…</small>
+                        </span>
+                      </div>
+                    </div>
+                    <AppTabs />
+                  </motion.div>
+                ) : null}
 
-              <div className="wh-dphone-stage">
-                <AnimatePresence mode="wait" initial={false}>
-                  {active === 0 ? (
-                    <motion.div key="open" className="wh-dstep" {...swap}>
-                      <span className="wh-dstep-label">Two ways in</span>
-                      <div className="wh-dstep-door wh-dstep-door--app">
-                        <strong>The Wheelers app</strong>
-                        <span>iPhone and Android</span>
+                {active === 1 ? (
+                  <motion.div key="plan" className="wh-app-view wh-app-view--pad" {...swap}>
+                    <div className="wh-app-head">
+                      <span className="wh-app-back">‹</span>
+                      <strong className="wh-app-title wh-app-title--sm">Plan your trip</strong>
+                    </div>
+                    <div className="wh-app-fields">
+                      <div className="wh-app-field">
+                        <span className="wh-app-dot" />
+                        <small>FROM</small>
+                        <b>Ilemere Rd, Ikorodu</b>
                       </div>
-                      <div className="wh-dstep-door wh-dstep-door--wa">
-                        <strong>WhatsApp</strong>
-                        <span>Say hi to Wheelers. Nothing to install.</span>
+                      <div className="wh-app-field wh-app-field--on">
+                        <span className="wh-app-dot wh-app-dot--to" />
+                        <small>TO</small>
+                        <Typed text="University of Lagos" />
                       </div>
-                      <div className="wh-dstep-bubble">Hi 👋</div>
-                    </motion.div>
-                  ) : null}
-
-                  {active === 1 ? (
-                    <motion.div key="where" className="wh-dstep" {...swap}>
-                      <span className="wh-dstep-label">Plan your trip</span>
-                      <div className="wh-dstep-route">
-                        <div className="wh-dstep-stop">
-                          <span className="wh-dstep-dot" />
-                          <div>
-                            <small>From</small>
-                            <strong>Admiralty Way, Lekki</strong>
-                          </div>
-                        </div>
-                        <div className="wh-dstep-stop">
-                          <span className="wh-dstep-dot wh-dstep-dot--to" />
-                          <div>
-                            <small>To</small>
-                            <motion.strong initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.4 }}>
-                              Ozumba Mbadiwe, VI
-                            </motion.strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="wh-dphone-map wh-dphone-map--short">
-                        <span className="wh-map-me" />
-                        <span className="wh-map-ping" />
-                        <span className="wh-map-rider" />
-                        <svg viewBox="0 0 300 200" preserveAspectRatio="none" className="wh-map-route" aria-hidden="true">
-                          <motion.path
-                            d="M108 78 C 150 70, 170 60, 196 46"
-                            stroke="#FF7700"
-                            strokeWidth="4"
-                            fill="none"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ delay: 0.6, duration: 0.9, ease: "easeOut" }}
-                          />
-                        </svg>
-                      </div>
-                    </motion.div>
-                  ) : null}
-
-                  {active === 2 ? (
-                    <motion.div key="fare" className="wh-dstep" {...swap}>
-                      <span className="wh-dstep-label">Your fare</span>
-                      <div className="wh-dphone-earn">
-                        <span className="wh-dphone-earn-label">Admiralty Way → Ozumba Mbadiwe</span>
-                        <span className="wh-dphone-earn-amt">₦5,684</span>
-                        <span className="wh-dphone-earn-delta">18 km · about 24 min</span>
-                      </div>
+                    </div>
+                    <span className="wh-app-label">Matching places</span>
+                    {["University of Lagos, Akoka", "University of Lagos Gate, Yaba", "UNILAG Senate Building"].map((place, index) => (
                       <motion.div
-                        className="wh-dstep-confirm"
-                        initial={{ scale: 0.96 }}
-                        animate={{ scale: [0.96, 1.02, 1] }}
-                        transition={{ delay: 0.9, duration: 0.5 }}>
-                        Confirm this fare
+                        key={place}
+                        className="wh-app-result"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.1 + index * 0.14, duration: 0.3 }}>
+                        <span className="wh-app-pin" />
+                        <div>
+                          <b>{place}</b>
+                          <small>Lagos</small>
+                        </div>
                       </motion.div>
-                      <span className="wh-dstep-note">The price you see is the price you pay.</span>
-                    </motion.div>
-                  ) : null}
+                    ))}
+                    <span className="wh-app-cta">Continue</span>
+                  </motion.div>
+                ) : null}
 
-                  {active === 3 ? (
-                    <motion.div key="match" className="wh-dstep" {...swap}>
-                      <div className="wh-dphone-earn">
-                        <span className="wh-dphone-earn-label">Earned today</span>
-                        <span className="wh-dphone-earn-amt">₦12,400</span>
-                        <span className="wh-dphone-earn-delta">↑ 18% vs yesterday · 7 trips</span>
-                      </div>
-                      <div className="wh-dphone-req">
-                        <div className="wh-dphone-req-top">
-                          <span className="wh-dphone-req-label">New request · 0:28</span>
-                          <span className="wh-dphone-req-fare">₦5,684</span>
+                {active === 2 ? (
+                  <motion.div key="price" className="wh-app-view wh-app-view--pad" {...swap}>
+                    <div className="wh-app-head">
+                      <span className="wh-app-back">‹</span>
+                      <strong className="wh-app-title wh-app-title--sm">Set your price</strong>
+                    </div>
+                    <div className="wh-app-trip">
+                      <small>Ilemere Rd → University of Lagos</small>
+                      <small>34 km · about 58 min</small>
+                    </div>
+                    <div className="wh-app-price">
+                      <span className="wh-app-step">−</span>
+                      <motion.strong
+                        initial={{ scale: 0.9, opacity: 0.4 }}
+                        animate={{ scale: [0.9, 1.08, 1], opacity: 1 }}
+                        transition={{ delay: 0.4, duration: 0.5 }}>
+                        ₦6,500
+                      </motion.strong>
+                      <span className="wh-app-step">+</span>
+                    </div>
+                    <div className="wh-app-suggest">
+                      <span>Suggested price</span>
+                      <b>₦7,350</b>
+                    </div>
+                    <small className="wh-app-note">You are offering ₦850 under the suggested price.</small>
+                    <span className="wh-app-cta">Find drivers</span>
+                  </motion.div>
+                ) : null}
+
+                {active === 3 ? (
+                  <motion.div key="offers" className="wh-app-view wh-app-view--pad" {...swap}>
+                    <div className="wh-app-head">
+                      <strong className="wh-app-title wh-app-title--sm">Driver offers</strong>
+                      <span className="wh-app-yours">Your price ₦6,500</span>
+                    </div>
+                    {[
+                      { initials: "TA", name: "Tunde A.", car: "Toyota Corolla · LAG-482-XY", meta: "4.9★ · 4 min away", price: "₦6,500", best: true },
+                      { initials: "AU", name: "Amaka U.", car: "Honda Civic · GGE-845-TL", meta: "5.0★ · 6 min away", price: "₦7,000", best: false },
+                    ].map((offer, index) => (
+                      <motion.div
+                        key={offer.name}
+                        className={`wh-app-offer${offer.best ? " wh-app-offer--best" : ""}`}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 + index * 0.45, duration: 0.35 }}>
+                        <div className="wh-app-offer-top">
+                          <span className="wh-app-avatar">{offer.initials}</span>
+                          <div>
+                            <b>{offer.name}</b>
+                            <small>{offer.car}</small>
+                            <small>{offer.meta}</small>
+                          </div>
+                          <strong>{offer.price}</strong>
                         </div>
-                        <span className="wh-dphone-req-route">Admiralty Way → Ozumba Mbadiwe</span>
-                        <span className="wh-dphone-req-meta">18 km · 2 min to pickup</span>
-                        <div className="wh-dphone-req-actions">
-                          <motion.span
-                            className="wh-dphone-accept"
-                            animate={{ scale: [1, 1.05, 1] }}
-                            transition={{ delay: 0.8, duration: 0.5 }}>
-                            Accept
-                          </motion.span>
-                          <span className="wh-dphone-skip">Skip</span>
+                        <div className="wh-app-offer-actions">
+                          <span className="wh-app-accept">Accept</span>
+                          <span className="wh-app-decline">Decline</span>
                         </div>
-                      </div>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-              </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+
+/** The app's tab bar: Ride, Trips, Wallet, You. */
+function AppTabs() {
+  return (
+    <div className="wh-app-tabs" aria-hidden="true">
+      {["Ride", "Trips", "Wallet", "You"].map((tab, index) => (
+        <span key={tab} className={index === 0 ? "wh-app-tab wh-app-tab--on" : "wh-app-tab"}>
+          <i />
+          {tab}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** A destination being typed, a letter at a time. */
+function Typed({ text }: { text: string }) {
+  const still = useReducedMotion();
+  const [shown, setShown] = useState(still ? text.length : 0);
+  useEffect(() => {
+    if (still || shown >= text.length) return;
+    const timer = setTimeout(() => setShown((count) => count + 1), 45);
+    return () => clearTimeout(timer);
+  }, [shown, still, text.length]);
+  return (
+    <b>
+      {text.slice(0, shown)}
+      {shown < text.length ? <span className="wh-app-caret" /> : null}
+    </b>
   );
 }
