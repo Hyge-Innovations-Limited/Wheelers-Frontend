@@ -180,6 +180,7 @@
   mask: url("/wheelers-wordmark.png") center / contain no-repeat;
 }
 .wh-wordmark--lg { width: 172px; }
+.wh-wordmark--sm { width: 104px; }
 .wh-nav-brand { display: flex; align-items: center; gap: 12px; }
 .wh-nav-brand:hover { color: var(--wh-ink); }
 .wh-nav-brand img {
@@ -468,6 +469,31 @@
   align-items: start;
 }
 .wh-step--active { border-left: 4px solid var(--wh-orange); padding-left: 16px; margin-left: -20px; }
+/* The steps taking turns: a bar that slides to the one that is on, a number
+   that lights up, and a thin line running out the time it has left. */
+.wh-step--live { position: relative; display: block; padding: 0; }
+.wh-step-btn {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  padding: 24px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: .62;
+  transition: opacity .25s ease;
+}
+.wh-step--on .wh-step-btn { opacity: 1; }
+.wh-step-btn:hover { opacity: 1; }
+.wh-step-btn:focus-visible { outline: 3px solid var(--wh-orange); outline-offset: 4px; }
+.wh-step-bar { position: absolute; left: -20px; top: 0; bottom: 0; width: 4px; background: var(--wh-orange); }
+.wh-step-run { position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; background: var(--wh-orange); transform-origin: left; }
+@media (max-width: 720px) { .wh-step-bar { left: -12px; } }
 .wh-step-num {
   width: 52px;
   height: 52px;
@@ -496,7 +522,7 @@
   padding: 12px;
   box-shadow: 10px 10px 0 var(--wh-orange), 0 0 0 3px var(--wh-ink);
 }
-.wh-dphone-screen { background: #1E1B18; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; height: 680px; color: var(--wh-cream); }
+.wh-dphone-screen { background: #1E1B18; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; height: 540px; color: var(--wh-cream); }
 .wh-dphone-top { padding: 30px 20px 14px; display: flex; justify-content: space-between; align-items: center; }
 .wh-dphone-brand { display: flex; align-items: center; gap: 10px; }
 .wh-dphone-brand img { width: 30px; height: 30px; border-radius: 8px; }
@@ -685,3 +711,25 @@
   text-transform: uppercase;
   color: var(--wh-sand-2);
 }
+
+
+/* ─── how it works: what the phone shows for each step ───── */
+.wh-dphone-stage { position: relative; flex: 1; min-height: 0; padding: 4px 18px 18px; display: flex; flex-direction: column; }
+.wh-dstep { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+.wh-dstep .wh-dphone-earn, .wh-dstep .wh-dphone-req, .wh-dstep .wh-dphone-map { margin: 0; }
+.wh-dstep-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--wh-sand); }
+.wh-dstep-door { display: flex; flex-direction: column; gap: 2px; padding: 16px; border: 2px solid #3A352F; border-radius: 16px; background: #26221E; }
+.wh-dstep-door strong { font-weight: 700; font-size: 16px; }
+.wh-dstep-door span { font-size: 13px; color: var(--wh-sand); }
+.wh-dstep-door--app { border-color: var(--wh-orange); }
+.wh-dstep-door--wa { border-color: var(--wh-wa); }
+.wh-dstep-bubble { align-self: flex-end; margin-top: auto; padding: 10px 16px; border-radius: 16px 16px 4px 16px; background: var(--wh-wa); color: var(--wh-ink); font-weight: 700; font-size: 15px; }
+.wh-dstep-route { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--wh-cream); color: var(--wh-ink); }
+.wh-dstep-stop { display: flex; align-items: center; gap: 12px; }
+.wh-dstep-stop small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wh-muted-2); }
+.wh-dstep-stop strong { font-weight: 700; font-size: 15px; }
+.wh-dstep-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wh-ink); flex: none; }
+.wh-dstep-dot--to { border-radius: 3px; background: var(--wh-orange); }
+.wh-dphone-map--short { flex: 1; min-height: 160px; }
+.wh-dstep-confirm { padding: 14px; border-radius: 14px; background: var(--wh-cream); color: var(--wh-ink); text-align: center; font-weight: 700; font-size: 15px; }
+.wh-dstep-note { font-size: 13px; color: var(--wh-sand); text-align: center; }

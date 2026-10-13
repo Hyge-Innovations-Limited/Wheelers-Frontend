@@ -18,17 +18,17 @@ export default function TwoSides() {
           <div className="wh-side wh-side--riders">
             <div className="wh-side-top">
               <span className="wh-side-badge wh-side-badge--wa">R</span>
-              <span className="wh-side-index">01 · WhatsApp</span>
+              <span className="wh-side-index">01 · WhatsApp or app</span>
             </div>
             <h3>For riders</h3>
             <p>
-              No app to install, no account to set up. Save one number, send your pickup and destination, and a
-              fixed fare comes back before you commit. Reply once and you&rsquo;re booked.
+              Book in the Wheelers app or on WhatsApp, whichever you prefer. Send your pickup and destination, and a
+              fixed fare comes back before you commit. Confirm once and you&rsquo;re booked.
             </p>
             <ul className="wh-bullets">
-              <li>Works on any phone that runs WhatsApp</li>
+              <li>In the app, or on any phone that runs WhatsApp</li>
               <li>Fixed fare, locked before you book — no surge</li>
-              <li>Live tracking link and driver details in the chat</li>
+              <li>Live tracking and driver details, in the app or the chat</li>
               <li>Pay with wallet, card or USDT</li>
             </ul>
             <a

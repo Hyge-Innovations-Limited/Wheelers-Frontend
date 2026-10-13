@@ -55,11 +55,11 @@ export default function LandingHero() {
           <h1 className="wh-h1">
             Ride from
             <br />
-            WhatsApp.
+            WhatsApp or
             <br />
-            <span className="wh-serif">Drive</span> from
+            the app. <span className="wh-serif">Drive</span>
             <br />
-            the app.
+            and earn.
           </h1>
 
           <StoreBadges />
