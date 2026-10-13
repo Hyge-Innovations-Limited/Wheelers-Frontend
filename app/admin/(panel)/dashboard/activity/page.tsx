@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Badge, Card, EmptyState, ErrorState, FilterTabs, PageHeader, RefreshButton, SearchInput, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
@@ -80,24 +80,20 @@ export default function ActivityPage() {
   const [query, setQuery] = useState("");
   const feed = useAdminData<Feed>(`/admin/analytics/app-activity?outcome=${outcome}&limit=80`, [outcome], { refreshMs: 20_000 });
 
-  // Older lines, fetched on request and kept until the filter changes.
-  const [older, setOlder] = useState<Row[]>([]);
-  const [olderCursor, setOlderCursor] = useState<string | null | undefined>(undefined);
+  // Older lines, fetched on request. They belong to the filter they were
+  // fetched under: change the filter and they are no longer shown.
+  const [fetched, setFetched] = useState<{ outcome: Outcome; rows: Row[]; cursor: string | null } | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  useEffect(() => {
-    setOlder([]);
-    setOlderCursor(undefined);
-  }, [outcome]);
-
-  const cursor = olderCursor === undefined ? (feed.data?.hasMore ? feed.data.nextBefore : null) : olderCursor;
+  const kept = fetched?.outcome === outcome ? fetched : null;
+  const older = kept?.rows;
+  const cursor = kept ? kept.cursor : feed.data?.hasMore ? feed.data.nextBefore : null;
 
   async function loadOlder() {
     if (!cursor || loadingOlder) return;
     setLoadingOlder(true);
     try {
       const page = await adminJson<Feed>(`/admin/analytics/app-activity?outcome=${outcome}&limit=80&before=${encodeURIComponent(cursor)}`);
-      setOlder((current) => [...current, ...page.rows]);
-      setOlderCursor(page.hasMore ? page.nextBefore : null);
+      setFetched({ outcome, rows: [...(older ?? []), ...page.rows], cursor: page.hasMore ? page.nextBefore : null });
     } finally {
       setLoadingOlder(false);
     }
@@ -105,7 +101,7 @@ export default function ActivityPage() {
 
   const rows = useMemo(() => {
     const seen = new Set<string>();
-    const all = [...(feed.data?.rows ?? []), ...older].filter((row) => (seen.has(row.id) ? false : (seen.add(row.id), true)));
+    const all = [...(feed.data?.rows ?? []), ...(older ?? [])].filter((row) => (seen.has(row.id) ? false : (seen.add(row.id), true)));
     const wanted = query.trim().toLowerCase();
     if (!wanted) return all;
     return all.filter((row) => [row.name, row.phone, row.action, row.message].some((part) => part?.toLowerCase().includes(wanted)));
