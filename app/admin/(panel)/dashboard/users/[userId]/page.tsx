@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { setWithdrawalFreeze, type AdminUserDetail } from "@/lib/admin-api";
+import { adminJson, setWithdrawalFreeze, type AdminUserDetail } from "@/lib/admin-api";
 import {
   displayName,
   formatDate,
@@ -80,11 +80,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
             <span>Joined {formatDate(user.createdAt)}</span>
           </div>
         </div>
-        {isDriver ? (
-          <Link href={`/admin/dashboard/drivers/${driver!.id}`} className="admin-btn-primary">
-            Review KYC documents
-          </Link>
-        ) : null}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end" }}>
+          {isDriver ? (
+            <Link href={`/admin/dashboard/drivers/${driver!.id}`} className="admin-btn-primary">
+              Review KYC documents
+            </Link>
+          ) : null}
+          <SignOutEverywhere userId={user.id} name={user.name ?? user.username ?? user.phone ?? "this person"} />
+        </div>
       </div>
 
       <StatGrid>
@@ -304,6 +307,45 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
         </Card>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Signs the person out of every phone they are signed in on. Their logins
+ * stop working at once; they sign in again as usual and land where their
+ * account belongs (a driver who has not finished verification, on
+ * verification). Nothing about the account is changed.
+ */
+function SignOutEverywhere({ userId, name }: { userId: string; name: string }) {
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function signOut() {
+    if (busy) return;
+    if (!window.confirm(`Sign ${name} out of every phone? They will have to sign in again. Their account, wallet and trips are not changed.`)) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      await adminJson(`/admin/users/${userId}/sign-out`, { method: "POST" });
+      setNote({ ok: true, text: "Signed out everywhere. They will be asked to sign in the next time they open the app." });
+    } catch (error) {
+      setNote({ ok: false, text: error instanceof Error ? error.message : "Could not sign them out." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", maxWidth: 320 }}>
+      <button type="button" className="admin-btn-ghost" onClick={() => void signOut()} disabled={busy}>
+        {busy ? "Signing out…" : "Sign out of all phones"}
+      </button>
+      {note ? (
+        <span role="status" style={{ fontSize: 13, textAlign: "right", color: note.ok ? "#0B7A55" : "#C0392B" }}>
+          {note.text}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
