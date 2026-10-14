@@ -15,29 +15,6 @@ export default function LandingFooter() {
             Wheelers app and Stellar. A product of HYGE Innovations Limited.
           </p>
 
-          {/* The community comes first: it is people, not a feed. */}
-          <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="wh-community">
-            <span className="wh-community-icon">
-              <span className="wh-brand-icon wh-brand-icon--whatsapp" aria-hidden="true" />
-            </span>
-            <span className="wh-community-words">
-              <strong>Join the Wheelers community</strong>
-              <small>Riders and drivers trading tips, routes and early news, on WhatsApp.</small>
-            </span>
-            <span className="wh-community-go" aria-hidden="true">→</span>
-          </a>
-
-          <div className="wh-follow">
-            <span>Follow us</span>
-            <div className="wh-socials">
-              {SOCIAL_LINKS.map((link) => (
-                <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={`Wheelers on ${link.name}`} title={link.name} className="wh-social">
-                  <span className={`wh-brand-icon wh-brand-icon--${link.icon}`} aria-hidden="true" />
-                </a>
-              ))}
-            </div>
-          </div>
-
           <a href="https://stellar.org" target="_blank" rel="noopener noreferrer" className="wh-stellar-badge">
             <span className="wh-brand-icon wh-brand-icon--stellar" aria-hidden="true" />
             Payments on Stellar
@@ -52,12 +29,29 @@ export default function LandingFooter() {
           <a href="#how">How it works</a>
         </div>
 
-        <div className="wh-footer-col">
+        <div className="wh-footer-col wh-footer-col--community">
           <span className="wh-footer-col-title">Community</span>
-          <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer">Join the WhatsApp community</a>
-          {SOCIAL_LINKS.map((link) => (
-            <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer">{link.name === "X" ? "X (Twitter)" : link.name}</a>
-          ))}
+          {/* The community comes first: it is people, not a feed. */}
+          <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="wh-community">
+            <span className="wh-community-icon">
+              <span className="wh-brand-icon wh-brand-icon--whatsapp" aria-hidden="true" />
+            </span>
+            <span className="wh-community-words">
+              <strong>Join the Wheelers community</strong>
+              <small>Riders and drivers trading tips, routes and early news, on WhatsApp.</small>
+            </span>
+            <span className="wh-community-go" aria-hidden="true">→</span>
+          </a>
+          <div className="wh-follow">
+            <span>Follow us</span>
+            <div className="wh-socials">
+              {SOCIAL_LINKS.map((link) => (
+                <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={`Wheelers on ${link.name}`} title={link.name} className="wh-social">
+                  <span className={`wh-brand-icon wh-brand-icon--${link.icon}`} aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="wh-footer-col">

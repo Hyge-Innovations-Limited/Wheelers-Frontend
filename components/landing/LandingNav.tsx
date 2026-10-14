@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WHATSAPP_URL } from "@/lib/landing-links";
+import { ScrollProgress } from "./motion";
 
 const LINKS = [
   { label: "Riders", href: "#riders" },
@@ -15,6 +16,8 @@ export default function LandingNav() {
 
   return (
     <header className="wh-nav">
+      {/* Along the header's bottom edge: a steering wheel turning as you scroll down the page. */}
+      <ScrollProgress />
       <div className="wh-container wh-nav-row">
         <a href="#top" className="wh-nav-brand" onClick={close}>
           {/* The wordmark as the app shows it: the W and "wheelers" as one mark, in orange. */}

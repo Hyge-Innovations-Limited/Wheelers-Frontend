@@ -161,8 +161,9 @@ export function PullIn({
 
 /**
  * How far down the page you are, as a steering wheel you are turning: it
- * rides down a thin road on the right edge of the window as you scroll, and
- * turns as it goes, the way a wheel turns under your hands on a long drive.
+ * rolls along the bottom edge of the header as you scroll, leaving an orange
+ * line behind it, and turns as it goes, the way a wheel turns under your
+ * hands on a long drive.
  */
 export function ScrollProgress() {
   // Drawn once the page is in the browser: where the wheel sits depends on the scroll, which a server cannot know.
@@ -173,16 +174,16 @@ export function ScrollProgress() {
 function SteeringWheel() {
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
-  // Down the road, whole at the top and whole at the bottom.
-  const top = useTransform(progress, (value) => `calc(${value * 100}% - ${value * 52}px)`);
+  // Along the road, whole at the start and whole at the end.
+  const left = useTransform(progress, (value) => `calc(${value * 100}% - ${value * 34}px)`);
   // A full turn and a half from top to bottom, eased back a touch at each end like a real wheel.
   const turn = useTransform(progress, [0, 0.5, 1], [-20, 270, 520]);
   return (
     <div aria-hidden="true" className="wh-steer">
       <div className="wh-steer-road" />
-      <motion.div className="wh-steer-trail" style={{ scaleY: progress }} />
-      <motion.div className="wh-steer-wheel" style={{ top, rotate: turn }}>
-        <svg viewBox="0 0 52 52" width="52" height="52">
+      <motion.div className="wh-steer-trail" style={{ scaleX: progress }} />
+      <motion.div className="wh-steer-wheel" style={{ left, rotate: turn }}>
+        <svg viewBox="0 0 52 52" width="34" height="34">
           <circle cx="26" cy="26" r="22" fill="none" stroke="#141210" strokeWidth="6" />
           <circle cx="26" cy="26" r="22" fill="none" stroke="#FF7700" strokeWidth="2.5" strokeDasharray="10 128" strokeLinecap="round" transform="rotate(-90 26 26)" />
           <path d="M6 24 C 14 30, 38 30, 46 24" fill="none" stroke="#141210" strokeWidth="5" strokeLinecap="round" />
