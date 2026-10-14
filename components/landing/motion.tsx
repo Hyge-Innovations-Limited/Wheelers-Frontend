@@ -12,7 +12,9 @@ import {
   useVelocity,
   type Variants,
 } from "framer-motion";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+
+const noSubscription = () => () => {};
 
 /**
  * The landing page's motion, in one vocabulary. The page is hard edges, thick
@@ -163,6 +165,12 @@ export function PullIn({
  * end with the page. Its wheels turn as it goes.
  */
 export function ScrollProgress() {
+  // Drawn once the page is in the browser: where the car sits depends on the scroll, which a server cannot know.
+  const inBrowser = useSyncExternalStore(noSubscription, () => true, () => false);
+  return inBrowser ? <ScrollCar /> : null;
+}
+
+function ScrollCar() {
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
   // Shifted back by its own length as it goes: whole at the start, whole at the end.
