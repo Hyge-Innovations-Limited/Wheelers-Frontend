@@ -160,41 +160,34 @@ export function PullIn({
 }
 
 /**
- * How far down the page you are, told by a car: it drives along the bottom
- * edge of the header, leaving an orange line behind it, and reaches the far
- * end with the page. Its wheels turn as it goes.
+ * How far down the page you are, as a steering wheel you are turning: it
+ * rides down a thin road on the right edge of the window as you scroll, and
+ * turns as it goes, the way a wheel turns under your hands on a long drive.
  */
 export function ScrollProgress() {
-  // Drawn once the page is in the browser: where the car sits depends on the scroll, which a server cannot know.
+  // Drawn once the page is in the browser: where the wheel sits depends on the scroll, which a server cannot know.
   const inBrowser = useSyncExternalStore(noSubscription, () => true, () => false);
-  return inBrowser ? <ScrollCar /> : null;
+  return inBrowser ? <SteeringWheel /> : null;
 }
 
-function ScrollCar() {
+function SteeringWheel() {
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
-  // Shifted back by its own length as it goes: whole at the start, whole at the end.
-  const left = useTransform(progress, (value) => `calc(${value * 100}% - ${value * 46}px)`);
-  const spin = useTransform(progress, [0, 1], [0, 2160]);
+  // Down the road, whole at the top and whole at the bottom.
+  const top = useTransform(progress, (value) => `calc(${value * 100}% - ${value * 52}px)`);
+  // A full turn and a half from top to bottom, eased back a touch at each end like a real wheel.
+  const turn = useTransform(progress, [0, 0.5, 1], [-20, 270, 520]);
   return (
-    <div aria-hidden="true" className="wh-progress">
-      <motion.div className="wh-progress-trail" style={{ scaleX: progress }} />
-      <motion.div className="wh-progress-car" style={{ left }}>
-        <svg viewBox="86 236 204 100" width="46" height="23">
-          <path
-            d="M102 318h170c7 0 12-5 12-12v-9c0-7-5-12-12-13l-26-5-19-21c-4-4-9-6-14-6h-54c-6 0-11 3-14 8l-13 19-23 5c-7 2-12 7-12 14v8c0 7 5 12 12 12z"
-            fill="#FF7700"
-            stroke="#141210"
-            strokeWidth="6"
-          />
-          <path d="M152 262h30v20h-44zM190 262h23l17 20h-40z" fill="#2B2B2B" />
-          {[140, 242].map((cx) => (
-            <motion.g key={cx} style={{ rotate: spin, transformBox: "fill-box", originX: 0.5, originY: 0.5 }}>
-              <circle cx={cx} cy={320} fill="#141210" r={16} />
-              <circle cx={cx} cy={320} fill="#FFF8EC" r={7} />
-              <rect x={cx - 2} y={306} width={4} height={10} fill="#FFF8EC" />
-            </motion.g>
-          ))}
+    <div aria-hidden="true" className="wh-steer">
+      <div className="wh-steer-road" />
+      <motion.div className="wh-steer-trail" style={{ scaleY: progress }} />
+      <motion.div className="wh-steer-wheel" style={{ top, rotate: turn }}>
+        <svg viewBox="0 0 52 52" width="52" height="52">
+          <circle cx="26" cy="26" r="22" fill="none" stroke="#141210" strokeWidth="6" />
+          <circle cx="26" cy="26" r="22" fill="none" stroke="#FF7700" strokeWidth="2.5" strokeDasharray="10 128" strokeLinecap="round" transform="rotate(-90 26 26)" />
+          <path d="M6 24 C 14 30, 38 30, 46 24" fill="none" stroke="#141210" strokeWidth="5" strokeLinecap="round" />
+          <path d="M26 30 L26 47" stroke="#141210" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="26" cy="27" r="7" fill="#FF7700" stroke="#141210" strokeWidth="3" />
         </svg>
       </motion.div>
     </div>

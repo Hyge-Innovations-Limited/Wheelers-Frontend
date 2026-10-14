@@ -738,11 +738,16 @@
 .wh-wa-row--plain { animation: none; }
 
 /* ─── motion ──────────────────────────────────────────────── */
-/* How far down the page you are: a car driving the header's bottom edge. */
-.wh-progress { position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; pointer-events: none; z-index: 2; }
-.wh-progress-trail { position: absolute; inset: 0; background: var(--wh-orange); transform-origin: 0 50%; }
-.wh-progress-car { position: absolute; bottom: 1px; width: 46px; }
-.wh-progress-car svg { display: block; overflow: visible; }
+/* How far down the page you are: a steering wheel turning its way down the right edge. */
+.wh-steer { position: fixed; top: 96px; bottom: 24px; right: 14px; width: 52px; z-index: 30; pointer-events: none; }
+.wh-steer-road { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: repeating-linear-gradient(180deg, rgba(20, 18, 16, .28) 0 10px, transparent 10px 20px); }
+.wh-steer-trail { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; margin-left: -2px; background: var(--wh-orange); transform-origin: 50% 0; }
+.wh-steer-wheel { position: absolute; left: 0; width: 52px; height: 52px; filter: drop-shadow(3px 3px 0 rgba(20, 18, 16, .25)); }
+.wh-steer-wheel svg { display: block; }
+@media (max-width: 720px) {
+  .wh-steer { right: 6px; width: 36px; top: 84px; }
+  .wh-steer-wheel, .wh-steer-wheel svg { width: 36px; height: 36px; }
+}
 
 /* A heading's lines rise from behind their own baseline. */
 .wh-line { display: block; overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
