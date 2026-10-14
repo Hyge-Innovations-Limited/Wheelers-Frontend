@@ -1,5 +1,6 @@
 "use client";
 
+import { DocPeek } from "@/components/admin/doc-peek";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminFetch, getToken } from "@/lib/admin-api";
@@ -60,24 +61,28 @@ function DocumentView({ url, label, isPdf }: { url: string; label: string; isPdf
           title={label}
           style={{ width: "100%", height: 420, border: "none", display: "block", background: "#f5ead8" }}
         />
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          style={{ display: "inline-block", padding: "8px 12px", fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}
-        >
-          Open PDF in a new tab
-        </a>
+        <DocPeek url={url} label={label} isPdf>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-block", padding: "8px 12px", fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}
+          >
+            Open PDF in a new tab
+          </a>
+        </DocPeek>
       </div>
     );
   }
   return (
-    <img
-      src={url}
-      alt={label}
-      style={{ width: "100%", maxHeight: 300, objectFit: "contain", display: "block", background: "#f5ead8", cursor: "zoom-in" }}
-      onClick={() => window.open(url, "_blank")}
-    />
+    <DocPeek url={url} label={label}>
+      <img
+        src={url}
+        alt={label}
+        style={{ width: "100%", maxHeight: 300, objectFit: "contain", display: "block", background: "#f5ead8", cursor: "zoom-in" }}
+        onClick={() => window.open(url, "_blank")}
+      />
+    </DocPeek>
   );
 }
 
@@ -86,12 +91,14 @@ function VehiclePhotoGrid({ urls }: { urls: string[] }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginTop: 12 }}>
       {urls.map((url, i) => (
         <div key={i} style={{ border: "2px solid #E8DDD3", borderRadius: 8, overflow: "hidden" }}>
-          <img
-            src={url}
-            alt={`Vehicle photo ${i + 1}`}
-            style={{ width: "100%", height: 120, objectFit: "cover", display: "block", cursor: "pointer" }}
-            onClick={() => window.open(url, "_blank")}
-          />
+          <DocPeek url={url} label={`Vehicle photo ${i + 1}`}>
+            <img
+              src={url}
+              alt={`Vehicle photo ${i + 1}`}
+              style={{ width: "100%", height: 120, objectFit: "cover", display: "block", cursor: "zoom-in" }}
+              onClick={() => window.open(url, "_blank")}
+            />
+          </DocPeek>
         </div>
       ))}
     </div>
@@ -672,11 +679,9 @@ export default function DriverReviewPage() {
             {sub.ninImageUrl && (
               <div className="admin-doc-card">
                 <p className="admin-doc-label">NIN Card</p>
-                <img
-                  src={sub.ninImageUrl}
-                  alt="NIN"
-                  className="admin-doc-img"
-                />
+                <DocPeek url={sub.ninImageUrl} label="NIN card">
+                  <img src={sub.ninImageUrl} alt="NIN" className="admin-doc-img" style={{ cursor: "zoom-in" }} onClick={() => window.open(sub.ninImageUrl!, "_blank")} />
+                </DocPeek>
               </div>
             )}
             {sub.licenceImageUrl && (
@@ -685,22 +690,18 @@ export default function DriverReviewPage() {
                 {licenceIsPdf ? (
                   <DocumentView url={sub.licenceImageUrl} label="Licence" isPdf />
                 ) : (
-                  <img
-                    src={sub.licenceImageUrl}
-                    alt="Licence"
-                    className="admin-doc-img"
-                  />
+                  <DocPeek url={sub.licenceImageUrl} label="Driver's licence">
+                    <img src={sub.licenceImageUrl} alt="Licence" className="admin-doc-img" style={{ cursor: "zoom-in" }} onClick={() => window.open(sub.licenceImageUrl!, "_blank")} />
+                  </DocPeek>
                 )}
               </div>
             )}
             {sub.selfieUrl && (
               <div className="admin-doc-card">
                 <p className="admin-doc-label">Selfie</p>
-                <img
-                  src={sub.selfieUrl}
-                  alt="Selfie"
-                  className="admin-doc-img"
-                />
+                <DocPeek url={sub.selfieUrl} label="Selfie">
+                  <img src={sub.selfieUrl} alt="Selfie" className="admin-doc-img" style={{ cursor: "zoom-in" }} onClick={() => window.open(sub.selfieUrl!, "_blank")} />
+                </DocPeek>
               </div>
             )}
           </div>

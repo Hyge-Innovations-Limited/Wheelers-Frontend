@@ -157,11 +157,41 @@ export function PullIn({
   );
 }
 
-/** How far down the page you are, as an orange line under the top of the window. */
+/**
+ * How far down the page you are, told by a car: it drives along the bottom
+ * edge of the header, leaving an orange line behind it, and reaches the far
+ * end with the page. Its wheels turn as it goes.
+ */
 export function ScrollProgress() {
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
-  return <motion.div aria-hidden="true" className="wh-progress" style={{ scaleX }} />;
+  const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
+  const left = useTransform(progress, [0, 1], ["0%", "100%"]);
+  // Shifted back by its own length as it goes: whole at the start, whole at the end.
+  const back = useTransform(progress, [0, 1], ["0%", "-100%"]);
+  const spin = useTransform(progress, [0, 1], [0, 2160]);
+  return (
+    <div aria-hidden="true" className="wh-progress">
+      <motion.div className="wh-progress-trail" style={{ scaleX: progress }} />
+      <motion.div className="wh-progress-car" style={{ left, x: back }}>
+        <svg viewBox="86 236 204 100" width="46" height="23">
+          <path
+            d="M102 318h170c7 0 12-5 12-12v-9c0-7-5-12-12-13l-26-5-19-21c-4-4-9-6-14-6h-54c-6 0-11 3-14 8l-13 19-23 5c-7 2-12 7-12 14v8c0 7 5 12 12 12z"
+            fill="#FF7700"
+            stroke="#141210"
+            strokeWidth="6"
+          />
+          <path d="M152 262h30v20h-44zM190 262h23l17 20h-40z" fill="#2B2B2B" />
+          {[140, 242].map((cx) => (
+            <motion.g key={cx} style={{ rotate: spin, transformBox: "fill-box", originX: 0.5, originY: 0.5 }}>
+              <circle cx={cx} cy={320} fill="#141210" r={16} />
+              <circle cx={cx} cy={320} fill="#FFF8EC" r={7} />
+              <rect x={cx - 2} y={306} width={4} height={10} fill="#FFF8EC" />
+            </motion.g>
+          ))}
+        </svg>
+      </motion.div>
+    </div>
+  );
 }
 
 /**

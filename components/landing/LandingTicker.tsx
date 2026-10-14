@@ -3,13 +3,13 @@
 import { RollingStrip } from "./motion";
 
 const ITEMS = [
-  "Ride on WhatsApp or in the app",
-  "Name your price, choose your driver",
-  "One app for riders and drivers",
-  "KYC-verified drivers only",
-  "Pay NGN, card or USDT",
-  "Lagos-wide · always live",
-];
+  "No download needed · just text Wheelers",
+  "You name the fare · drivers bid · you choose",
+  "Also on iPhone and Android",
+  "Every driver ID-checked",
+  "Pay in naira or XLM on Stellar",
+  "Live across Lagos",
+]
 
 export default function LandingTicker() {
   return (

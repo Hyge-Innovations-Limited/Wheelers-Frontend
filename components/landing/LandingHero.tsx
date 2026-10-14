@@ -68,6 +68,12 @@ export default function LandingHero() {
                 Live in Lagos
               </span>
             </StaggerItem>
+            <StaggerItem>
+              <span className="wh-chip wh-chip-stellar">
+                <span className="wh-brand-icon wh-brand-icon--stellar" aria-hidden="true" />
+                Payments on Stellar
+              </span>
+            </StaggerItem>
           </Stagger>
 
           <Lines
@@ -84,6 +90,13 @@ export default function LandingHero() {
               "and earn.",
             ]}
           />
+
+          <Stamp className="wh-hero-lead" delay={0.5} onLoad>
+            <p>
+              Text Wheelers where you&rsquo;re going and what you&rsquo;ll pay. Drivers nearby answer with offers in
+              seconds; you pick one and go. Rather tap than text? The app does the same thing.
+            </p>
+          </Stamp>
 
           <Stamp delay={0.62} onLoad>
             <StoreBadges />

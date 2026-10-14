@@ -1,5 +1,6 @@
 "use client";
 
+import { DocPeek } from "@/components/admin/doc-peek";
 import { useState } from "react";
 
 import { useAdminData } from "@/components/admin/use-admin-data";
@@ -150,9 +151,11 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
                     <span style={{ fontSize: 13, color: "#786F68" }}> · sent {when(doc.uploadedAt)}</span>
                   </div>
                   {doc.url ? (
-                    <a href={doc.url} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}>
-                      Open {doc.fileType === "application/pdf" ? "PDF" : "photo"} in a new tab
-                    </a>
+                    <DocPeek url={doc.url} isPdf={doc.fileType === "application/pdf"} label={paper.label}>
+                      <a href={doc.url} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}>
+                        Open {doc.fileType === "application/pdf" ? "PDF" : "photo"} in a new tab
+                      </a>
+                    </DocPeek>
                   ) : <span style={{ fontSize: 13, color: "#786F68" }}>File storage is off</span>}
                 </div>
 

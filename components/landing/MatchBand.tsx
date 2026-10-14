@@ -88,21 +88,21 @@ export default function MatchBand() {
             className="wh-h2"
             lines={[
               <>
-                Match in <span className="wh-serif">30 seconds.</span>
+                Offers in <span className="wh-serif">seconds.</span>
               </>,
-              "Every single time.",
+              "On your way in minutes.",
             ]}
           />
           <p>
-            Your WhatsApp message pings every verified driver in that hub. The first to accept on the Driver app is
-            locked to you before you blink. Lagos-wide, always live.
+            Your request reaches every verified driver nearby at once. Watch the offers come in, take the one you
+            like, and your driver is already moving. Day or night, across Lagos.
           </p>
           <div className="wh-band-ctas">
             <a href={WHATSAPP_URL} className="wh-btn wh-btn-dark-cream" target="_blank" rel="noopener noreferrer">
               Ride · WhatsApp
             </a>
             <a href="#driverapp" className="wh-btn wh-btn-cream">
-              Drive · iOS + Android
+              Drive · iPhone + Android
             </a>
           </div>
         </div>

@@ -10,7 +10,7 @@ import HowItWorks from "./HowItWorks";
 import LandingFeatures from "./LandingFeatures";
 import MatchBand from "./MatchBand";
 import LandingFooter from "./LandingFooter";
-import { RoadDivider, ScrollProgress } from "./motion";
+import { RoadDivider } from "./motion";
 
 export default function LandingPage({ className = "" }: { className?: string }) {
   useEffect(() => {
@@ -38,7 +38,6 @@ export default function LandingPage({ className = "" }: { className?: string }) 
     // Anyone who has asked their device for less motion gets a page that holds still.
     <MotionConfig reducedMotion="user">
       <div className={`wh ${className}`.trim()}>
-        <ScrollProgress />
         <LandingNav />
         <LandingTicker />
         <main>

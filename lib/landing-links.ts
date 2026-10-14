@@ -10,3 +10,13 @@ const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "2348141979106";
 
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+// Where Wheelers lives online, and the riders' community on WhatsApp.
+export const SOCIAL_LINKS = [
+  { name: "WhatsApp community", icon: "whatsapp", href: "https://chat.whatsapp.com/H4EzW4IUm6N2BhdbQfBveA" },
+  { name: "TikTok", icon: "tiktok", href: "https://www.tiktok.com/@_wheelersng" },
+  { name: "Instagram", icon: "instagram", href: "https://instagram.com/_wheelersng" },
+  { name: "X", icon: "x", href: "https://x.com/_wheelers" },
+] as const;
+
+export const COMMUNITY_URL = SOCIAL_LINKS[0].href;

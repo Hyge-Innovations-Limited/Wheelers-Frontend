@@ -12,7 +12,7 @@ export default function StoreBadges({ small = false }: { small?: boolean }) {
         className={cls}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Download Wheelers Driver on the App Store"
+        aria-label="Download Wheelers on the App Store"
       >
         <AppleIcon size={icon} />
         <span className="wh-store-text">
@@ -25,7 +25,7 @@ export default function StoreBadges({ small = false }: { small?: boolean }) {
         className={cls}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Get Wheelers Driver on Google Play"
+        aria-label="Get Wheelers on Google Play"
       >
         <PlayIcon size={small ? 22 : 24} />
         <span className="wh-store-text">
