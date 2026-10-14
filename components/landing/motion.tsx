@@ -165,14 +165,13 @@ export function PullIn({
 export function ScrollProgress() {
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
-  const left = useTransform(progress, [0, 1], ["0%", "100%"]);
   // Shifted back by its own length as it goes: whole at the start, whole at the end.
-  const back = useTransform(progress, [0, 1], ["0%", "-100%"]);
+  const left = useTransform(progress, (value) => `calc(${value * 100}% - ${value * 46}px)`);
   const spin = useTransform(progress, [0, 1], [0, 2160]);
   return (
     <div aria-hidden="true" className="wh-progress">
       <motion.div className="wh-progress-trail" style={{ scaleX: progress }} />
-      <motion.div className="wh-progress-car" style={{ left, x: back }}>
+      <motion.div className="wh-progress-car" style={{ left }}>
         <svg viewBox="86 236 204 100" width="46" height="23">
           <path
             d="M102 318h170c7 0 12-5 12-12v-9c0-7-5-12-12-13l-26-5-19-21c-4-4-9-6-14-6h-54c-6 0-11 3-14 8l-13 19-23 5c-7 2-12 7-12 14v8c0 7 5 12 12 12z"
