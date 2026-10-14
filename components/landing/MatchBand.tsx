@@ -94,8 +94,8 @@ export default function MatchBand() {
             ]}
           />
           <p>
-            Your request reaches every verified driver nearby at once. Watch the offers come in, take the one you
-            like, and your driver is already moving. Day or night, across Lagos.
+            One message reaches every verified driver around you at the same time. The offers roll in, you take the
+            one you like, and your driver is already turning the corner. Day or night, across Lagos.
           </p>
           <div className="wh-band-ctas">
             <a href={WHATSAPP_URL} className="wh-btn wh-btn-dark-cream" target="_blank" rel="noopener noreferrer">

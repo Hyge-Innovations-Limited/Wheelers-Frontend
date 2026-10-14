@@ -93,8 +93,9 @@ export default function LandingHero() {
 
           <Stamp className="wh-hero-lead" delay={0.5} onLoad>
             <p>
-              Text Wheelers where you&rsquo;re going and what you&rsquo;ll pay. Drivers nearby answer with offers in
-              seconds; you pick one and go. Rather tap than text? The app does the same thing.
+              Lagos already runs on WhatsApp, so Wheelers does too. Say where you&rsquo;re going and what you think is
+              fair. Drivers nearby send their offers, and you choose who takes you. No surge, no guessing. Prefer an
+              app? It&rsquo;s on iPhone and Android.
             </p>
           </Stamp>
 

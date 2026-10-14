@@ -32,14 +32,14 @@ export default function TwoSides() {
             </div>
             <h3>For riders</h3>
             <p>
-              Say hi to Wheelers on WhatsApp and you&rsquo;re already booking: no download, no forms. Tell us where
-              you&rsquo;re headed and what you&rsquo;d like to pay, and drivers nearby answer with offers. Prefer an
-              app? Same rides, same prices, in Wheelers on iPhone and Android.
+              Getting somewhere shouldn&rsquo;t start with a guessing game. Tell Wheelers where you&rsquo;re headed
+              and what feels fair, right in WhatsApp. Drivers nearby answer with their offers, and you pick the one that
+              works for you, before anyone moves.
             </p>
             <ul className="wh-bullets">
-              <li>Works on any phone with WhatsApp, or in the app</li>
-              <li>You set the fare; drivers take it or counter</li>
-              <li>Your driver&rsquo;s name, car and live location, right in the chat</li>
+              <li>No download, no sign-up form: just a chat</li>
+              <li>You set the fare; drivers take it or make an offer</li>
+              <li>See your driver&rsquo;s name, car and plate before they arrive</li>
               <li>Pay from your wallet: naira by transfer, or XLM on Stellar</li>
             </ul>
             <a
@@ -59,14 +59,15 @@ export default function TwoSides() {
             </div>
             <h3>For drivers</h3>
             <p>
-              Your car, your hours, your fares. Go online when it suits you, see the rider&rsquo;s price before you
-              move, and take it or name yours. Your earnings land in your wallet the moment the trip ends.
+              You know these roads, and you know what your time is worth. On Wheelers you see the rider&rsquo;s offer
+              before you move, and you can take it or name your own. When the trip ends, your money is already in your
+              wallet.
             </p>
             <ul className="wh-bullets">
-              <li>Wheelers on iPhone and Android</li>
+              <li>One app, on iPhone and Android</li>
               <li>See the fare first; accept or counter</li>
-              <li>Paid to your wallet as each trip ends</li>
-              <li>Earn from every rider and driver you refer</li>
+              <li>Paid into your wallet the moment you drop off</li>
+              <li>Earn more for every rider and driver you bring</li>
             </ul>
             <StoreBadges small />
           </PullIn>

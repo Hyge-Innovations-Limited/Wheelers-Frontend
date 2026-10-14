@@ -14,7 +14,7 @@ import { Lines, Stamp } from "./motion";
  * the whole chat shows.
  */
 const STEPS = [
-  { n: "01", title: "Say hi", body: "Message Wheelers on WhatsApp, or open the app. Your phone number is your account." },
+  { n: "01", title: "Say hi", body: "Message Wheelers on WhatsApp, or open the app. Your phone number is your account; there is nothing else to fill in." },
   { n: "02", title: "Say where you're going", body: "Type pickup and destination, or drop a location pin." },
   { n: "03", title: "Name your price", body: "Offer what you want to pay. Drivers reply with their offers." },
   {

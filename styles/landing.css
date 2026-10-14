@@ -820,13 +820,27 @@
 .wh-feature-top { display: flex; align-items: center; justify-content: space-between; }
 .wh-feature-mark { width: 26px; height: 26px; color: var(--wh-ink); }
 
-.wh-socials { display: flex; gap: 10px; flex-wrap: wrap; }
+.wh-socials { display: flex; gap: 8px; }
 .wh-social {
-  display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px;
-  border: 2px solid var(--wh-sand); color: var(--wh-cream); transition: transform .15s, background .15s, color .15s, border-color .15s;
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  color: var(--wh-sand); transition: color .15s, transform .15s;
 }
-.wh-social .wh-brand-icon { width: 19px; height: 19px; }
-.wh-social:hover { background: var(--wh-orange); border-color: var(--wh-orange); color: var(--wh-ink); transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--wh-cream); }
+.wh-social .wh-brand-icon { width: 16px; height: 16px; }
+.wh-social:hover { color: var(--wh-orange); transform: translateY(-2px); }
+.wh-follow { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--wh-sand-2); }
+
+.wh-community {
+  display: flex; align-items: center; gap: 14px; max-width: 360px; padding: 14px 16px;
+  border: 2px solid var(--wh-wa); background: rgba(37, 211, 102, .08); color: var(--wh-cream) !important;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.wh-community:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--wh-wa); background: rgba(37, 211, 102, .14); }
+.wh-community-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex: none; background: var(--wh-wa); color: var(--wh-ink); }
+.wh-community-icon .wh-brand-icon { width: 20px; height: 20px; }
+.wh-community-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wh-community-words strong { font-weight: 700; font-size: 15px; }
+.wh-community-words small { font-size: 12.5px; line-height: 1.4; color: var(--wh-sand); }
+.wh-community-go { margin-left: auto; font-size: 18px; color: var(--wh-wa); }
 .wh-stellar-badge {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px;
   border: 2px solid var(--wh-sand); color: var(--wh-cream) !important; font-size: 13px; font-weight: 600; letter-spacing: .02em;

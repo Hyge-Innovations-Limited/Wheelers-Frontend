@@ -3,12 +3,12 @@
 import { RollingStrip } from "./motion";
 
 const ITEMS = [
-  "No download needed · just text Wheelers",
-  "You name the fare · drivers bid · you choose",
-  "Also on iPhone and Android",
+  "Say hi on WhatsApp · we take it from there",
+  "Your fare, your call",
+  "Drivers bid · you choose",
   "Every driver ID-checked",
   "Pay in naira or XLM on Stellar",
-  "Live across Lagos",
+  "One app for riders and drivers",
 ]
 
 export default function LandingTicker() {

@@ -3,12 +3,12 @@
 import { Lines, Stagger, StaggerItem, Stamp } from "./motion";
 
 const FEATURES = [
-  { n: "01", title: "Name your price", body: "You decide what the trip is worth. Drivers who agree take it; the rest make you an offer. No surge, no surprises." },
-  { n: "02", title: "WhatsApp first", body: "Book, pay and follow your ride without leaving the chat you already use every day. Works on any phone with WhatsApp." },
-  { n: "03", title: "Or tap it in the app", body: "Wheelers on iPhone and Android: a live map, saved places, scheduled rides and every trip you have taken." },
-  { n: "04", title: "Book ahead", body: "Sort tomorrow morning's ride tonight. We start finding your driver before you need them and tell you when they're on the way." },
-  { n: "05", title: "Drivers you can check", body: "Every driver passes ID, licence and vehicle checks before their first trip. You see their name, car and plate before you get in." },
-  { n: "06", title: "Paid on Stellar", body: "Top up in naira or XLM. Payments run on the Stellar network: settled in seconds, cents in fees, and on the record.", stellar: true },
+  { n: "01", title: "Name your price", body: "You know what the trip is worth. Say it, and drivers take it or come back with an offer. No surge pricing creeping up on you." },
+  { n: "02", title: "WhatsApp first", body: "The chat you already open fifty times a day is all you need. Book, pay and follow your ride without downloading a thing." },
+  { n: "03", title: "Or tap it in the app", body: "Wheelers on iPhone and Android: a live map, saved places, rides booked ahead and every trip you have taken." },
+  { n: "04", title: "Book ahead", body: "Early flight? School run? Book tonight for tomorrow. We find your driver in good time and tell you when they're on the way." },
+  { n: "05", title: "Drivers you can check", body: "Every driver passes ID, licence and vehicle checks before their first trip. You see who is coming, and in what car, before you step outside." },
+  { n: "06", title: "Paid on Stellar", body: "Top up in naira or XLM. Payments settle on the Stellar network in seconds, for almost nothing, on a record nobody can quietly change.", stellar: true },
 ]
 
 export default function LandingFeatures() {
