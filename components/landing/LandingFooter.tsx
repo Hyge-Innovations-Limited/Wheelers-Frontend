@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { APP_STORE_URL, COMMUNITY_URL, PLAY_STORE_URL, SOCIAL_LINKS, WHATSAPP_URL } from "@/lib/landing-links";
+import { APP_STORE_URL, COMMUNITY_URL, HYGE_URL, PLAY_STORE_URL, SOCIAL_LINKS, WHATSAPP_URL } from "@/lib/landing-links";
 
 export default function LandingFooter() {
   return (
@@ -12,7 +12,11 @@ export default function LandingFooter() {
           <span className="wh-footer-tag">Ride. Earn. Own.</span>
           <p>
             Ride-hailing where the rider names the price and the driver agrees to it. Built in Lagos, on WhatsApp, the
-            Wheelers app and Stellar. A product of HYGE Innovations Limited.
+            Wheelers app and Stellar. A product of{" "}
+            <a href={HYGE_URL} target="_blank" rel="noopener noreferrer" className="wh-hyge-link">
+              HYGE Innovations Limited
+            </a>
+            .
           </p>
 
           <a href="https://stellar.org" target="_blank" rel="noopener noreferrer" className="wh-stellar-badge">
@@ -65,7 +69,12 @@ export default function LandingFooter() {
 
       <div className="wh-footer-bar">
         <div className="wh-container wh-footer-bar-inner">
-          <span>© {new Date().getFullYear()} HYGE Innovations Limited</span>
+          <span>
+            © {new Date().getFullYear()}{" "}
+            <a href={HYGE_URL} target="_blank" rel="noopener noreferrer" className="wh-hyge-link">
+              HYGE Innovations Limited
+            </a>
+          </span>
           <span>Lagos, Nigeria · wheelersng.com</span>
         </div>
       </div>

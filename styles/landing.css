@@ -849,3 +849,9 @@
 .wh-stellar-badge:hover { border-color: var(--wh-cream); }
 .wh-footer-col--community { gap: 14px; }
 .wh-footer-col--community .wh-community { max-width: 300px; }
+
+/* "A product of HYGE": a way to the company behind Wheelers. */
+.wh-chip-link { color: var(--wh-cream) !important; transition: transform .15s, box-shadow .15s; }
+.wh-chip-link:hover { transform: translate(-1px, -1px); }
+.wh-hyge-link { color: inherit !important; text-decoration: underline; text-decoration-color: var(--wh-orange); text-underline-offset: 3px; }
+.wh-hyge-link:hover { color: var(--wh-orange) !important; }

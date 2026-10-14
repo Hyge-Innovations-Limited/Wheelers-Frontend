@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { WHATSAPP_URL } from "@/lib/landing-links";
+import { HYGE_URL, WHATSAPP_URL } from "@/lib/landing-links";
 import { Drift, Lines, Stagger, StaggerItem, Stamp } from "./motion";
 import StoreBadges from "./StoreBadges";
 import { WhatsAppIcon } from "./icons";
@@ -60,7 +60,9 @@ export default function LandingHero() {
           {/* The opening: the two tags are stamped down, the headline comes up line by line, then the ways in. */}
           <Stagger className="wh-chips" gap={0.09} onLoad>
             <StaggerItem>
-              <span className="wh-chip wh-chip-dark">A product of HYGE Innovations Limited</span>
+              <a href={HYGE_URL} target="_blank" rel="noopener noreferrer" className="wh-chip wh-chip-dark wh-chip-link">
+                A product of HYGE Innovations Limited ↗
+              </a>
             </StaggerItem>
             <StaggerItem>
               <span className="wh-chip wh-chip-peach">

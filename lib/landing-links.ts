@@ -20,3 +20,6 @@ export const SOCIAL_LINKS = [
 
 // The riders' and drivers' community, on WhatsApp.
 export const COMMUNITY_URL = "https://chat.whatsapp.com/H4EzW4IUm6N2BhdbQfBveA";
+
+// The company behind Wheelers.
+export const HYGE_URL = "https://hygeinnovations.xyz/";
