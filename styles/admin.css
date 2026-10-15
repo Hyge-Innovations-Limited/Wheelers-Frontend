@@ -2152,3 +2152,94 @@
 .admin-peek-img { flex: 1; min-height: 0; width: 100%; object-fit: contain; background: #f5ead8; }
 .admin-peek-pdf { flex: 1; width: 100%; border: 0; background: #f5ead8; }
 @media (prefers-reduced-motion: reduce) { .admin-peek { animation: none; } }
+
+/* ── Activity ─────────────────────────────────────────────────────────────
+   Dates first, then the counts, the problems hitting most people, bots
+   probing the server, and every line. On a phone each line stacks: who,
+   then what, with the time beside the name. */
+.act-page { min-width: 0; }
+
+.act-range { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 0 0 20px; }
+.act-range-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--adm-line-soft); border-radius: 12px; }
+.act-chip {
+  border: 0; background: transparent; color: var(--adm-muted);
+  font: inherit; font-size: 14px; font-weight: 600;
+  padding: 8px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+}
+.act-chip:hover { color: var(--adm-ink); }
+.act-chip.on { background: var(--adm-paper); color: var(--adm-ink); box-shadow: 0 1px 3px rgba(13, 13, 13, 0.08); }
+.act-chip:focus-visible { outline: 2px solid var(--adm-orange); outline-offset: 1px; }
+.act-dates { display: flex; flex-wrap: wrap; gap: 10px; }
+.act-date { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--adm-muted); }
+.act-date input {
+  font: inherit; font-size: 14px; color: var(--adm-ink);
+  height: 40px; padding: 0 12px; border: 1px solid var(--adm-line); border-radius: 10px; background: var(--adm-paper);
+}
+.act-date input:focus { outline: 2px solid var(--adm-orange); outline-offset: 0; border-color: transparent; }
+
+.act-strong { font-weight: 700; color: var(--adm-ink); }
+.act-sub { font-size: 13px; color: var(--adm-muted); }
+.act-message { margin-top: 4px; color: #2B2622; line-height: 1.45; overflow-wrap: anywhere; }
+
+.act-problem { display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; border-top: 1px solid var(--adm-line-soft); }
+.act-problem:first-child { border-top: 0; }
+.act-problem-text { flex: 1; min-width: 0; }
+.act-problem-count { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; white-space: nowrap; text-align: right; }
+
+.act-probes { padding: 16px 20px 18px; }
+.act-probe-note { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--adm-muted); max-width: 72ch; }
+.act-probe-cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
+.act-probe-head { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--adm-muted); margin-bottom: 6px; }
+.act-probe-line { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--adm-line-soft); font-size: 13px; }
+.act-probe-line code, .act-probe-try code { font-size: 12.5px; color: var(--adm-ink); overflow-wrap: anywhere; min-width: 0; }
+.act-probe-line span { color: var(--adm-muted); white-space: nowrap; }
+.act-probe-recent { margin-top: 14px; }
+.act-probe-recent summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--adm-ink); }
+.act-probe-try { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 2px 12px; padding: 8px 0; border-top: 1px solid var(--adm-line-soft); }
+.act-probe-try > :last-child { grid-column: 2; overflow-wrap: anywhere; }
+
+.act-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 4px 0 12px; }
+.act-search { flex: 1; min-width: 240px; }
+
+.act-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(0, 2.6fr) 88px;
+  grid-template-areas: "who what when";
+  gap: 6px 20px;
+  align-items: start;
+  padding: 16px 20px;
+  border-top: 1px solid var(--adm-line-soft);
+  border-left: 4px solid var(--adm-orange);
+}
+.act-row:first-child { border-top: 0; }
+.act-row.ok { border-left-color: #0B7A55; }
+.act-row.ours { border-left-color: #C0392B; }
+.act-who { grid-area: who; min-width: 0; }
+.act-name { font-weight: 700; color: var(--adm-ink); overflow-wrap: anywhere; }
+a.act-name { text-decoration: underline; text-underline-offset: 3px; }
+.act-what { grid-area: what; min-width: 0; }
+.act-what-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.act-tech { margin-top: 6px; font-size: 12px; color: #9A9086; overflow-wrap: anywhere; }
+.act-tech a { color: inherit; text-decoration: underline; }
+.act-when { grid-area: when; font-size: 13px; color: var(--adm-muted); white-space: nowrap; text-align: right; }
+.act-more { display: flex; justify-content: center; margin: 16px 0 8px; }
+
+@media (max-width: 900px) {
+  .act-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "who when" "what what"; }
+  .act-probe-cols { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+
+@media (max-width: 560px) {
+  .act-range-chips { width: 100%; }
+  .act-chip { flex: 1 0 auto; padding: 8px 10px; }
+  .act-dates { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .act-date { min-width: 0; }
+  .act-date input { width: 100%; min-width: 0; padding: 0 10px; }
+  .act-row { padding: 14px 14px 14px 12px; }
+  .act-problem { flex-direction: column; gap: 6px; padding: 12px 16px; }
+  .act-problem-count { flex-direction: row; align-items: center; gap: 8px; }
+  .act-probes { padding: 14px 16px; }
+  .act-probe-try { grid-template-columns: minmax(0, 1fr); }
+  .act-probe-try > :last-child { grid-column: 1; }
+  .act-search { min-width: 0; flex-basis: 100%; }
+}
