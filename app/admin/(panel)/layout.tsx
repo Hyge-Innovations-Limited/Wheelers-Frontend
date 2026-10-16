@@ -144,7 +144,6 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/activity", label: "Activity", icon: "activity" },
   { href: "/admin/dashboard/usage", label: "Usage", icon: "activity" },
   { href: "/admin/dashboard/health", label: "Health", icon: "health" },
-  { href: "/admin/dashboard/pricing", label: "Pricing", icon: "fees", ownerOnly: true },
   { href: "/admin/dashboard/team", label: "Team", icon: "team", badge: "flags", ownerOnly: true },
 ];
 
