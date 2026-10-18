@@ -253,14 +253,15 @@
 }
 .wh-hero { position: relative; overflow: hidden; background-color: var(--wh-cream); }
 .wh-hero-inner {
-  padding-top: 72px;
+  padding-top: 40px;
   padding-bottom: 80px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
   gap: 48px;
   align-items: center;
 }
-.wh-hero-copy { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+/* Up against the header, not centred on the tall phone beside it. */
+.wh-hero-copy { display: flex; flex-direction: column; gap: 28px; min-width: 0; align-self: start; }
 .wh-chips { display: flex; flex-wrap: wrap; gap: 10px; }
 .wh-chip {
   display: inline-flex;
