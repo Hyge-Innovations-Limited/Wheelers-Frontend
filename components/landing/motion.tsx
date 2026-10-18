@@ -3,16 +3,13 @@
 import {
   AnimatePresence,
   motion,
-  useAnimationFrame,
-  useMotionValue,
   useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
-  useVelocity,
   type Variants,
 } from "framer-motion";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 const noSubscription = () => () => {};
 
@@ -190,50 +187,6 @@ function SteeringWheel() {
           <path d="M26 30 L26 47" stroke="#141210" strokeWidth="5" strokeLinecap="round" />
           <circle cx="26" cy="27" r="7" fill="#FF7700" stroke="#141210" strokeWidth="3" />
         </svg>
-      </motion.div>
-    </div>
-  );
-}
-
-/**
- * The orange strip of words under the header. It rolls by itself, and rolls
- * faster (or backwards) with the page as you scroll it, like a road under a car.
- */
-export function RollingStrip({ children }: { children: ReactNode }) {
-  const still = useReducedMotion();
-  const x = useMotionValue(0);
-  const { scrollY } = useScroll();
-  const velocity = useSpring(useVelocity(scrollY), { damping: 50, stiffness: 400 });
-  const boost = useTransform(velocity, [-1500, 0, 1500], [-5, 0, 5], { clamp: false });
-  const direction = useRef(1);
-  const group = useRef<HTMLSpanElement>(null);
-
-  useAnimationFrame((_, delta) => {
-    if (still) return;
-    const width = group.current?.offsetWidth ?? 0;
-    if (!width) return;
-    const push = boost.get();
-    if (push < -0.2) direction.current = -1;
-    else if (push > 0.2) direction.current = 1;
-    // 46px a second by itself, up to six times that while the page is moving.
-    let next = x.get() - direction.current * (46 + Math.abs(push) * 46) * (delta / 1000);
-    if (next <= -width) next += width;
-    if (next > 0) next -= width;
-    x.set(next);
-  });
-
-  return (
-    <div className="wh-ticker">
-      <motion.div className="wh-ticker-track wh-ticker-track--driven" style={{ x }}>
-        <span ref={group} className="wh-ticker-group">
-          {children}
-        </span>
-        <span className="wh-ticker-group" aria-hidden="true">
-          {children}
-        </span>
-        <span className="wh-ticker-group" aria-hidden="true">
-          {children}
-        </span>
       </motion.div>
     </div>
   );

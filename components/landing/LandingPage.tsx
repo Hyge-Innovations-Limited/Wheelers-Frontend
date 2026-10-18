@@ -3,7 +3,6 @@
 import { MotionConfig } from "framer-motion";
 import { useEffect } from "react";
 import LandingNav from "./LandingNav";
-import LandingTicker from "./LandingTicker";
 import LandingHero from "./LandingHero";
 import TwoSides from "./TwoSides";
 import HowItWorks from "./HowItWorks";
@@ -39,7 +38,6 @@ export default function LandingPage({ className = "" }: { className?: string }) 
     <MotionConfig reducedMotion="user">
       <div className={`wh ${className}`.trim()}>
         <LandingNav />
-        <LandingTicker />
         <main>
           <LandingHero />
           <RoadDivider />
