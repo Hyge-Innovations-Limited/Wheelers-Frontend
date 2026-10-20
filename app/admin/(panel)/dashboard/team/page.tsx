@@ -6,6 +6,7 @@ import { Card, EmptyState, ErrorState, PageHeader, RefreshButton, Spinner, StatC
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { adminJson } from "@/lib/admin-api";
 import { useAdminSession, type AdminRole } from "@/lib/admin-session";
+import { BalanceRequestsCard } from "@/components/admin/balance-access";
 
 /**
  * Team: the admins, their roles, and everything they did in the dashboard.
@@ -170,6 +171,10 @@ export default function TeamPage() {
             <StatCard label="Flags this week" value={admins.reduce((sum, a) => sum + a.flagsThisWeek, 0)} tone={admins.some((a) => a.flagsThisWeek > 0) ? "red" : "green"} hint="Screenshot keys and blocked downloads" />
             <StatCard label="Active today" value={admins.filter((a) => a.today > 0).length} hint="Admins who did anything today" />
           </StatGrid>
+
+          <div style={{ height: 20 }} />
+
+          <BalanceRequestsCard />
 
           <div style={{ height: 20 }} />
 

@@ -7,6 +7,7 @@ import { Badge, Card, EmptyState, ErrorState, Spinner } from "@/components/admin
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { DeskTripTable, Fact, type DeskTrip } from "@/components/admin/desk";
 import { adminJson } from "@/lib/admin-api";
+import { BalanceAccessCard, type BalanceAccess } from "@/components/admin/balance-access";
 import { formatDate, formatWhen, humanise, initialsOf } from "@/lib/admin-format";
 
 interface DeskProfile {
@@ -15,6 +16,7 @@ interface DeskProfile {
   trips: DeskTrip[];
   activity: Array<{ id: string; at: string; ok: boolean; action: string; message: string | null; rideId: string | null }>;
   chats: Array<{ id: string; status: "open" | "resolved"; topic: string | null; lastMessageAt: string; lastMessagePreview: string | null }>;
+  balanceAccess: BalanceAccess;
 }
 
 type Tab = "trips" | "activity" | "chats";
@@ -97,6 +99,10 @@ export default function DeskPersonPage({ params }: { params: Promise<{ userId: s
           </div>
         ) : null}
       </div>
+
+      <BalanceAccessCard userId={person.id} access={data.balanceAccess} onChange={refresh} />
+
+      <div style={{ height: 16 }} />
 
       <Card title={`Message ${person.name}`} padded>
         <form onSubmit={(event) => void send(event)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>

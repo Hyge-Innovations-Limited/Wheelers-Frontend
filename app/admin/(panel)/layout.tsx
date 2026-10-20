@@ -272,8 +272,9 @@ export default function AdminPanelLayout({
   useEffect(() => {
     if (!ready || !isOwner) return;
     let cancelled = false;
-    const poll = () => adminJson<{ last24h: number }>("/admin/team/flags")
-      .then((r) => { if (!cancelled) setTeamFlags(r.last24h); })
+    // Flagged events, and support waiting for a yes to see a balance.
+    const poll = () => adminJson<{ last24h: number; balanceRequests?: number }>("/admin/team/flags")
+      .then((r) => { if (!cancelled) setTeamFlags(r.last24h + (r.balanceRequests ?? 0)); })
       .catch(() => undefined);
     void poll();
     const timer = setInterval(() => void poll(), 60_000);
