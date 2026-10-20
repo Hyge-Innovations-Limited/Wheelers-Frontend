@@ -7,7 +7,6 @@ import { Badge, Card, EmptyState, ErrorState, FilterTabs, PageHeader, RefreshBut
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { AdminApiError, adminJson } from "@/lib/admin-api";
 import { useAdminSession } from "@/lib/admin-session";
-import { RevealPhone } from "@/components/admin/reveal-phone";
 
 /**
  * Support inbox: chats riders and drivers start from the app.
@@ -78,11 +77,13 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 
 export default function SupportInboxPage() {
   const [status, setStatus] = useState<Status>("open");
-  const [picked, setPicked] = useState<string | null>(null);
+  // A link can open one chat (?c=…): from someone's profile, or after messaging them.
+  const [linked] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("c")));
+  const [picked, setPicked] = useState<string | null>(linked);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"send" | "resolve" | "assign" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  // The support desk: numbers masked (shown on asking), no fares, and its own profile and trip pages.
+  // The support desk: no fares, and its own profile and trip pages.
   const { isSupport } = useAdminSession();
   const profileHref = (id: string) => (isSupport ? `/admin/desk/people/${id}` : `/admin/dashboard/users/${id}`);
   const tripHref = (id: string) => (isSupport ? `/admin/desk/trips/${id}` : `/admin/dashboard/rides/${id}`);
@@ -90,7 +91,7 @@ export default function SupportInboxPage() {
   const inbox = useAdminData<Inbox>(`/admin/support/conversations?status=${status}`, [status], { refreshMs: 8_000 });
   const rows = inbox.data?.items ?? [];
   // Whoever is waiting longest is opened first; a pick the list no longer has falls back to it.
-  const selected = picked && rows.some((row) => row.id === picked) ? picked : rows[0]?.id ?? null;
+  const selected = picked && (rows.some((row) => row.id === picked) || picked === linked) ? picked : rows[0]?.id ?? null;
   const thread = useAdminData<Thread>(selected ? `/admin/support/conversations/${selected}` : null, [selected], { refreshMs: 5_000 });
   const open = thread.data && thread.data.conversation.id === selected ? thread.data : null;
 
@@ -243,9 +244,7 @@ export default function SupportInboxPage() {
               <Card title="Who wrote in" padded>
                 <Fact label="Name">{open.conversation.person.name}</Fact>
                 <Fact label="Account">{open.conversation.person.role === "DRIVER" ? "Driver" : "Rider"}</Fact>
-                <Fact label="Phone">{isSupport
-                  ? <RevealPhone key={open.conversation.person.id} userId={open.conversation.person.id} masked={open.conversation.person.phone} />
-                  : open.conversation.person.phone ? <a href={`tel:${open.conversation.person.phone}`}>{open.conversation.person.phone}</a> : "—"}</Fact>
+                <Fact label="Phone">{open.conversation.person.phone ? <a href={`tel:${open.conversation.person.phone}`}>{open.conversation.person.phone}</a> : "—"}</Fact>
                 <Fact label="Email">{open.conversation.person.email ?? "—"}</Fact>
                 <Fact label="Chat started">{when(open.conversation.createdAt)}</Fact>
                 {open.conversation.topic ? <Fact label="About">{open.conversation.topic}</Fact> : null}
@@ -259,8 +258,8 @@ export default function SupportInboxPage() {
                     <Fact label="To">{open.ride.destAddress}</Fact>
                     {isSupport ? null : <Fact label="Fare">{naira(open.ride.fareNgn)}</Fact>}
                     <Fact label={open.ride.startedAt ? "Started" : "Booked"}>{when(open.ride.startedAt ?? open.ride.createdAt)}</Fact>
-                    <Fact label="Rider">{open.ride.rider?.name ?? "—"}{open.ride.rider?.phone ? <> · {isSupport ? open.ride.rider.phone : <a href={`tel:${open.ride.rider.phone}`}>{open.ride.rider.phone}</a>}</> : null}</Fact>
-                    <Fact label="Driver">{open.ride.driver?.name ?? "No driver yet"}{open.ride.driver?.phone ? <> · {isSupport ? open.ride.driver.phone : <a href={`tel:${open.ride.driver.phone}`}>{open.ride.driver.phone}</a>}</> : null}</Fact>
+                    <Fact label="Rider">{open.ride.rider?.name ?? "—"}{open.ride.rider?.phone ? <> · <a href={`tel:${open.ride.rider.phone}`}>{open.ride.rider.phone}</a></> : null}</Fact>
+                    <Fact label="Driver">{open.ride.driver?.name ?? "No driver yet"}{open.ride.driver?.phone ? <> · <a href={`tel:${open.ride.driver.phone}`}>{open.ride.driver.phone}</a></> : null}</Fact>
                     {open.ride.driver ? <Fact label="Car">{[open.ride.driver.car, open.ride.driver.plate].filter(Boolean).join(" · ") || "—"}</Fact> : null}
                     <p style={{ margin: "12px 0 0", display: "flex", flexWrap: "wrap", gap: 12 }}>
                       <Link href={tripHref(open.ride.id)}>Open the trip</Link>

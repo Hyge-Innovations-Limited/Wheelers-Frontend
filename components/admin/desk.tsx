@@ -7,7 +7,7 @@ import { EmptyState, TableWrap } from "@/components/admin/ui";
 
 /**
  * The support desk's people and trips, as the server sends them to it
- * (/admin/desk/*): numbers and emails masked, nothing about money.
+ * (/admin/desk/*): with the number and email to reach someone, nothing about money.
  */
 export interface DeskTrip {
   id: string;
@@ -35,6 +35,7 @@ export interface DeskPerson {
   name: string;
   role: string;
   phone: string | null;
+  email: string | null;
   joinedAt: string;
   driver: { online: boolean; documents: string } | null;
 }
