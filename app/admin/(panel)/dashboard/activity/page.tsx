@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Badge, Card, EmptyState, ErrorState, FilterTabs, PageHeader, RefreshButton, SearchInput, Spinner, StatCard, StatGrid } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { adminJson } from "@/lib/admin-api";
+import { useAdminSession } from "@/lib/admin-session";
 
 /**
  * Activity: what people tried to do in the app and how it went, in words.
@@ -100,11 +101,13 @@ function rangeFor(preset: Preset, from: string, to: string): { query: string; la
 }
 
 function Who({ row }: { row: Row }) {
+  // The support desk opens its own profile page (numbers masked, no money).
+  const { isSupport } = useAdminSession();
   const label = row.name ?? row.phone ?? (row.signedIn ? "Someone signed in" : "Someone not signed in");
   return (
     <div className="act-who">
       {row.userId ? (
-        <Link className="act-name" href={`/admin/dashboard/users/${row.userId}`}>
+        <Link className="act-name" href={isSupport ? `/admin/desk/people/${row.userId}` : `/admin/dashboard/users/${row.userId}`}>
           {label}
         </Link>
       ) : (
@@ -165,6 +168,7 @@ function RangePicker({
 }
 
 export default function ActivityPage() {
+  const { isSupport } = useAdminSession();
   const [outcome, setOutcome] = useState<Outcome>("failed");
   const [query, setQuery] = useState("");
   const [preset, setPreset] = useState<Preset>("24h");
@@ -349,7 +353,7 @@ export default function ActivityPage() {
                   {row.rideId ? (
                     <>
                       {" · "}
-                      <Link href={`/admin/dashboard/rides/${row.rideId}`}>the trip</Link>
+                      <Link href={isSupport ? `/admin/desk/trips/${row.rideId}` : `/admin/dashboard/rides/${row.rideId}`}>the trip</Link>
                     </>
                   ) : null}
                 </div>

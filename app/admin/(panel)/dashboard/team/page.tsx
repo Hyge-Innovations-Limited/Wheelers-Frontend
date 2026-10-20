@@ -166,7 +166,7 @@ export default function TeamPage() {
       {team.data ? (
         <>
           <StatGrid cols={3}>
-            <StatCard label="Admins" value={admins.length} hint={`${admins.filter((a) => a.role === "OWNER").length} owners · ${admins.filter((a) => a.role === "STAFF").length} staff`} />
+            <StatCard label="Admins" value={admins.length} hint={`${admins.filter((a) => a.role === "OWNER").length} owners · ${admins.filter((a) => a.role === "STAFF").length} staff · ${admins.filter((a) => a.role === "SUPPORT").length} support`} />
             <StatCard label="Flags this week" value={admins.reduce((sum, a) => sum + a.flagsThisWeek, 0)} tone={admins.some((a) => a.flagsThisWeek > 0) ? "red" : "green"} hint="Screenshot keys and blocked downloads" />
             <StatCard label="Active today" value={admins.filter((a) => a.today > 0).length} hint="Admins who did anything today" />
           </StatGrid>
@@ -193,6 +193,7 @@ export default function TeamPage() {
                         >
                           <option value="OWNER">Owner</option>
                           <option value="STAFF">Staff</option>
+                          <option value="SUPPORT">Support</option>
                         </select>
                       </td>
                       <td>{when(a.lastSeenAt)}</td>
@@ -226,7 +227,7 @@ export default function TeamPage() {
               </div>
               {traced ? (
                 traced.admin
-                  ? <div><strong>{traced.code}</strong> is <strong>{traced.admin.name}</strong> (@{traced.admin.username}, {traced.admin.role === "OWNER" ? "owner" : "staff"}).</div>
+                  ? <div><strong>{traced.code}</strong> is <strong>{traced.admin.name}</strong> (@{traced.admin.username}, {traced.admin.role === "OWNER" ? "owner" : traced.admin.role === "SUPPORT" ? "support" : "staff"}).</div>
                   : <div style={{ color: "#FF3333" }}>No admin has the code {traced.code}.</div>
               ) : null}
             </div>

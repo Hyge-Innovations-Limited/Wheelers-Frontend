@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminFetch, saveSession } from "@/lib/admin-api";
+import { SUPPORT_HOME } from "@/lib/admin-session";
 import "../../../styles/admin.css";
 
 export default function AdminLoginPage() {
@@ -46,7 +47,8 @@ function AdminLoginForm() {
 
       saveSession(data.accessToken, data.admin, data.expiresAt);
 
-      router.push("/admin/dashboard");
+      // Support has its own desk: straight to the inbox.
+      router.push(data.admin?.role === "SUPPORT" ? SUPPORT_HOME : "/admin/dashboard");
     } catch {
       setError("Failed to connect to server");
     } finally {

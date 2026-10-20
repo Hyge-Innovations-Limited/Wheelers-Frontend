@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { adminJson, clearSession, endSession, fetchAlertCounts, sessionExpiresAt } from "@/lib/admin-api";
-import { AdminSessionProvider, type AdminSessionUser } from "@/lib/admin-session";
+import { AdminSessionProvider, SUPPORT_HOME, SUPPORT_PAGES, type AdminSessionUser } from "@/lib/admin-session";
 import { ScreenGuard } from "@/components/admin/screen-guard";
 import "../../../styles/admin.css";
 
@@ -147,6 +147,13 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/team", label: "Team", icon: "team", badge: "flags", ownerOnly: true },
 ];
 
+// The support desk's own sidebar: the inbox, what people tried in the app, and the look-ups.
+const SUPPORT_NAV: typeof NAV_ITEMS = [
+  { href: "/admin/dashboard/support", label: "Inbox", icon: "activity", badge: "support" },
+  { href: "/admin/dashboard/activity", label: "Activity", icon: "alerts" },
+  { href: "/admin/desk", label: "People & trips", icon: "riders" },
+];
+
 export default function AdminPanelLayout({
   children,
 }: {
@@ -158,6 +165,7 @@ export default function AdminPanelLayout({
   const pathname = usePathname();
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [ready, setReady] = useState(false);
+  const isSupport = admin?.role === "SUPPORT";
   /**
    * Emergency alerts waiting on a human.
    *
@@ -213,8 +221,11 @@ export default function AdminPanelLayout({
     let cancelled = false;
     const poll = async () => {
       try {
-        const counts = await fetchAlertCounts();
-        if (!cancelled) setLiveAlerts(counts.live);
+        // Emergency alerts are not part of the support desk.
+        if (!isSupport) {
+          const counts = await fetchAlertCounts();
+          if (!cancelled) setLiveAlerts(counts.live);
+        }
       } catch {
         // A failed poll leaves the last known count alone.
       }
@@ -234,7 +245,7 @@ export default function AdminPanelLayout({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [ready]);
+  }, [ready, isSupport]);
 
   // Who is signed in, from the server: the role decides what is shown.
   useEffect(() => {
@@ -251,6 +262,12 @@ export default function AdminPanelLayout({
   }, [ready]);
 
   const isOwner = admin?.role === "OWNER";
+
+  // Support has only its desk: any other page goes back to the inbox (the server refuses them anyway).
+  useEffect(() => {
+    if (!ready || !isSupport) return;
+    if (!SUPPORT_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`))) router.replace(SUPPORT_HOME);
+  }, [ready, isSupport, pathname, router]);
 
   useEffect(() => {
     if (!ready || !isOwner) return;
@@ -297,7 +314,7 @@ export default function AdminPanelLayout({
           </svg>
         </button>
         <span className="admin-topbar-brand">Wheelers</span>
-        {liveAlerts > 0 ? (
+        {liveAlerts > 0 && !isSupport ? (
           <Link href="/admin/dashboard/alerts" className="admin-topbar-alerts" onClick={() => setNavOpen(false)}>
             {liveAlerts > 99 ? "99+" : liveAlerts} alerts
           </Link>
@@ -311,7 +328,7 @@ export default function AdminPanelLayout({
         </div>
 
         <nav className="admin-sidebar-nav">
-          {NAV_ITEMS.filter((item) => !("ownerOnly" in item && item.ownerOnly) || isOwner).map((item) => (
+          {(isSupport ? SUPPORT_NAV : NAV_ITEMS.filter((item) => !("ownerOnly" in item && item.ownerOnly) || isOwner)).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -359,6 +376,7 @@ export default function AdminPanelLayout({
         value={{
           admin: admin ? { id: admin.id ?? null, username: admin.username, name: admin.name, role: admin.role ?? "STAFF", markCode: admin.markCode ?? null } : null,
           isOwner,
+          isSupport,
         }}
       >
         <main className="admin-main">{children}</main>
