@@ -2243,3 +2243,63 @@ a.act-name { text-decoration: underline; text-underline-offset: 3px; }
   .act-probe-try > :last-child { grid-column: 1; }
   .act-search { min-width: 0; flex-basis: 100%; }
 }
+
+/* Checks on a driver's page: a small spinner inside a button or a line, and
+   the card shown while Prembly or the AI is working (a sweeping bar). */
+.admin-spin-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: -2px;
+  margin-right: 8px;
+  animation: admin-spin 0.7s linear infinite;
+}
+
+.admin-working {
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fbf7f1;
+  font-size: 13px;
+  color: #3d3833;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-working::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 35%;
+  border-radius: 3px;
+  background: var(--or);
+  animation: admin-working-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes admin-working-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.admin-check-in {
+  animation: admin-check-in 0.35s ease-out both;
+}
+
+@keyframes admin-check-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-spin-sm { animation-duration: 1.6s; }
+  .admin-working::after { animation: none; width: 100%; opacity: 0.35; }
+  .admin-check-in { animation: none; }
+}

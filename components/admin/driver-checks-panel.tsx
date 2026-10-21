@@ -14,7 +14,7 @@ import { adminFetch } from "@/lib/admin-api";
  *                each set against what the driver gave us; what does not agree
  *                shows in red. Each check costs money: only owners run one, and
  *                the same check on the same number within 30 days shows the
- *                saved answer unless run again on purpose.
+ *                saved answer. While one runs, the card says so and a bar sweeps.
  *   By hand      what Prembly does not cover (the hackney permit on AutoReg,
  *                roadworthiness on DVIS, the owner's letter): each paper the
  *                driver sent, with its photo, number and dates, the site to
@@ -312,14 +312,13 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   const latest = (kinds: string[]) => data.checks.find((c) => kinds.includes(c.kind));
   const canRun = prembly.on && prembly.canRun;
 
-  const runPrembly = async (kind: PaidKind, body: Record<string, unknown>, force = false) => {
-    if (!window.confirm(`${force ? "Run it again? " : ""}This is a paid Prembly check. Go ahead?`)) return;
+  const runPrembly = async (kind: PaidKind, body: Record<string, unknown>) => {
     setBusy(kind); setError(null); setReusedKind(null);
     try {
       const res = await adminFetch(`/admin/drivers/${driverId}/checks/prembly`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ kind, ...body, ...(force ? { force: true } : {}) }),
+        body: JSON.stringify({ kind, ...body }),
       });
       const answer = (await res.json().catch(() => null)) as { error?: string; reused?: boolean; photo?: string } | null;
       if (!res.ok) setError(answer?.error ?? "Could not run that check.");
@@ -362,34 +361,41 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
 
   const copy = (text: string) => { void navigator.clipboard?.writeText(text).catch(() => undefined); };
 
-  const runButton = (kind: PaidKind, body: Record<string, unknown>, ready: boolean) => {
-    const last = latest(kind === "licence" ? ["licence", "licenceFace"] : [kind]);
-    return (
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-        <button type="button" className="admin-btn-approve" disabled={!canRun || !ready || busy !== null} onClick={() => void runPrembly(kind, body)}>
-          {busy === kind ? "Checking…" : "Check with Prembly"}
-        </button>
-        {canRun && last && (reusedKind === kind || last.outcome !== "error") ? (
-          <button type="button" className="admin-btn-ghost" disabled={busy !== null} onClick={() => void runPrembly(kind, body, true)}>
-            Run again (paid)
-          </button>
-        ) : null}
-      </div>
-    );
+  /** Where each check asks, for the line shown while it runs. */
+  const ASKING: Record<PaidKind, string> = {
+    licence: "Asking FRSC through Prembly",
+    plate: "Asking the vehicle records through Prembly",
+    insurance: "Asking NIID through Prembly",
   };
+
+  const runButton = (kind: PaidKind, body: Record<string, unknown>, ready: boolean) => (
+    <>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+        <button type="button" className="admin-btn-approve" disabled={!canRun || !ready || busy !== null} aria-busy={busy === kind} onClick={() => void runPrembly(kind, body)}>
+          {busy === kind ? <><span className="admin-spin-sm" aria-hidden />Checking…</> : "Check with Prembly"}
+        </button>
+      </div>
+      {busy === kind ? (
+        <div className="admin-working" role="status">
+          <span className="admin-spin-sm" aria-hidden style={{ color: "var(--or)", margin: 0 }} />
+          <span>{ASKING[kind]}… this can take up to a minute.</span>
+        </div>
+      ) : null}
+    </>
+  );
 
   const resultOf = (kind: PaidKind) => {
     const last = latest(kind === "licence" ? ["licence", "licenceFace"] : [kind]);
-    if (!last) return null;
+    if (!last || busy === kind) return null;
     return (
-      <>
+      <div key={last.id} className="admin-check-in">
         {reusedKind === kind ? (
           <p style={{ margin: "8px 0 0", fontSize: 12.5, color: "#786F68" }}>
-            Checked within the last {prembly.reuseDays} days: this is the saved answer, nothing was paid. Use Run again for a fresh one.
+            Checked within the last {prembly.reuseDays} days: this is the saved answer, nothing was paid.
           </p>
         ) : null}
         <CheckResult check={last} />
-      </>
+      </div>
     );
   };
 
@@ -467,14 +473,17 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
           </label>
         ) : null}
         {read.state === "reading" ? (
-          <p style={{ margin: "8px 0 0", fontSize: 13, color: "#786F68" }}>Reading the licence photo…</p>
+          <div className="admin-working" role="status">
+            <span className="admin-spin-sm" aria-hidden style={{ color: "var(--or)", margin: 0 }} />
+            <span>Reading the licence photo…</span>
+          </div>
         ) : read.state === "failed" ? (
           <p style={{ margin: "8px 0 0", fontSize: 13, color: "#786F68" }}>
             {read.error}{" "}
             <button type="button" className="admin-btn-ghost" style={{ fontSize: 12 }} onClick={() => void readLicence(true)}>Try again</button>
           </p>
         ) : read.state === "done" ? (
-          <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: "#F4F1FF", fontSize: 13 }}>
+          <div className="admin-check-in" style={{ marginTop: 8, padding: 10, borderRadius: 10, background: "#F4F1FF", fontSize: 13 }}>
             {read.reading.readable ? (
               <div>
                 Read from the licence photo by AI
@@ -623,13 +632,13 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
                     onChange={(e) => setNotes((all) => ({ ...all, [paper.type]: e.target.value }))}
                   />
                   <button type="button" className="admin-btn-approve" disabled={busy !== null} onClick={() => void recordManual(paper.type, source, "verified")}>
-                    {mine ? "Saving…" : "Good"}
+                    {mine ? <><span className="admin-spin-sm" aria-hidden />Saving…</> : "Good"}
                   </button>
                   <button type="button" className="admin-btn-reject" disabled={busy !== null} onClick={() => void recordManual(paper.type, source, "failed")}>
                     Failed
                   </button>
                 </div>
-                {last ? <CheckResult check={last} /> : null}
+                {last ? <div key={last.id} className="admin-check-in"><CheckResult check={last} /></div> : null}
               </Beside>
             </div>
           );
