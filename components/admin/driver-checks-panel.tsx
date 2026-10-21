@@ -30,7 +30,8 @@ import { adminFetch } from "@/lib/admin-api";
  * A check never approves or sends back a paper: that is decided in Papers below.
  */
 
-type Outcome = "verified" | "mismatch" | "not_found" | "failed" | "error";
+/** "pending": a Prembly check still running in the background on the server. */
+type Outcome = "verified" | "mismatch" | "not_found" | "failed" | "error" | "pending";
 interface Check {
   id: string;
   kind: string;
@@ -45,6 +46,8 @@ interface Check {
   note: string | null;
   by: string;
   at: string;
+  /** The FRSC photo of a licence check just in: kept a few minutes in the server's memory, never saved. */
+  photo?: string;
 }
 interface ManualSource { key: string; label: string; url: string | null; papers: string[] }
 interface SentPaper {
@@ -100,6 +103,7 @@ const OUTCOME: Record<Outcome, { word: string; color: string; bg: string }> = {
   not_found: { word: "Not found", color: "#B00020", bg: "#FFF0F0" },
   failed: { word: "Failed", color: "#B00020", bg: "#FFF0F0" },
   error: { word: "Could not check", color: "#786F68", bg: "#F3EEE6" },
+  pending: { word: "Checking…", color: "#B04A00", bg: "#FFF4E8" },
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -247,8 +251,9 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   const { data, refresh } = useAdminData<ChecksView>(`/admin/drivers/${driverId}/checks`, [driverId]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
   const [reusedKind, setReusedKind] = useState<string | null>(null);
+  // The check each press started, until the page's list has it: no flash of the old answer in between.
+  const [started, setStarted] = useState<Record<string, string>>({});
 
   // What a licence check sends, typed or corrected from the licence photo.
   const [licence, setLicence] = useState<{ number: string; dob: string; firstName: string; lastName: string; withFace: boolean } | null>(null);
@@ -258,6 +263,14 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [sources, setSources] = useState<Record<string, string>>({});
   const [read, setRead] = useState<ReadState>({ state: "idle" });
+
+  // A Prembly check runs on the server in the background: while one is running, ask every 3 seconds until it is in.
+  const anyRunning = Boolean(data?.checks.some((c) => c.outcome === "pending"));
+  useEffect(() => {
+    if (!anyRunning) return;
+    const timer = setInterval(refresh, 3000);
+    return () => clearInterval(timer);
+  }, [anyRunning, refresh]);
   const readFor = useRef<string | null>(null);
 
   // The form as it starts: what the driver typed. A reading fills in only what is still empty.
@@ -320,11 +333,13 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind, ...body }),
       });
-      const answer = (await res.json().catch(() => null)) as { error?: string; reused?: boolean; photo?: string } | null;
+      const answer = (await res.json().catch(() => null)) as { error?: string; reused?: boolean; check?: { id: string } } | null;
       if (!res.ok) setError(answer?.error ?? "Could not run that check.");
+      const startedId = answer?.check?.id;
+      if (res.ok && startedId) setStarted((all) => ({ ...all, [kind]: startedId }));
       if (answer?.reused) setReusedKind(kind);
-      if (kind === "licence") setPhoto(answer?.photo ?? null);
-      refresh();
+      // Started (202): the check is now "pending" and the page asks until it is in.
+      await refresh();
     } catch {
       setError("Could not reach the server.");
     } finally {
@@ -368,25 +383,32 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
     insurance: "Asking NIID through Prembly",
   };
 
+  const kindsOf = (kind: PaidKind) => (kind === "licence" ? ["licence", "licenceFace"] : [kind]);
+  /** Pressed, or running on the server (also after the page is reopened). */
+  const working = (kind: PaidKind) => {
+    const last = latest(kindsOf(kind));
+    return busy === kind || last?.outcome === "pending" || Boolean(started[kind] && !data.checks.some((c) => c.id === started[kind]));
+  };
+
   const runButton = (kind: PaidKind, body: Record<string, unknown>, ready: boolean) => (
     <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-        <button type="button" className="admin-btn-approve" disabled={!canRun || !ready || busy !== null} aria-busy={busy === kind} onClick={() => void runPrembly(kind, body)}>
-          {busy === kind ? <><span className="admin-spin-sm" aria-hidden />Checking…</> : "Check with Prembly"}
+        <button type="button" className="admin-btn-approve" disabled={!canRun || !ready || busy !== null || working(kind)} aria-busy={working(kind)} onClick={() => void runPrembly(kind, body)}>
+          {working(kind) ? <><span className="admin-spin-sm" aria-hidden />Checking…</> : "Check with Prembly"}
         </button>
       </div>
-      {busy === kind ? (
+      {working(kind) ? (
         <div className="admin-working" role="status">
           <span className="admin-spin-sm" aria-hidden style={{ color: "var(--or)", margin: 0 }} />
-          <span>{ASKING[kind]}… this can take up to a minute.</span>
+          <span>{ASKING[kind]}… this can take up to a minute. You can leave this page: the answer is saved.</span>
         </div>
       ) : null}
     </>
   );
 
   const resultOf = (kind: PaidKind) => {
-    const last = latest(kind === "licence" ? ["licence", "licenceFace"] : [kind]);
-    if (!last || busy === kind) return null;
+    const last = latest(kindsOf(kind));
+    if (!last || working(kind)) return null;
     return (
       <div key={last.id} className="admin-check-in">
         {reusedKind === kind ? (
@@ -534,11 +556,11 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
           { number: lic.number, dob: lic.dob, ...(lic.withFace ? { withFace: true } : { firstName: lic.firstName, lastName: lic.lastName }) },
           Boolean(lic.number.trim() && lic.dob && (lic.withFace || (lic.firstName.trim() && lic.lastName.trim()))),
         )}
-        {photo ? (
-          <div style={{ marginTop: 8 }}>
-            <span style={{ fontSize: 12.5, color: "#786F68" }}>Photo on the FRSC record (shown now, not saved):</span>
+        {!working("licence") && latest(["licence"])?.photo ? (
+          <div className="admin-check-in" style={{ marginTop: 8 }}>
+            <span style={{ fontSize: 12.5, color: "#786F68" }}>Photo on the FRSC record (shown for a few minutes, not saved):</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`data:image/jpeg;base64,${photo}`} alt="Photo on the licence record" style={{ display: "block", maxHeight: 180, borderRadius: 10, marginTop: 4 }} />
+            <img src={`data:image/jpeg;base64,${latest(["licence"])!.photo}`} alt="Photo on the licence record" style={{ display: "block", maxHeight: 180, borderRadius: 10, marginTop: 4 }} />
           </div>
         ) : null}
         {resultOf("licence")}
