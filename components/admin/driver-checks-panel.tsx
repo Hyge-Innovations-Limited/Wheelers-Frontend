@@ -400,6 +400,8 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   };
 
   const sentPapers = data.documents?.papers ?? [];
+  // Insurance is checked with Prembly above, so it is not checked by hand as well.
+  const byHand = sentPapers.filter((p) => p.type !== "insurance");
   const insurancePaper = sentPapers.find((p) => p.type === "insurance") ?? null;
   // The usual site for a paper: the first that covers it, or Other.
   const usualSource = (type: string) => data.manualSources.find((s) => s.url && s.papers.includes(type))?.key ?? "other";
@@ -597,9 +599,9 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
             </button>
           ) : null}
         </div>
-        {sentPapers.length === 0 ? (
+        {byHand.length === 0 ? (
           <p style={{ margin: "10px 0 0", fontSize: 13, color: "#786F68" }}>No papers sent yet.</p>
-        ) : sentPapers.map((paper) => {
+        ) : byHand.map((paper) => {
           const source = sources[paper.type] ?? usualSource(paper.type);
           const site = data.manualSources.find((x) => x.key === source);
           const last = lastManual(paper.type);
