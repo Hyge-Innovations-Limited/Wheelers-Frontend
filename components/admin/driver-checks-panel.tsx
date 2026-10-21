@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+
+import { DocPeek } from "@/components/admin/doc-peek";
 
 import { useAdminData } from "@/components/admin/use-admin-data";
 import { adminFetch } from "@/lib/admin-api";
@@ -14,8 +16,13 @@ import { adminFetch } from "@/lib/admin-api";
  *                the same check on the same number within 30 days shows the
  *                saved answer unless run again on purpose.
  *   By hand      what Prembly does not cover (the hackney permit on AutoReg,
- *                roadworthiness on DVIS, the owner's letter): open the site,
- *                check, and record what was found.
+ *                roadworthiness on DVIS, the owner's letter): each paper the
+ *                driver sent, with its photo, number and dates, the site to
+ *                check it on, and Good or Failed.
+ *
+ * Each check shows the paper it is set against beside it (the licence photo
+ * to read the date of birth from, the insurance certificate), so nothing is
+ * looked up elsewhere on the page.
  *
  * A check never approves or sends back a paper: that is decided in Papers below.
  */
@@ -37,6 +44,17 @@ interface Check {
   at: string;
 }
 interface ManualSource { key: string; label: string; url: string | null; papers: string[] }
+interface SentPaper {
+  type: string;
+  label: string;
+  number: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  uploadedAt: string;
+  expiresOn: string | null;
+  daysLeft: number | null;
+  isPdf: boolean;
+  url: string | null;
+}
 interface ChecksView {
   prembly: { on: boolean; canRun: boolean; thisMonth: number; reuseDays: number };
   inputs: {
@@ -51,6 +69,8 @@ interface ChecksView {
     hasSelfie: boolean;
   };
   manualSources: ManualSource[];
+  /** Older servers send none. */
+  documents?: { licence: { url: string; isPdf: boolean } | null; selfieUrl: string | null; papers: SentPaper[] };
   checks: Check[];
 }
 type PaidKind = "licence" | "plate" | "insurance";
@@ -73,17 +93,11 @@ const KIND_LABEL: Record<string, string> = {
 
 const SOURCE_LABEL: Record<string, string> = { prembly: "Prembly", autoreg: "AutoReg", dvis: "DVIS", niid: "NIID", other: "Other" };
 
-const PAPER_OPTIONS: Array<{ type: string; label: string }> = [
-  { type: "hackneyPermit", label: "Hackney permit" },
-  { type: "vehicleLicence", label: "Vehicle licence" },
-  { type: "roadworthiness", label: "Roadworthiness certificate" },
-  { type: "vioInspection", label: "VIO inspection report" },
-  { type: "insurance", label: "Insurance" },
-  { type: "proofOfOwnership", label: "Proof of ownership" },
-  { type: "purchaseReceipt", label: "Receipt of the car" },
-  { type: "ownerLetter", label: "Owner's letter" },
-  { type: "lagosVehicle", label: "Lagos State vehicle paper" },
-];
+const STATUS_WORD: Record<SentPaper["status"], { word: string; color: string }> = {
+  PENDING: { word: "To check", color: "#B04A00" },
+  APPROVED: { word: "Approved", color: "#0B7A55" },
+  REJECTED: { word: "Sent back", color: "#B00020" },
+};
 
 const FOUND_LABEL: Record<string, string> = {
   name: "Name",
@@ -109,6 +123,9 @@ const FOUND_LABEL: Record<string, string> = {
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Africa/Lagos" });
 
+const dayWords = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
 const inputStyle = { height: 38, borderRadius: 10, border: "1px solid #E8DDD3", padding: "0 10px", fontSize: 14, minWidth: 0 } as const;
 
 function OutcomeBadge({ outcome }: { outcome: Outcome }) {
@@ -117,6 +134,54 @@ function OutcomeBadge({ outcome }: { outcome: Outcome }) {
     <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: look.bg, color: look.color, fontWeight: 700, whiteSpace: "nowrap" }}>
       {look.word}
     </span>
+  );
+}
+
+/** A paper's photo or PDF, small: point at it for a large preview, click to open it in a new tab. */
+function Thumb({ url, isPdf, label, height = 150 }: { url: string | null; isPdf: boolean; label: string; height?: number }) {
+  if (!url) return <div style={{ fontSize: 12.5, color: "#786F68" }}>File storage is off</div>;
+  return (
+    <DocPeek url={url} isPdf={isPdf} label={label}>
+      {isPdf ? (
+        <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 700, color: "#0d0d0d" }}>Open {label} (PDF)</a>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt={label}
+          onClick={() => window.open(url, "_blank")}
+          style={{ display: "block", height, maxWidth: "100%", objectFit: "contain", borderRadius: 10, background: "#f5ead8", cursor: "zoom-in" }}
+        />
+      )}
+    </DocPeek>
+  );
+}
+
+/** A paper's number and dates in one line: expired or running out within 30 days in red. */
+function PaperDates({ paper }: { paper: SentPaper }) {
+  const soon = paper.daysLeft !== null && paper.daysLeft <= 30;
+  return (
+    <div style={{ fontSize: 13, display: "flex", gap: 12, flexWrap: "wrap" }}>
+      {paper.number ? <span>No. <strong>{paper.number}</strong></span> : null}
+      <span style={{ color: "#786F68" }}>Sent {when(paper.uploadedAt)}</span>
+      {paper.expiresOn ? (
+        <span style={soon ? { color: "#B00020", fontWeight: 700 } : undefined}>
+          Expires {dayWords(paper.expiresOn)}
+          {paper.daysLeft === null ? "" : paper.daysLeft < 0 ? ` (expired ${-paper.daysLeft} days ago)` : soon ? ` (in ${paper.daysLeft} days)` : ""}
+        </span>
+      ) : <span style={{ color: "#786F68" }}>Does not expire</span>}
+      <span style={{ color: STATUS_WORD[paper.status].color, fontWeight: 700 }}>{STATUS_WORD[paper.status].word}</span>
+    </div>
+  );
+}
+
+/** The check's form beside what it is set against. */
+function Beside({ doc, children }: { doc: ReactNode; children: ReactNode }) {
+  return (
+    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginTop: 10 }}>
+      <div style={{ flex: "1 1 360px", minWidth: 0 }}>{children}</div>
+      {doc ? <div style={{ flex: "0 1 280px", minWidth: 0 }}>{doc}</div> : null}
+    </div>
   );
 }
 
@@ -170,7 +235,9 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   const [licence, setLicence] = useState<{ number: string; dob: string; firstName: string; lastName: string; withFace: boolean } | null>(null);
   const [plate, setPlate] = useState<string | null>(null);
   const [policy, setPolicy] = useState<string | null>(null);
-  const [manual, setManual] = useState({ paperType: "hackneyPermit", source: "autoreg", note: "" });
+  // Per paper: the note being typed, and the site it was checked on when not the usual one.
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [sources, setSources] = useState<Record<string, string>>({});
 
   if (!data) return null;
   const { prembly, inputs } = data;
@@ -208,24 +275,25 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
     }
   };
 
-  const recordManual = async (outcome: "verified" | "failed") => {
-    if (outcome === "failed" && manual.note.trim().length < 4) {
+  const recordManual = async (paperType: string, source: string, outcome: "verified" | "failed") => {
+    const note = (notes[paperType] ?? "").trim();
+    if (outcome === "failed" && note.length < 4) {
       setError("Say what was wrong: the next admin reads it.");
       return;
     }
-    setBusy("manual"); setError(null);
+    setBusy(`manual:${paperType}`); setError(null);
     try {
       const res = await adminFetch(`/admin/drivers/${driverId}/checks/manual`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...manual, outcome }),
+        body: JSON.stringify({ paperType, source, note, outcome }),
       });
       if (!res.ok) {
         const answer = (await res.json().catch(() => null)) as { error?: string } | null;
         setError(answer?.error ?? "Could not save that.");
         return;
       }
-      setManual((m) => ({ ...m, note: "" }));
+      setNotes((all) => ({ ...all, [paperType]: "" }));
       refresh();
     } catch {
       setError("Could not reach the server.");
@@ -267,8 +335,11 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
     );
   };
 
-  const source = data.manualSources.find((s) => s.key === manual.source);
-  const manualChecks = data.checks.filter((c) => c.kind === "manual");
+  const sentPapers = data.documents?.papers ?? [];
+  const insurancePaper = sentPapers.find((p) => p.type === "insurance") ?? null;
+  // The usual site for a paper: the first that covers it, or Other.
+  const usualSource = (type: string) => data.manualSources.find((s) => s.url && s.papers.includes(type))?.key ?? "other";
+  const lastManual = (type: string) => data.checks.find((c) => c.kind === "manual" && c.paperType === type);
 
   return (
     <>
@@ -292,7 +363,24 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
       <div className="admin-info-card">
         <strong>Driver&apos;s licence</strong>
         <span style={{ fontSize: 12.5, color: "#786F68" }}> · FRSC, through Prembly</span>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 8, marginTop: 10 }}>
+        <Beside
+          doc={data.documents?.licence || (lic.withFace && data.documents?.selfieUrl) ? (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {data.documents?.licence ? (
+                <div>
+                  <div style={{ fontSize: 12.5, color: "#786F68", marginBottom: 4 }}>Their licence: read the date of birth here</div>
+                  <Thumb url={data.documents.licence.url} isPdf={data.documents.licence.isPdf} label="Driver's licence" />
+                </div>
+              ) : null}
+              {lic.withFace && data.documents?.selfieUrl ? (
+                <div>
+                  <div style={{ fontSize: 12.5, color: "#786F68", marginBottom: 4 }}>Their selfie</div>
+                  <Thumb url={data.documents.selfieUrl} isPdf={false} label="Selfie" />
+                </div>
+              ) : null}
+            </div>
+          ) : null}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 8 }}>
           <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
             Licence number
             <input style={inputStyle} value={lic.number} onChange={(e) => setLicence({ ...lic, number: e.target.value })} />
@@ -322,8 +410,9 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
         ) : null}
         <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#786F68" }}>
           Set against: {inputs.legalName ?? inputs.accountName ?? "no name given"}
-          {inputs.licenceExpiresOn ? `, expiry typed ${inputs.licenceExpiresOn}` : ""}.
+          {inputs.licenceExpiresOn ? `, expiry typed ${dayWords(inputs.licenceExpiresOn)}` : ""}.
         </p>
+        </Beside>
         {runButton(
           "licence",
           { number: lic.number, dob: lic.dob, ...(lic.withFace ? { withFace: true } : { firstName: lic.firstName, lastName: lic.lastName }) },
@@ -356,18 +445,27 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
       <div className="admin-info-card">
         <strong>Insurance</strong>
         <span style={{ fontSize: 12.5, color: "#786F68" }}> · NIID, through Prembly</span>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "end" }}>
+        <Beside
+          doc={insurancePaper ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12.5, color: "#786F68" }}>The certificate they sent</div>
+              <Thumb url={insurancePaper.url} isPdf={insurancePaper.isPdf} label="Insurance" />
+              <PaperDates paper={insurancePaper} />
+            </div>
+          ) : <div style={{ fontSize: 12.5, color: "#786F68" }}>No insurance certificate sent yet.</div>}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "end" }}>
           <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
             Policy number
             <input style={inputStyle} value={policyValue} onChange={(e) => setPolicy(e.target.value)} />
           </label>
           <span style={{ fontSize: 12.5, color: "#786F68", paddingBottom: 10 }}>
             Set against: plate {inputs.plate ?? "—"}, {inputs.vehicle ?? "no car given"}
-            {inputs.insuranceExpiresOn ? `, expiry typed ${inputs.insuranceExpiresOn}` : ""}
+            {inputs.insuranceExpiresOn ? `, expiry typed ${dayWords(inputs.insuranceExpiresOn)}` : ""}
           </span>
         </div>
         {runButton("insurance", { number: policyValue }, Boolean(policyValue.trim()))}
         {resultOf("insurance")}
+        </Beside>
       </div>
 
       <div className="admin-info-card">
@@ -385,48 +483,52 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
             </button>
           ) : null}
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "end" }}>
-          <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
-            Paper
-            <select style={inputStyle} value={manual.paperType} onChange={(e) => setManual({ ...manual, paperType: e.target.value })}>
-              {PAPER_OPTIONS.map((p) => <option key={p.type} value={p.type}>{p.label}</option>)}
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
-            Checked on
-            <select style={inputStyle} value={manual.source} onChange={(e) => setManual({ ...manual, source: e.target.value })}>
-              {data.manualSources.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68", flex: "1 1 220px" }}>
-            What you found
-            <input
-              style={inputStyle}
-              value={manual.note}
-              maxLength={300}
-              placeholder={source?.key === "dvis" ? "e.g. Valid to 12 Mar 2027" : "e.g. Permit valid, plate matches"}
-              onChange={(e) => setManual({ ...manual, note: e.target.value })}
-            />
-          </label>
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <button type="button" className="admin-btn-approve" disabled={busy !== null} onClick={() => void recordManual("verified")}>
-            {busy === "manual" ? "Saving…" : "Good"}
-          </button>
-          <button type="button" className="admin-btn-reject" disabled={busy !== null} onClick={() => void recordManual("failed")}>
-            Failed
-          </button>
-        </div>
-        {manualChecks.length ? (
-          <div style={{ marginTop: 10 }}>
-            {manualChecks.map((c) => (
-              <div key={c.id}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>{c.paperLabel ?? c.paperType}</div>
-                <CheckResult check={c} />
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {sentPapers.length === 0 ? (
+          <p style={{ margin: "10px 0 0", fontSize: 13, color: "#786F68" }}>No papers sent yet.</p>
+        ) : sentPapers.map((paper) => {
+          const source = sources[paper.type] ?? usualSource(paper.type);
+          const site = data.manualSources.find((x) => x.key === source);
+          const last = lastManual(paper.type);
+          const mine = busy === `manual:${paper.type}`;
+          return (
+            <div key={paper.type} style={{ borderTop: "1px solid #E8DDD3", paddingTop: 12, marginTop: 12 }}>
+              <Beside doc={<Thumb url={paper.url} isPdf={paper.isPdf} label={paper.label} height={130} />}>
+                <strong style={{ fontSize: 14 }}>{paper.label}</strong>
+                <div style={{ marginTop: 4 }}><PaperDates paper={paper} /></div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "end" }}>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
+                    Checked on
+                    <select style={inputStyle} value={source} onChange={(e) => setSources((all) => ({ ...all, [paper.type]: e.target.value }))}>
+                      {data.manualSources.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                    </select>
+                  </label>
+                  {site?.url ? (
+                    <a href={site.url} target="_blank" rel="noreferrer" className="admin-btn-ghost" style={{ fontSize: 13, textDecoration: "none" }}>
+                      Open {SOURCE_LABEL[site.key] ?? site.label} ↗
+                    </a>
+                  ) : null}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
+                  <input
+                    style={{ ...inputStyle, flex: "1 1 220px" }}
+                    value={notes[paper.type] ?? ""}
+                    maxLength={300}
+                    aria-label={`What you found for ${paper.label}`}
+                    placeholder={source === "dvis" ? "What you found, e.g. Valid to 12 Mar 2027" : "What you found, e.g. Valid, plate matches"}
+                    onChange={(e) => setNotes((all) => ({ ...all, [paper.type]: e.target.value }))}
+                  />
+                  <button type="button" className="admin-btn-approve" disabled={busy !== null} onClick={() => void recordManual(paper.type, source, "verified")}>
+                    {mine ? "Saving…" : "Good"}
+                  </button>
+                  <button type="button" className="admin-btn-reject" disabled={busy !== null} onClick={() => void recordManual(paper.type, source, "failed")}>
+                    Failed
+                  </button>
+                </div>
+                {last ? <CheckResult check={last} /> : null}
+              </Beside>
+            </div>
+          );
+        })}
       </div>
 
       {data.checks.length > 0 ? (
