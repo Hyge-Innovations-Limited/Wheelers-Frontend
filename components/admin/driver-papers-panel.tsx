@@ -9,8 +9,9 @@ import { adminFetch } from "@/lib/admin-api";
 /**
  * A driver's papers on their review page: the name and licence details they
  * typed, and each paper for the car with a link to open it, its expiry date
- * and where it stands. A paper waiting to be checked is approved or sent back
- * here; sending back needs a reason, because that is what the driver is told.
+ * and where it stands. Each paper is marked Approve or Send back (with a
+ * reason: it is what the driver is told), then one Send decision saves them
+ * all and the driver gets ONE message listing what to send again.
  *
  * It loads on its own, so a server that does not have papers yet simply
  * shows nothing here and the rest of the page is untouched.
@@ -50,7 +51,19 @@ const STATE: Record<State, { word: string; color: string; bg: string }> = {
   expired: { word: "Expired", color: "#B00020", bg: "#FFF0F0" },
 };
 
-const QUICK = ["The photo is blurry.", "Part of it is cut off.", "This is the wrong paper.", "The name does not match the driver.", "The date on it has passed."];
+const QUICK = [
+  "The photo is blurry.",
+  "Part of it is cut off.",
+  "This is the wrong paper.",
+  "The name does not match the driver.",
+  "The date on it has passed.",
+  "It is for another car.",
+  "Not found on NIID.",
+  "Not found on DVIS.",
+  "Not found on AutoReg.",
+];
+
+type Choice = { decision: "approve" | "reject"; reason: string };
 
 const dayWords = (iso: string | null) =>
   iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
@@ -60,35 +73,58 @@ const when = (iso: string) =>
 export function DriverPapersPanel({ driverId }: { driverId: string }) {
   // A server without papers answers 404: `data` stays empty and nothing is shown.
   const { data: papers, refresh } = useAdminData<DriverPapers>(`/admin/drivers/${driverId}/papers`, [driverId]);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [sendingBack, setSendingBack] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [choices, setChoices] = useState<Record<string, Choice>>({});
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
 
-  const review = async (type: string, decision: "approve" | "reject") => {
-    setBusy(type); setError(null);
+  // Tapping the chosen answer again takes it back.
+  const choose = (type: string, decision: Choice["decision"]) => {
+    setDone(null);
+    setChoices((all) => {
+      const next = { ...all };
+      if (next[type]?.decision === decision) delete next[type];
+      else next[type] = { decision, reason: next[type]?.reason ?? "" };
+      return next;
+    });
+  };
+  const setReason = (type: string, reason: string) =>
+    setChoices((all) => (all[type] ? { ...all, [type]: { ...all[type]!, reason } } : all));
+
+  const sendDecision = async () => {
+    const decisions = Object.entries(choices).map(([type, c]) => ({ type, decision: c.decision, ...(c.decision === "reject" ? { reason: c.reason.trim() } : {}) }));
+    if (!decisions.length) return;
+    setBusy(true); setError(null); setDone(null);
     try {
-      const res = await adminFetch(`/admin/drivers/${driverId}/papers/${encodeURIComponent(type)}/review`, {
+      const res = await adminFetch(`/admin/drivers/${driverId}/papers/decide`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ decision, ...(decision === "reject" ? { reason: reason.trim() } : {}) }),
+        body: JSON.stringify({ decisions }),
       });
+      const body = (await res.json().catch(() => null)) as { error?: string; errors?: Array<{ error: string }>; approved?: string[]; sentBack?: string[] } | null;
       if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(body?.error ?? "Could not save that.");
+        setError(body?.errors?.length ? body.errors.map((e) => e.error).join(" ") : body?.error ?? "Could not save that.");
         return;
       }
-      setSendingBack(null); setReason("");
+      const a = body?.approved?.length ?? 0;
+      const r = body?.sentBack?.length ?? 0;
+      setDone(`Saved: ${a} approved, ${r} sent back. The driver got one message.`);
+      setChoices({});
       refresh();
     } catch {
       setError("Could not reach the server.");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
   if (!papers) return null;
   const sent = papers.needs.flatMap((n) => n.papers).filter((p) => p.document);
+  const waiting = sent.filter((p) => p.document!.state === "waiting");
+  const staged = Object.values(choices);
+  const toApprove = staged.filter((c) => c.decision === "approve").length;
+  const toSendBack = staged.filter((c) => c.decision === "reject").length;
+  const reasonsMissing = staged.some((c) => c.decision === "reject" && c.reason.trim().length < 4);
 
   return (
     <>
@@ -100,6 +136,14 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
             {papers.blocked ? " This driver cannot go online until they are in." : papers.requiredFrom ? ` Needed to go online from ${dayWords(papers.requiredFrom)}.` : ""}
           </p>
         </div>
+        {waiting.length > 1 ? (
+          <button
+            type="button"
+            className="admin-btn-ghost"
+            onClick={() => { setDone(null); setChoices((all) => ({ ...all, ...Object.fromEntries(waiting.map((p) => [p.type, { decision: "approve" as const, reason: "" }])) })); }}>
+            Mark all {waiting.length} waiting to approve
+          </button>
+        ) : null}
       </div>
 
       <div className="admin-info-card">
@@ -122,6 +166,9 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
       {error ? (
         <div className="admin-info-card" style={{ borderColor: "#FF3333", background: "#FFF0F0", color: "#B00020" }}>{error}</div>
       ) : null}
+      {done ? (
+        <div className="admin-info-card" style={{ borderColor: "#0B7A55", background: "#E3F8F0", color: "#0B7A55", fontWeight: 600 }}>{done}</div>
+      ) : null}
 
       {papers.needs.map((need) => (
         <div key={need.key} className="admin-info-card">
@@ -142,6 +189,7 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
             const doc = paper.document!;
             const look = STATE[doc.state];
             const canReview = doc.state !== "expired";
+            const choice = choices[paper.type];
             return (
               <div key={paper.type} style={{ borderTop: "1px solid #E8DDD3", paddingTop: 10, marginTop: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
@@ -184,42 +232,47 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
                 ) : null}
 
                 {canReview ? (
-                  sendingBack === paper.type ? (
-                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {QUICK.map((q) => (
-                          <button key={q} type="button" className="admin-btn-ghost" style={{ fontSize: 12 }} onClick={() => setReason(q)}>{q}</button>
-                        ))}
-                      </div>
-                      <input
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        placeholder="Why is it being sent back? The driver is told this."
-                        aria-label={`Why ${paper.label} is being sent back`}
-                        maxLength={300}
-                        style={{ height: 40, borderRadius: 10, border: "1px solid #E8DDD3", padding: "0 12px", fontSize: 14 }}
-                      />
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button type="button" className="admin-btn-confirm-reject" disabled={busy === paper.type || reason.trim().length < 4} onClick={() => void review(paper.type, "reject")}>
-                          {busy === paper.type ? "Sending…" : "Send back"}
-                        </button>
-                        <button type="button" className="admin-btn-ghost" onClick={() => { setSendingBack(null); setReason(""); }}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
+                  <>
                     <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {doc.status !== "APPROVED" ? (
-                        <button type="button" className="admin-btn-approve" disabled={busy === paper.type} onClick={() => void review(paper.type, "approve")}>
-                          {busy === paper.type ? "Saving…" : "Approve"}
+                        <button
+                          type="button"
+                          className="admin-btn-approve"
+                          aria-pressed={choice?.decision === "approve"}
+                          style={choice?.decision === "approve" ? { outline: "3px solid #0d0d0d", outlineOffset: 2 } : choice ? { opacity: 0.45 } : undefined}
+                          onClick={() => choose(paper.type, "approve")}>
+                          {choice?.decision === "approve" ? "✓ Approve" : "Approve"}
                         </button>
                       ) : null}
                       {doc.status !== "REJECTED" ? (
-                        <button type="button" className="admin-btn-reject" disabled={busy === paper.type} onClick={() => { setSendingBack(paper.type); setReason(""); setError(null); }}>
-                          Send back
+                        <button
+                          type="button"
+                          className="admin-btn-reject"
+                          aria-pressed={choice?.decision === "reject"}
+                          style={choice?.decision === "reject" ? { outline: "3px solid #0d0d0d", outlineOffset: 2 } : choice ? { opacity: 0.45 } : undefined}
+                          onClick={() => choose(paper.type, "reject")}>
+                          {choice?.decision === "reject" ? "✓ Send back" : "Send back"}
                         </button>
                       ) : null}
                     </div>
-                  )
+                    {choice?.decision === "reject" ? (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {QUICK.map((q) => (
+                            <button key={q} type="button" className="admin-btn-ghost" style={{ fontSize: 12 }} onClick={() => setReason(paper.type, q)}>{q}</button>
+                          ))}
+                        </div>
+                        <input
+                          value={choice.reason}
+                          onChange={(e) => setReason(paper.type, e.target.value)}
+                          placeholder="Why is it being sent back? The driver is told this."
+                          aria-label={`Why ${paper.label} is being sent back`}
+                          maxLength={300}
+                          style={{ height: 40, borderRadius: 10, border: `1px solid ${choice.reason.trim().length < 4 ? "#FF9A9A" : "#E8DDD3"}`, padding: "0 12px", fontSize: 14 }}
+                        />
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <p style={{ margin: "8px 0 0", fontSize: 13, color: "#786F68" }}>Expired: the driver has to send the renewed one.</p>
                 )}
@@ -230,8 +283,26 @@ export function DriverPapersPanel({ driverId }: { driverId: string }) {
       ))}
 
       {sent.length === 0 ? null : (
-        <p style={{ fontSize: 12.5, color: "#786F68" }}>The driver gets a notification for each paper approved or sent back.</p>
+        <p style={{ fontSize: 12.5, color: "#786F68" }}>Mark each paper, then Send decision: the driver gets one notification listing what to send again.</p>
       )}
+
+      {staged.length ? (
+        <div
+          role="region"
+          aria-label="Your decision"
+          style={{ position: "sticky", bottom: 12, zIndex: 5, background: "#0d0d0d", color: "#fff", borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", boxShadow: "0 6px 24px rgba(0,0,0,0.18)" }}>
+          <span style={{ flex: "1 1 220px", fontSize: 14 }}>
+            {toApprove ? `${toApprove} to approve` : ""}
+            {toApprove && toSendBack ? " · " : ""}
+            {toSendBack ? `${toSendBack} to send back` : ""}
+            {reasonsMissing ? <span style={{ color: "#FFB4B4" }}> · say why for each sent back</span> : <span style={{ color: "#BDB5AE" }}> · one message to the driver</span>}
+          </span>
+          <button type="button" className="admin-btn-approve" disabled={busy || reasonsMissing} onClick={() => void sendDecision()}>
+            {busy ? "Sending…" : "Send decision"}
+          </button>
+          <button type="button" className="admin-btn-ghost" style={{ color: "#fff" }} disabled={busy} onClick={() => setChoices({})}>Clear</button>
+        </div>
+      ) : null}
     </>
   );
 }

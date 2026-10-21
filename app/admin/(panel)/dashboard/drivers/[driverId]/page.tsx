@@ -4,6 +4,7 @@ import { DocPeek } from "@/components/admin/doc-peek";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminFetch, getToken } from "@/lib/admin-api";
+import { DriverChecksPanel } from "@/components/admin/driver-checks-panel";
 import { DriverPapersPanel } from "@/components/admin/driver-papers-panel";
 import { QUICK_REASONS, kycFieldLabel } from "@/lib/kyc-fields";
 
@@ -733,7 +734,10 @@ export default function DriverReviewPage() {
         </>
       )}
 
-      {/* The papers for the car, and the name and licence details: reviewed one by one, apart from verification. */}
+      {/* Prembly's checks of the licence, plate and insurance, and checks done by hand on government sites. */}
+      <DriverChecksPanel driverId={driverId} />
+
+      {/* The papers for the car, and the name and licence details: each marked, then decided in one go. */}
       <DriverPapersPanel driverId={driverId} />
     </div>
   );
