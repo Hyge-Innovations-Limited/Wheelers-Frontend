@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DocPeek } from "@/components/admin/doc-peek";
 
@@ -22,7 +22,10 @@ import { adminFetch } from "@/lib/admin-api";
  *
  * Each check shows the paper it is set against beside it (the licence photo
  * to read the date of birth from, the insurance certificate), so nothing is
- * looked up elsewhere on the page.
+ * looked up elsewhere on the page. The licence photo is read by AI as the
+ * page opens: the date of birth (and an empty number or name) is filled in,
+ * and where the photo disagrees with what the driver typed is said, to be
+ * looked at against the photo before a paid check.
  *
  * A check never approves or sends back a paper: that is decided in Papers below.
  */
@@ -74,6 +77,22 @@ interface ChecksView {
   checks: Check[];
 }
 type PaidKind = "licence" | "plate" | "insurance";
+interface LicenceReading {
+  readable: boolean;
+  licenceNumber: string | null;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  dateOfBirth: string | null;
+  issuedOn: string | null;
+  expiresOn: string | null;
+  note: string | null;
+}
+type ReadState =
+  | { state: "idle" }
+  | { state: "reading" }
+  | { state: "done"; reading: LicenceReading; differs: string[] }
+  | { state: "failed"; error: string };
 
 const OUTCOME: Record<Outcome, { word: string; color: string; bg: string }> = {
   verified: { word: "Matches", color: "#0B7A55", bg: "#E3F8F0" },
@@ -238,17 +257,56 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
   // Per paper: the note being typed, and the site it was checked on when not the usual one.
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [sources, setSources] = useState<Record<string, string>>({});
+  const [read, setRead] = useState<ReadState>({ state: "idle" });
+  const readFor = useRef<string | null>(null);
+
+  // The form as it starts: what the driver typed. A reading fills in only what is still empty.
+  const startingForm = (inputs: ChecksView["inputs"]) => {
+    const names = (inputs.legalName ?? inputs.accountName ?? "").split(/\s+/).filter(Boolean);
+    return { number: inputs.licenceNumber ?? "", dob: "", firstName: names[0] ?? "", lastName: names.length > 1 ? names[names.length - 1]! : "", withFace: false };
+  };
+
+  const readLicence = async (again: boolean) => {
+    if (!data) return;
+    const inputs = data.inputs;
+    setRead({ state: "reading" });
+    try {
+      const res = await adminFetch(`/admin/drivers/${driverId}/checks/read-licence`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(again ? { again: true } : {}),
+      });
+      const answer = (await res.json().catch(() => null)) as { error?: string; reading?: LicenceReading; differs?: string[] } | null;
+      if (!res.ok || !answer?.reading) { setRead({ state: "failed", error: answer?.error ?? "Could not read the licence photo: type it from the photo." }); return; }
+      const reading = answer.reading;
+      setRead({ state: "done", reading, differs: answer.differs ?? [] });
+      setLicence((current) => {
+        const form = current ?? startingForm(inputs);
+        return {
+          ...form,
+          dob: form.dob || reading.dateOfBirth || "",
+          number: form.number || reading.licenceNumber || "",
+          firstName: form.firstName || reading.firstName || "",
+          lastName: form.lastName || reading.lastName || "",
+        };
+      });
+    } catch {
+      setRead({ state: "failed", error: "Could not reach the server." });
+    }
+  };
+
+  // Read once when a driver with a licence photo opens.
+  const hasLicencePhoto = Boolean(data?.documents?.licence);
+  useEffect(() => {
+    if (!hasLicencePhoto || readFor.current === driverId) return;
+    readFor.current = driverId;
+    void readLicence(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasLicencePhoto, driverId]);
 
   if (!data) return null;
   const { prembly, inputs } = data;
-  const names = (inputs.legalName ?? inputs.accountName ?? "").split(/\s+/).filter(Boolean);
-  const lic = licence ?? {
-    number: inputs.licenceNumber ?? "",
-    dob: "",
-    firstName: names[0] ?? "",
-    lastName: names.length > 1 ? names[names.length - 1]! : "",
-    withFace: false,
-  };
+  const lic = licence ?? startingForm(inputs);
   const plateValue = plate ?? inputs.plate ?? "";
   const policyValue = policy ?? inputs.insuranceNumber ?? "";
   const latest = (kinds: string[]) => data.checks.find((c) => kinds.includes(c.kind));
@@ -368,7 +426,7 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {data.documents?.licence ? (
                 <div>
-                  <div style={{ fontSize: 12.5, color: "#786F68", marginBottom: 4 }}>Their licence: read the date of birth here</div>
+                  <div style={{ fontSize: 12.5, color: "#786F68", marginBottom: 4 }}>Their licence</div>
                   <Thumb url={data.documents.licence.url} isPdf={data.documents.licence.isPdf} label="Driver's licence" />
                 </div>
               ) : null}
@@ -407,6 +465,53 @@ export function DriverChecksPanel({ driverId }: { driverId: string }) {
             <input type="checkbox" checked={lic.withFace} onChange={(e) => setLicence({ ...lic, withFace: e.target.checked })} />
             Also match their selfie against the licence photo
           </label>
+        ) : null}
+        {read.state === "reading" ? (
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "#786F68" }}>Reading the licence photo…</p>
+        ) : read.state === "failed" ? (
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "#786F68" }}>
+            {read.error}{" "}
+            <button type="button" className="admin-btn-ghost" style={{ fontSize: 12 }} onClick={() => void readLicence(true)}>Try again</button>
+          </p>
+        ) : read.state === "done" ? (
+          <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: "#F4F1FF", fontSize: 13 }}>
+            {read.reading.readable ? (
+              <div>
+                Read from the licence photo by AI
+                {read.reading.dateOfBirth ? <>: date of birth <strong>{dayWords(read.reading.dateOfBirth)}</strong></> : ": no date of birth it could read"}
+                {read.reading.expiresOn ? <>, expires <strong>{dayWords(read.reading.expiresOn)}</strong></> : null}
+                . Look at it against the photo before checking.
+              </div>
+            ) : (
+              <div>The AI could not read this licence{read.reading.note ? ` (${read.reading.note})` : ""}: type it from the photo.</div>
+            )}
+            {read.differs.length ? (
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18, color: "#B04A00", fontWeight: 600 }}>
+                {read.differs.map((d) => <li key={d}>{d}</li>)}
+              </ul>
+            ) : null}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              {read.reading.readable && (read.reading.licenceNumber || read.reading.lastName) ? (
+                <button
+                  type="button"
+                  className="admin-btn-ghost"
+                  style={{ fontSize: 12 }}
+                  onClick={() => {
+                    const r = read.reading;
+                    setLicence({
+                      ...lic,
+                      number: r.licenceNumber ?? lic.number,
+                      dob: r.dateOfBirth ?? lic.dob,
+                      firstName: r.firstName ?? lic.firstName,
+                      lastName: r.lastName ?? lic.lastName,
+                    });
+                  }}>
+                  Use what the photo says
+                </button>
+              ) : null}
+              <button type="button" className="admin-btn-ghost" style={{ fontSize: 12 }} onClick={() => void readLicence(true)}>Read again</button>
+            </div>
+          </div>
         ) : null}
         <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#786F68" }}>
           Set against: {inputs.legalName ?? inputs.accountName ?? "no name given"}
