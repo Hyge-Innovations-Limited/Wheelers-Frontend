@@ -34,6 +34,8 @@ interface DriverDetail {
     /** "application/pdf" when the licence is a PDF (older ones were saved as .jpg). */
     licenceFileType?: string | null;
     selfieUrl: string | null;
+    /** How the selfie was taken: the phone's face check passed, skipped, not available; null from older apps. */
+    selfieCheck?: "passed" | "skipped" | "unavailable" | null;
     vehicleImageUrls: string[];
     rejectionReason: string | null;
     rejectedFields: string[];
@@ -43,6 +45,14 @@ interface DriverDetail {
     fieldStatuses: Record<string, FieldStatus>;
   };
 }
+
+/** What the reviewer is told about how the selfie was taken. */
+const SELFIE_CHECK: Record<string, { text: string; color: string; bg: string }> = {
+  passed: { text: "Face check passed on the phone (looked straight, eyes, turned both ways)", color: "#0B7A55", bg: "#E3F8F0" },
+  skipped: { text: "Taken without the face check: the driver was stuck and went on. Look closely.", color: "#B04A00", bg: "#FFE9D5" },
+  unavailable: { text: "Taken without the face check: the app or phone could not run it. Look closely.", color: "#B04A00", bg: "#FFE9D5" },
+  none: { text: "Taken on an older app, before the face check. Look closely.", color: "#786F68", bg: "#F3EEE6" },
+};
 
 const REVIEW_FIELDS = [
   { key: "nin", label: "NIN Card", imageKey: "ninImageUrl" },
@@ -456,6 +466,15 @@ export default function DriverReviewPage() {
                     <DocumentView url={imageUrl} label={field.label} isPdf={field.key === "licence" && licenceIsPdf} />
                   </div>
                 )}
+
+                {field.key === "selfie" && imageUrl ? (() => {
+                  const how = SELFIE_CHECK[sub.selfieCheck ?? "none"] ?? SELFIE_CHECK.none!;
+                  return (
+                    <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 10, background: how.bg, color: how.color, fontSize: 13, fontWeight: 600 }}>
+                      {how.text}
+                    </div>
+                  );
+                })() : null}
 
                 {/* Vehicle info display */}
                 {field.key === "vehicle" && (
