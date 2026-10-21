@@ -366,7 +366,7 @@ function DashboardBody() {
             <StatCard
               label="Commission"
               value={formatNairaCompact(k.commissionNgn)}
-              hint={<Hint text={`10% of trip fares · plus ${formatNaira(k.serviceFeeNgn)} booking fees · ${formatNaira(k.vatNgn ?? 0)} VAT owed`} now={k.commissionNgn} before={p.commissionNgn} />}
+              hint={<Hint text={`5% of trip fares · plus ${formatNaira(k.whatsappFeeNgn ?? 0)} WhatsApp fees · ${formatNaira(k.serviceFeeNgn)} booking fees · ${formatNaira(k.vatNgn ?? 0)} VAT owed`} now={k.commissionNgn} before={p.commissionNgn} />}
               href={feesHref()}
             />
             <StatCard

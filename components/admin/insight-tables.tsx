@@ -115,9 +115,11 @@ export function TripsTable({
               <>
                 {money(r.commissionNgn)}
                 {r.commissionNgn != null && r.pricingVersion === 1 ? <span className="admin-estimated" title="Agreed before 10 Oct 2026: 4% commission, VAT taken from the driver">4%</span> : null}
+                {r.commissionNgn != null && r.pricingVersion === 2 ? <span className="admin-estimated" title="Agreed 10 to 21 Oct 2026: 10% commission, no WhatsApp fee">10%</span> : null}
               </>
             ),
           },
+          { key: "whatsapp", label: "WhatsApp fee", numeric: true, render: (r: TripRow) => money(r.whatsappFeeNgn ?? null) },
           { key: "levy", label: "State levy", numeric: true, render: (r: TripRow) => money(r.stateLevyNgn) },
           {
             key: "total",

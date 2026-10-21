@@ -625,6 +625,8 @@ export interface Kpis {
   medianFareNgn: number | null;
   distanceKm: number;
   commissionNgn: number;
+  /** The flat ₦300 from the driver on version 3 rides. */
+  whatsappFeeNgn?: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
   /** 7.5% of the trip fare. Owed: not income. */
@@ -712,6 +714,7 @@ export interface InsightPoint {
   cancelled: number;
   gmvNgn: number;
   commissionNgn: number;
+  whatsappFeeNgn?: number;
   serviceFeeNgn: number;
   stateLevyNgn: number;
   /** 7.5% of the trip fare. Owed: not income. */
@@ -755,9 +758,11 @@ export interface TripRow {
   fareNgn: number | null;
   /** What the driver priced (rate per km × distance): the fare without the booking fee and, in pricing 2, the VAT. */
   tripFareNgn?: number | null;
-  /** 1: 4% commission, VAT from the driver. 2 (since 10 Oct 2026): 10% commission, VAT in the rider's fare. */
-  pricingVersion?: 1 | 2;
+  /** 1: 4% commission, VAT from the driver. 2 (10 Oct 2026): 10% commission, VAT in the rider's fare. 3 (21 Oct 2026): 5% commission and the ₦300 WhatsApp fee. */
+  pricingVersion?: 1 | 2 | 3;
   commissionNgn: number | null;
+  /** Version 3 rides: the flat ₦300 from the driver. */
+  whatsappFeeNgn?: number | null;
   serviceFeeNgn: number | null;
   stateLevyNgn: number | null;
   vatNgn: number | null;
@@ -809,6 +814,8 @@ export interface InsightRiderRow {
 
 export interface FeeTotals {
   commissionNgn: number;
+  /** The flat ₦300 from the driver on version 3 rides. */
+  whatsappFeeNgn?: number;
   serviceFeeNgn: number;
   depositFeesNgn: number;
   /** Wheelers' fee on withdrawals that reached the bank. */
@@ -832,6 +839,8 @@ export interface FeeTotals {
 export interface FeePoint {
   bucket: string;
   commissionNgn: number;
+  /** The flat ₦300 from the driver on version 3 rides. */
+  whatsappFeeNgn?: number;
   serviceFeeNgn: number;
   depositFeesNgn: number;
   withdrawalFeesNgn: number;
@@ -869,6 +878,8 @@ export interface FeeLedgerRow {
   amountNgn: number;
   referenceId: string | null;
   commissionNgn: number | null;
+  /** Version 3 rides: the flat ₦300 from the driver. */
+  whatsappFeeNgn?: number | null;
   serviceFeeNgn: number | null;
   stateLevyNgn: number | null;
   vatNgn: number | null;

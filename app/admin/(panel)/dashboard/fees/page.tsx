@@ -17,9 +17,9 @@ import { Badge, Card, ErrorState, FilterTabs, PageHeader, Pagination, RefreshBut
 /**
  * What Wheelers earns and what it pays to earn it, for a period.
  *
- * Income is the commission (10% of the trip fare; 4% on trips agreed before
- * 10 Oct 2026) and the ₦375 booking fee on each wallet ride, and the ₦30
- * deposit fee. The ₦30 state levy is collected on each ride for Lagos
+ * Income is the commission (5% of the trip fare from 21 Oct 2026; 10% from
+ * 10 Oct; 4% before), the ₦300 WhatsApp fee from the driver on every ride
+ * from 21 Oct, the booking fee on each wallet ride, and the ₦30 deposit fee. The ₦30 state levy is collected on each ride for Lagos
  * State, so it is shown on its own and never counted as income. Costs are
  * what the platform pays to take in deposits and to send out withdrawals.
  */
@@ -87,6 +87,7 @@ function FeeRows({ kind }: { kind: FeeKind | null }) {
       render: (r) => <span className={r.direction === "DEBIT" ? "admin-text-red" : "admin-text-green"}>{r.direction === "DEBIT" ? "−" : "+"}{formatNaira(r.amountNgn)}</span>,
     },
     { key: "commission", label: "Commission", numeric: true, render: (r) => (r.commissionNgn == null ? "" : formatNaira(r.commissionNgn)) },
+    { key: "whatsapp", label: "WhatsApp fee", numeric: true, render: (r) => (r.whatsappFeeNgn == null ? "" : formatNaira(r.whatsappFeeNgn)) },
     { key: "service", label: "Booking fee", numeric: true, render: (r) => (r.serviceFeeNgn == null ? "" : formatNaira(r.serviceFeeNgn)) },
     { key: "levy", label: "State levy", numeric: true, render: (r) => (r.stateLevyNgn == null ? "" : formatNaira(r.stateLevyNgn)) },
     { key: "vat", label: "VAT", numeric: true, render: (r) => (r.vatNgn == null ? "" : formatNaira(r.vatNgn)) },
@@ -242,7 +243,8 @@ function FeesBody() {
               tone="green"
               href={ledger(null)}
             />
-            <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`10% of the trip fare (4% before 10 Oct 2026) on ${formatNumber(t.feeRides)} trips`} href={trips()} />
+            <StatCard label="Commission" value={formatNairaCompact(t.commissionNgn)} hint={`5% of the trip fare (10% before 21 Oct, 4% before 10 Oct 2026) on ${formatNumber(t.feeRides)} trips`} href={trips()} />
+            <StatCard label="WhatsApp fee" value={formatNairaCompact(t.whatsappFeeNgn ?? 0)} hint="₦300 from the driver on every ride from 21 Oct 2026" href={trips()} />
             <StatCard label="Booking fee" value={formatNairaCompact(t.serviceFeeNgn)} hint="₦375 in each rider's fare" href={trips()} />
           </StatGrid>
           <StatGrid cols={2}>
@@ -264,7 +266,7 @@ function FeesBody() {
           <StatGrid>
             <StatCard label="Trip fare" value="Rate × km" hint="The driver's price per km times the distance. Recommended rate ₦375 a km" />
             <StatCard label="Added for the rider" value="7.5% + ₦375" hint="VAT on the trip fare and the booking fee. The rider sees one fare, rounded up to ₦50" />
-            <StatCard label="Taken from the driver" value="10% + ₦30" hint="Commission on the trip fare and the Lagos levy. The driver keeps the rest" />
+            <StatCard label="Taken from the driver" value="5% + ₦300 + ₦30" hint="Commission on the trip fare, the WhatsApp fee and the Lagos levy. The driver keeps the rest" />
             <StatCard label="Offer limits" value="90% to 150%" hint="Of the recommended rate: a rider can go no lower, a driver no higher" />
           </StatGrid>
 
