@@ -1065,6 +1065,30 @@ export interface HealthPoint {
   redisPingMs: number | null;
 }
 
+export interface HealthEndpoint {
+  route: string;
+  count: number;
+  errors: number;
+  slow: number;
+  totalMs: number;
+  avgMs: number;
+  p95Ms: number | null;
+  /** Per request, on average. */
+  dbMs: number;
+  queriesPerRequest: number;
+  externalMs: number;
+  externalCallsPerRequest: number;
+  ownMs: number;
+}
+
+/** GET /admin/health/sql: Postgres's own figures. */
+export interface HealthSql {
+  statements:
+    | { available: true; since: string | null; rows: Array<{ query: string; calls: number | null; totalMs: number; meanMs: number; maxMs: number; rows: number | null; cacheHitPct: number | null }> }
+    | { available: false; reason: string };
+  tables: Array<{ table: string; sizeMb: number; liveRows: number | null; deadRows: number | null; fullScans: number | null; rowsReadByFullScans: number | null; indexScans: number | null; lastAutovacuum: string | null; lastAutoanalyze: string | null }>;
+}
+
 export interface HealthReport {
   range: HealthRange;
   generatedAt: number;
@@ -1081,7 +1105,14 @@ export interface HealthReport {
     dbP95: number | null;
     dbAvgMs: number | null;
     slowQueries: number;
+    /** The same queries timed by Postgres alone; the gap to dbAvgMs is waiting for a free connection. Absent on older servers. */
+    dbRunAvgMs?: number | null;
+    dbRunP95?: number | null;
+    dbSlowRuns?: number;
+    dbWaitAvgMs?: number | null;
   };
+  /** Where API time goes, per endpoint, most total time first. Absent on older servers. */
+  endpoints?: HealthEndpoint[];
   points: HealthPoint[];
   spikes: Array<{ metric: string; label: string; unit: "ms" | "count"; from: number; to: number; peak: number; usual: number }>;
   incidents: Array<{ key: string; label: string; status: HealthStatus; from: number; to: number; minutes: number; ongoing: boolean }>;

@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { AreaChart, BarChart, CHART_COLORS } from "@/components/admin/charts";
 import { Card, EmptyState, ErrorState, PageHeader, RefreshButton, Spinner, StatCard, StatGrid, TableWrap } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
-import type { HealthRange, HealthReport, HealthStatus } from "@/lib/admin-api";
+import { adminFetch, type HealthRange, type HealthReport, type HealthSql, type HealthStatus } from "@/lib/admin-api";
+import { useAdminSession } from "@/lib/admin-session";
 
 /**
  * Health: is Wheelers working right now, and has it been.
@@ -15,6 +16,11 @@ import type { HealthRange, HealthReport, HealthStatus } from "@/lib/admin-api";
  * an uptime and a status bar like a public status page. Underneath: API
  * traffic, errors and response times, database query times, the stretches
  * where any of them spiked, and the queries the database spends its time on.
+ *
+ * Where the time goes: each endpoint's average split into the database, outside
+ * services (Google, the AI, Paystack, Meta…) and our own work; the queries'
+ * time in Postgres against waiting for a free connection; Postgres's own
+ * slowest SQL and each table's full scans and dead rows.
  */
 
 const RANGES: Array<{ key: HealthRange; label: string }> = [
@@ -54,6 +60,19 @@ function duration(msTotal: number): string {
 export default function HealthPage() {
   const [range, setRange] = useState<HealthRange>("24h");
   const { data, error, loading, refresh } = useAdminData<HealthReport>(`/admin/health?range=${range}`, [range], { refreshMs: 30_000 });
+  const sql = useAdminData<HealthSql>("/admin/health/sql", [], { refreshMs: 120_000 });
+  const { isOwner } = useAdminSession();
+  const [resetting, setResetting] = useState(false);
+  const resetSql = async () => {
+    if (!window.confirm("Start the slowest-SQL figures from zero? Do it after a fix, to see its effect.")) return;
+    setResetting(true);
+    try {
+      await adminFetch("/admin/health/sql/reset", { method: "POST" });
+      sql.refresh();
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const charts = useMemo(() => {
     const points = data?.points ?? [];
@@ -153,6 +172,21 @@ export default function HealthPage() {
               tone={data.summary.dbErrors > 0 ? "red" : data.summary.slowQueries > 0 ? "orange" : "green"}
               hint={`${n(data.summary.slowQueries)} over 0.5 s · ${n(data.summary.dbErrors)} failed`}
             />
+            {data.summary.dbRunAvgMs !== undefined && data.summary.dbRunAvgMs !== null ? (
+              <StatCard
+                label="Query time in Postgres"
+                value={ms(Math.round(data.summary.dbRunAvgMs))}
+                hint={`average · ${n(data.summary.dbSlowRuns ?? 0)} really over 0.5 s`}
+              />
+            ) : null}
+            {data.summary.dbWaitAvgMs !== undefined && data.summary.dbWaitAvgMs !== null ? (
+              <StatCard
+                label="Waiting for a connection"
+                value={ms(Math.round(data.summary.dbWaitAvgMs))}
+                tone={(data.summary.dbWaitAvgMs ?? 0) > (data.summary.dbRunAvgMs ?? 0) ? "orange" : undefined}
+                hint="average per query, before it ran"
+              />
+            ) : null}
           </StatGrid>
 
           <div style={{ height: 20 }} />
@@ -228,6 +262,49 @@ export default function HealthPage() {
 
           <div style={{ height: 20 }} />
 
+          {data.endpoints ? (
+            <>
+              <Card title="Slowest endpoints: where the time goes" right={`Last ${rangeWord}, most total time first; per request, on average`}>
+                {data.endpoints.length === 0 ? (
+                  <EmptyState>No requests counted yet.</EmptyState>
+                ) : (
+                  <TableWrap>
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Endpoint</th><th>Calls</th><th>Average</th><th>p95</th><th>Over 1 s</th><th>Errors</th>
+                          <th>Database</th><th>Outside services</th><th>Our own work</th><th>Total time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.endpoints.map((e) => {
+                          // The biggest share of the time, marked: that is where to look.
+                          const top = Math.max(e.dbMs, e.externalMs, e.ownMs);
+                          const mark = (v: number) => (v === top && v >= 100 ? { color: "#FF5C00", fontWeight: 700 } : undefined);
+                          return (
+                            <tr key={e.route}>
+                              <td><code>{e.route}</code></td>
+                              <td>{n(e.count)}</td>
+                              <td style={e.avgMs >= 500 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{ms(e.avgMs)}</td>
+                              <td>{ms(e.p95Ms)}</td>
+                              <td>{e.slow ? n(e.slow) : "—"}</td>
+                              <td style={e.errors ? { color: "#FF3333", fontWeight: 700 } : undefined}>{e.errors ? n(e.errors) : "—"}</td>
+                              <td style={mark(e.dbMs)}>{ms(e.dbMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.queriesPerRequest} queries</span></td>
+                              <td style={mark(e.externalMs)}>{e.externalCallsPerRequest ? <>{ms(e.externalMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.externalCallsPerRequest} calls</span></> : "—"}</td>
+                              <td style={mark(e.ownMs)}>{ms(e.ownMs)}</td>
+                              <td>{duration(e.totalMs) === "0 min" ? `${(e.totalMs / 1000).toFixed(1)} s` : duration(e.totalMs)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </TableWrap>
+                )}
+              </Card>
+              <div style={{ height: 20 }} />
+            </>
+          ) : null}
+
           <Card title="Where the database spends its time" right={`Last ${rangeWord}, most total time first`}>
             {data.queries.length === 0 ? (
               <EmptyState>No queries counted yet.</EmptyState>
@@ -253,6 +330,78 @@ export default function HealthPage() {
           </Card>
 
           <div style={{ height: 20 }} />
+
+          <Card
+            title="Slowest SQL, as Postgres sees it"
+            right={sql.data?.statements.available ? (
+              <span>
+                {sql.data.statements.since ? `Since ${when(Date.parse(sql.data.statements.since))}` : "Since Postgres started"}
+                {isOwner ? (
+                  <button type="button" className="admin-btn-ghost" style={{ marginLeft: 10 }} disabled={resetting} onClick={() => void resetSql()}>
+                    {resetting ? "Resetting…" : "Start from zero"}
+                  </button>
+                ) : null}
+              </span>
+            ) : undefined}>
+            {!sql.data ? (
+              sql.error ? <ErrorState error={sql.error} onRetry={sql.refresh} /> : <Spinner label="Asking Postgres" />
+            ) : !sql.data.statements.available ? (
+              <EmptyState>{sql.data.statements.reason}</EmptyState>
+            ) : sql.data.statements.rows.length === 0 ? (
+              <EmptyState>Nothing recorded yet.</EmptyState>
+            ) : (
+              <TableWrap>
+                <table className="admin-table">
+                  <thead><tr><th>SQL</th><th>Calls</th><th>Average</th><th>Slowest</th><th>Total time</th><th>From memory</th></tr></thead>
+                  <tbody>
+                    {sql.data.statements.rows.map((q, i) => (
+                      <tr key={i}>
+                        <td style={{ maxWidth: 520 }}><code style={{ fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word" }} title={q.query}>{q.query.length > 240 ? `${q.query.slice(0, 240)}…` : q.query}</code></td>
+                        <td>{n(q.calls ?? 0)}</td>
+                        <td style={q.meanMs >= 250 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{ms(Math.round(q.meanMs))}</td>
+                        <td>{ms(q.maxMs)}</td>
+                        <td>{duration(q.totalMs) === "0 min" ? `${(q.totalMs / 1000).toFixed(1)} s` : duration(q.totalMs)}</td>
+                        <td style={q.cacheHitPct !== null && q.cacheHitPct < 90 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{q.cacheHitPct === null ? "—" : `${q.cacheHitPct}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableWrap>
+            )}
+          </Card>
+
+          <div style={{ height: 20 }} />
+
+          {sql.data && sql.data.tables.length > 0 ? (
+            <>
+              <Card title="Tables" right="Biggest first. Many full scans on a big table usually means a missing index; many dead rows, cleanup falling behind">
+                <TableWrap>
+                  <table className="admin-table">
+                    <thead><tr><th>Table</th><th>Size</th><th>Rows</th><th>Dead rows</th><th>Full scans</th><th>Rows read by full scans</th><th>Index scans</th><th>Last cleanup</th></tr></thead>
+                    <tbody>
+                      {sql.data.tables.map((t) => {
+                        const dead = (t.deadRows ?? 0) > Math.max(1000, (t.liveRows ?? 0) * 0.2);
+                        const scans = (t.fullScans ?? 0) > (t.indexScans ?? 0) && (t.liveRows ?? 0) > 10_000;
+                        return (
+                          <tr key={t.table}>
+                            <td><code>{t.table}</code></td>
+                            <td>{t.sizeMb >= 1024 ? `${(t.sizeMb / 1024).toFixed(1)} GB` : `${t.sizeMb} MB`}</td>
+                            <td>{n(t.liveRows ?? 0)}</td>
+                            <td style={dead ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{n(t.deadRows ?? 0)}</td>
+                            <td style={scans ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{n(t.fullScans ?? 0)}</td>
+                            <td>{n(t.rowsReadByFullScans ?? 0)}</td>
+                            <td>{n(t.indexScans ?? 0)}</td>
+                            <td>{t.lastAutovacuum ? when(Date.parse(t.lastAutovacuum)) : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              </Card>
+              <div style={{ height: 20 }} />
+            </>
+          ) : null}
 
           <div className="health-charts">
             <Card title="API servers" right="Each process, as it reported in">
