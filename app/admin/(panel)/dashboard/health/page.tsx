@@ -38,6 +38,8 @@ const BANNER: Record<HealthStatus, { title: string; sub: string }> = {
 
 const n = (v: number) => v.toLocaleString("en-NG");
 const ms = (v: number | null) => (v === null ? "—" : v >= 5000 ? "> 2.5 s" : v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`);
+/** An exact time (an average, a total, a maximum): never capped, unlike a p95 read from the buckets. */
+const took = (v: number | null) => (v === null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`);
 
 function timeLabel(at: number, range: HealthRange): string {
   const d = new Date(at);
@@ -69,6 +71,8 @@ export default function HealthPage() {
     try {
       await adminFetch("/admin/health/sql/reset", { method: "POST" });
       sql.refresh();
+    } catch (failure) {
+      window.alert(failure instanceof Error ? failure.message : "Could not start from zero. Try again.");
     } finally {
       setResetting(false);
     }
@@ -156,7 +160,7 @@ export default function HealthPage() {
           <div style={{ height: 20 }} />
 
           <StatGrid cols={3}>
-            <StatCard label={`API requests · ${rangeWord}`} value={n(data.summary.requests)} hint={`average ${ms(data.summary.httpAvgMs)}`} />
+            <StatCard label={`API requests · ${rangeWord}`} value={n(data.summary.requests)} hint={`average ${took(data.summary.httpAvgMs)}`} />
             <StatCard
               label="API errors (5xx)"
               value={n(data.summary.errors)}
@@ -164,7 +168,7 @@ export default function HealthPage() {
               hint={`${data.summary.errorRatePct}% of requests`}
             />
             <StatCard label="API response time (p95)" value={ms(data.summary.httpP95)} tone={(data.summary.httpP95 ?? 0) >= 1000 ? "orange" : undefined} hint="95% of requests were faster" />
-            <StatCard label={`Database queries · ${rangeWord}`} value={n(data.summary.queries)} hint={`average ${ms(data.summary.dbAvgMs)}`} />
+            <StatCard label={`Database queries · ${rangeWord}`} value={n(data.summary.queries)} hint={`average ${took(data.summary.dbAvgMs)}`} />
             <StatCard label="Query time (p95)" value={ms(data.summary.dbP95)} tone={(data.summary.dbP95 ?? 0) >= 250 ? "orange" : undefined} hint="95% of queries were faster" />
             <StatCard
               label="Slow or failed queries"
@@ -175,14 +179,14 @@ export default function HealthPage() {
             {data.summary.dbRunAvgMs !== undefined && data.summary.dbRunAvgMs !== null ? (
               <StatCard
                 label="Query time in Postgres"
-                value={ms(Math.round(data.summary.dbRunAvgMs))}
+                value={took(Math.round(data.summary.dbRunAvgMs))}
                 hint={`average · ${n(data.summary.dbSlowRuns ?? 0)} really over 0.5 s`}
               />
             ) : null}
             {data.summary.dbWaitAvgMs !== undefined && data.summary.dbWaitAvgMs !== null ? (
               <StatCard
                 label="Waiting for a connection"
-                value={ms(Math.round(data.summary.dbWaitAvgMs))}
+                value={took(Math.round(data.summary.dbWaitAvgMs))}
                 tone={(data.summary.dbWaitAvgMs ?? 0) > (data.summary.dbRunAvgMs ?? 0) ? "orange" : undefined}
                 hint="average per query, before it ran"
               />
@@ -285,13 +289,13 @@ export default function HealthPage() {
                             <tr key={e.route}>
                               <td><code>{e.route}</code></td>
                               <td>{n(e.count)}</td>
-                              <td style={e.avgMs >= 500 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{ms(e.avgMs)}</td>
+                              <td style={e.avgMs >= 500 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{took(e.avgMs)}</td>
                               <td>{ms(e.p95Ms)}</td>
                               <td>{e.slow ? n(e.slow) : "—"}</td>
                               <td style={e.errors ? { color: "#FF3333", fontWeight: 700 } : undefined}>{e.errors ? n(e.errors) : "—"}</td>
-                              <td style={mark(e.dbMs)}>{ms(e.dbMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.queriesPerRequest} queries</span></td>
-                              <td style={mark(e.externalMs)}>{e.externalCallsPerRequest ? <>{ms(e.externalMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.externalCallsPerRequest} calls</span></> : "—"}</td>
-                              <td style={mark(e.ownMs)}>{ms(e.ownMs)}</td>
+                              <td style={mark(e.dbMs)}>{took(e.dbMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.queriesPerRequest} queries</span></td>
+                              <td style={mark(e.externalMs)}>{e.externalCallsPerRequest ? <>{took(e.externalMs)} <span style={{ color: "#786F68", fontWeight: 400 }}>· {e.externalCallsPerRequest} calls</span></> : "—"}</td>
+                              <td style={mark(e.ownMs)}>{took(e.ownMs)}</td>
                               <td>{duration(e.totalMs) === "0 min" ? `${(e.totalMs / 1000).toFixed(1)} s` : duration(e.totalMs)}</td>
                             </tr>
                           );
@@ -317,7 +321,7 @@ export default function HealthPage() {
                       <tr key={q.name}>
                         <td><code>{q.name}</code></td>
                         <td>{n(q.count)}</td>
-                        <td style={q.avgMs >= 250 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{ms(q.avgMs)}</td>
+                        <td style={q.avgMs >= 250 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{took(q.avgMs)}</td>
                         <td>{q.slow ? n(q.slow) : "—"}</td>
                         <td style={q.errors ? { color: "#FF3333", fontWeight: 700 } : undefined}>{q.errors ? n(q.errors) : "—"}</td>
                         <td>{duration(q.sumMs) === "0 min" ? `${(q.sumMs / 1000).toFixed(1)} s` : duration(q.sumMs)}</td>
@@ -358,8 +362,8 @@ export default function HealthPage() {
                       <tr key={i}>
                         <td style={{ maxWidth: 520 }}><code style={{ fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word" }} title={q.query}>{q.query.length > 240 ? `${q.query.slice(0, 240)}…` : q.query}</code></td>
                         <td>{n(q.calls ?? 0)}</td>
-                        <td style={q.meanMs >= 250 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{ms(Math.round(q.meanMs))}</td>
-                        <td>{ms(q.maxMs)}</td>
+                        <td style={q.meanMs >= 250 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{took(Math.round(q.meanMs))}</td>
+                        <td>{took(q.maxMs)}</td>
                         <td>{duration(q.totalMs) === "0 min" ? `${(q.totalMs / 1000).toFixed(1)} s` : duration(q.totalMs)}</td>
                         <td style={q.cacheHitPct !== null && q.cacheHitPct < 90 ? { color: "#FF5C00", fontWeight: 700 } : undefined}>{q.cacheHitPct === null ? "—" : `${q.cacheHitPct}%`}</td>
                       </tr>
@@ -441,7 +445,7 @@ export default function HealthPage() {
                             <td><strong>{s.label}</strong></td>
                             <td>{n(s.calls)}</td>
                             <td style={failedPct >= 5 ? { color: "#FF3333", fontWeight: 700 } : undefined}>{s.failed ? `${n(s.failed)} (${failedPct}%)` : "—"}</td>
-                            <td>{ms(s.avgMs)}</td>
+                            <td>{took(s.avgMs)}</td>
                           </tr>
                         );
                       })}

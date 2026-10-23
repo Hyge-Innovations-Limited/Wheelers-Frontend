@@ -147,11 +147,11 @@ export default function DataPage() {
       <div className="admin-card" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", padding: 14 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
           From
-          <input type="date" value={from} max={to} onChange={(e) => e.target.value && setFrom(e.target.value)} className="admin-input" />
+          <input type="date" value={from} max={to} onChange={(e) => { const day = e.target.value; if (!day) return; setFrom(day); if (day > to) setTo(day); }} className="admin-input" />
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
           To
-          <input type="date" value={to} min={from} onChange={(e) => e.target.value && setTo(e.target.value)} className="admin-input" />
+          <input type="date" value={to} min={from} onChange={(e) => { const day = e.target.value; if (!day) return; setTo(day); if (day < from) setFrom(day); }} className="admin-input" />
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: "#786F68" }}>
           Rides from
