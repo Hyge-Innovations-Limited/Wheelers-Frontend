@@ -60,6 +60,7 @@ function AdminLoginForm() {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login-logo">
+          <img src="/wheelers-mark.svg" alt="" width={52} height={52} />
           <span>Wheelers</span>
         </div>
         <h1>Admin Panel</h1>

@@ -27,6 +27,17 @@
 
 .admin-sidebar-logo {
   padding: 28px 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-sidebar-logo img,
+.admin-topbar-brand img,
+.admin-login-logo img {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 8px;
 }
 
 .admin-sidebar-logo h1 {
@@ -428,7 +439,10 @@
 }
 
 .admin-login-logo {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
@@ -1963,7 +1977,7 @@
     cursor: pointer;
   }
   .admin-menu-btn:active { background: rgba(255, 255, 255, 0.12); }
-  .admin-topbar-brand { font-family: var(--display, inherit); font-size: 19px; font-weight: 800; color: var(--adm-orange); }
+  .admin-topbar-brand { display: flex; align-items: center; gap: 8px; font-family: var(--display, inherit); font-size: 19px; font-weight: 800; color: var(--adm-orange); }
   .admin-topbar-alerts {
     margin-left: auto;
     padding: 5px 10px;

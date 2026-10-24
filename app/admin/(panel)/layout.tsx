@@ -113,6 +113,14 @@ function Icon({ name }: { name: string }) {
           <circle cx="12" cy="10" r="2.4" />
         </svg>
       );
+    case "referrals":
+      return (
+        <svg {...props}>
+          <rect x="3" y="8" width="18" height="13" rx="1.5" />
+          <path d="M12 8v13M3 12.5h18" />
+          <path d="M12 8c-1.5-3.5-5.5-4-5.5-1.5S10 8 12 8zM12 8c1.5-3.5 5.5-4 5.5-1.5S14 8 12 8z" />
+        </svg>
+      );
     case "logout":
       return (
         <svg {...props}>
@@ -133,6 +141,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Overview", icon: "dashboard" },
   { href: "/admin/dashboard/live-map", label: "Live map", icon: "map" },
   { href: "/admin/dashboard/users", label: "Users", icon: "riders" },
+  { href: "/admin/dashboard/referrals", label: "Referrals", icon: "referrals" },
   { href: "/admin/dashboard/rides", label: "Rides", icon: "rides" },
   { href: "/admin/dashboard/fees", label: "Fees", icon: "fees" },
   { href: "/admin/dashboard/data", label: "Data", icon: "rides" },
@@ -315,7 +324,10 @@ export default function AdminPanelLayout({
             {navOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
-        <span className="admin-topbar-brand">Wheelers</span>
+        <span className="admin-topbar-brand">
+          <img src="/wheelers-mark.svg" alt="" width={28} height={28} />
+          Wheelers
+        </span>
         {liveAlerts > 0 && !isSupport ? (
           <Link href="/admin/dashboard/alerts" className="admin-topbar-alerts" onClick={() => setNavOpen(false)}>
             {liveAlerts > 99 ? "99+" : liveAlerts} alerts
@@ -326,6 +338,7 @@ export default function AdminPanelLayout({
 
       <aside className="admin-sidebar">
         <div className="admin-sidebar-logo">
+          <img src="/wheelers-mark.svg" alt="" width={34} height={34} />
           <h1>Wheelers</h1>
         </div>
 
