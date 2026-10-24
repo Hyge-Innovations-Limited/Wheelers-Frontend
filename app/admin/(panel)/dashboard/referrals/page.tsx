@@ -61,14 +61,26 @@ const STATUS_WORDS: Record<Status, { label: string; badge: string }> = {
 
 const CASHBACK_WORDS: Record<string, string> = { AVAILABLE: "to spend", FROZEN: "frozen", USED: "spent", EXPIRED: "expired" };
 
+type Codes = {
+  total: number;
+  limit: number;
+  offset: number;
+  rows: Array<{
+    userId: string; name: string | null; phone: string | null; role: string; code: string; active: boolean; codeCreatedAt: string;
+    referred: number; rode: number; waiting: number; noRide: number; lastReferredAt: string | null; earnedNgn: number; availableNgn: number;
+  }>;
+};
+type CodeSort = "referred" | "cashback" | "newest";
+
 const LIMIT = 50;
 const lagosDay = (offsetDays = 0) => new Date(Date.now() + 3600_000 - offsetDays * 86_400_000).toISOString().slice(0, 10);
 const tripId = (n: number) => `WH-${String(n).padStart(5, "0")}`;
 
+/** A person: their name opens their referrals (code, friends, cashback). */
 function Who({ person }: { person: Person }) {
   return (
     <>
-      <Link href={`/admin/dashboard/users/${person.id}`} className="admin-user-link">{displayName(person)}</Link>
+      <Link href={`/admin/dashboard/referrals/${person.id}`} className="admin-user-link">{displayName(person)}</Link>
       {person.name && person.phone ? <span className="admin-sub">{person.phone}</span> : null}
     </>
   );
@@ -86,6 +98,14 @@ export default function ReferralsPage() {
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const q = useDebounced(search.trim());
+  // Everyone with a code, of all time: the dates do not narrow this list.
+  const [codeSearch, setCodeSearch] = useState("");
+  const [codeSort, setCodeSort] = useState<CodeSort>("referred");
+  const [codeOffset, setCodeOffset] = useState(0);
+  const cq = useDebounced(codeSearch.trim());
+  const codeParams = new URLSearchParams({ sort: codeSort, limit: String(LIMIT), offset: String(codeOffset) });
+  if (cq) codeParams.set("q", cq);
+  const codes = useAdminData<Codes>(`/admin/referrals/codes?${codeParams}`, [codeSort, cq, codeOffset]);
 
   const params = new URLSearchParams({ from, to, limit: String(LIMIT), offset: String(offset) });
   if (status) params.set("status", status);
@@ -106,7 +126,7 @@ export default function ReferralsPage() {
         subtitle={rules
           ? `A friend who rides within ${rules.rideWithinDays} days earns the person who brought them ${formatNaira(rules.rideRewardNgn)} cashback; ${formatNaira(rules.noRideRewardNgn)} if they don't. Cashback unused for ${rules.cashbackUnusedDays} days is frozen until the next friend joins.`
           : "Who brought whom, and what it earned them"}
-        actions={<RefreshButton busy={loading} onClick={refresh} />}
+        actions={<RefreshButton busy={loading || codes.loading} onClick={() => { refresh(); codes.refresh(); }} />}
       />
 
       <div className="admin-card" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", padding: 14 }}>
@@ -188,6 +208,69 @@ export default function ReferralsPage() {
                   </tbody>
                 </table>
               </TableWrap>
+            )}
+          </Card>
+
+          <SectionLabel right={<span className="admin-sub">all time · open one to see their friends and cashback</span>}>Everyone with a code</SectionLabel>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+            <SearchInput value={codeSearch} onChange={(v) => { setCodeSearch(v); setCodeOffset(0); }} placeholder="Name, phone or code" />
+            <FilterTabs
+              value={codeSort}
+              onChange={(v) => { setCodeSort(v); setCodeOffset(0); }}
+              options={[
+                { value: "referred", label: "Most friends" },
+                { value: "cashback", label: "Most cashback" },
+                { value: "newest", label: "Newest codes" },
+              ]}
+            />
+          </div>
+          <Card>
+            {codes.error && !codes.data ? (
+              <ErrorState error={codes.error} onRetry={codes.refresh} />
+            ) : !codes.data ? (
+              <Spinner label="Loading codes…" />
+            ) : codes.data.rows.length === 0 ? (
+              <EmptyState>{cq ? "No code matches that." : "Nobody has a referral code yet. One is made when someone opens Refer a friend."}</EmptyState>
+            ) : (
+              <>
+                <TableWrap>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Person</th>
+                        <th>Code</th>
+                        <th className="num">Friends</th>
+                        <th className="num">Rode</th>
+                        <th className="num">Waiting</th>
+                        <th className="num">Cashback given</th>
+                        <th className="num">To spend</th>
+                        <th>Last friend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {codes.data.rows.map((c) => (
+                        <tr key={c.userId}>
+                          <td>
+                            <Who person={{ id: c.userId, name: c.name, phone: c.phone }} />
+                            <span className="admin-sub">{c.role === "DRIVER" ? "Driver" : "Rider"}</span>
+                          </td>
+                          <td>
+                            <code>{c.code}</code>
+                            <span className="admin-sub">{c.active ? `since ${formatDate(c.codeCreatedAt)}` : "switched off"}</span>
+                          </td>
+                          <td className="num"><strong>{formatNumber(c.referred)}</strong></td>
+                          <td className="num">{formatNumber(c.rode)}</td>
+                          <td className="num">{formatNumber(c.waiting)}</td>
+                          <td className="num">{formatNaira(c.earnedNgn)}</td>
+                          <td className="num">{formatNaira(c.availableNgn)}</td>
+                          <td>{c.lastReferredAt ? formatDate(c.lastReferredAt) : "Nobody yet"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+                <Pagination offset={codes.data.offset} limit={codes.data.limit} total={codes.data.total} onChange={setCodeOffset} />
+              </>
             )}
           </Card>
 
