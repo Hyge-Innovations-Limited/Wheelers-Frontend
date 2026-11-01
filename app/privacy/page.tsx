@@ -44,54 +44,63 @@ const policySections = [
     ],
   },
   {
-    title: "3. How we use information",
+    title: "3. Trip audio recording (drivers)",
+    body: [
+      "For safety, and to resolve reports, complaints and disputes, the Wheelers Driver app records the sound inside the car during a trip, from the moment the trip starts until it ends. Drivers are asked for microphone access when they start using the app, and can switch Record trips off at any time in the app's Settings.",
+      "Because the recording is made inside the car, it can include the voices of the rider and anyone else in the car.",
+      "Recordings are stored securely and are never shown to riders or other drivers. Only Wheelers support staff can listen to them, when looking into a safety report, complaint or dispute, and every listen is logged. We may share a recording with legal authorities when required by law.",
+      "Recordings are deleted after 30 days.",
+    ],
+  },
+  {
+    title: "4. How we use information",
     body: [
       "We use your information to manage the waitlist, understand rider and driver needs, improve pricing and route experiences, respond to early access interest, test product ideas, detect abuse, keep the website reliable, and measure site performance.",
       "If you gave contact consent, we may contact you about early access, research, testing, launch updates, or follow-up questions related to Wheelers.",
     ],
   },
   {
-    title: "4. Cookies and analytics",
+    title: "5. Cookies and analytics",
     body: [
       "Wheelers may use cookies, similar technologies, and analytics scripts to remember site preferences, understand traffic patterns, debug issues, and improve the product experience.",
       "Microsoft Clarity may capture usage data such as clicks, scrolling, page visits, and general device or browser details. This helps us identify confusing parts of the site and improve the experience.",
     ],
   },
   {
-    title: "5. Sharing information",
+    title: "6. Sharing information",
     body: [
       "We do not sell your personal information. We may share information with service providers that help us operate the website, store waitlist submissions, provide analytics, calculate routes or locations, host the product, or communicate with users.",
       "We may also disclose information if required by law, to protect users and the Wheelers service, or as part of a business transfer such as a merger, acquisition, or reorganization.",
     ],
   },
   {
-    title: "6. Data retention",
+    title: "7. Data retention",
     body: [
       "We keep waitlist and survey information for as long as needed to build, launch, improve, and operate Wheelers, unless a longer period is required by law or a shorter period is appropriate for product, safety, or operational reasons.",
       "Ride quote, analytics, and technical logs may be kept for shorter operational periods or according to the retention settings of the services we use.",
     ],
   },
   {
-    title: "7. Your choices",
+    title: "8. Your choices",
     body: [
       "You can choose not to submit waitlist information or optional fields. You can also avoid ride quote and location search features if you do not want those searches processed.",
       "You may request access, correction, deletion, or withdrawal from Wheelers contact messages through the contact channels available on our website or in messages we send you.",
     ],
   },
   {
-    title: "8. Security",
+    title: "9. Security",
     body: [
       "We use reasonable technical and organizational measures to protect information submitted to Wheelers. No website or online service can guarantee absolute security, so we work to limit access and keep data handling focused on legitimate product needs.",
     ],
   },
   {
-    title: "9. Children",
+    title: "10. Children",
     body: [
       "Wheelers is not intended for children, and we do not knowingly collect personal information from children. If you believe a child has submitted personal information, contact us so we can review and remove it where appropriate.",
     ],
   },
   {
-    title: "10. Changes to this policy",
+    title: "11. Changes to this policy",
     body: [
       "We may update this Privacy Policy as Wheelers evolves. If we make material changes, we will update the date on this page and may provide additional notice where appropriate.",
     ],
@@ -117,7 +126,7 @@ export default function PrivacyPage() {
           </p>
           <div className="privacy-meta mono">
             <span>Effective date: June 5, 2026</span>
-            <span>Last updated: June 5, 2026</span>
+            <span>Last updated: November 1, 2026</span>
           </div>
         </div>
       </section>
@@ -146,7 +155,7 @@ export default function PrivacyPage() {
           ))}
 
           <article className="privacy-policy-card privacy-contact-card">
-            <h2>11. Contact</h2>
+            <h2>12. Contact</h2>
             <p>
               For privacy questions or data requests, use the official Wheelers
               contact channels available on this website or in Wheelers
