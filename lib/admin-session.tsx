@@ -6,7 +6,7 @@ export type AdminRole = "OWNER" | "STAFF" | "SUPPORT";
 
 /** Where a support login lands, and the only pages it has: the inbox, Activity and the people and trip look-ups. */
 export const SUPPORT_HOME = "/admin/dashboard/support";
-export const SUPPORT_PAGES = ["/admin/dashboard/support", "/admin/dashboard/activity", "/admin/desk"];
+export const SUPPORT_PAGES = ["/admin/dashboard/support", "/admin/dashboard/activity", "/admin/desk", "/admin/dashboard/recordings"];
 
 export interface AdminSessionUser {
   id: string | null;

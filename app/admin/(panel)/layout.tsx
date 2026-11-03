@@ -143,6 +143,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/users", label: "Users", icon: "riders" },
   { href: "/admin/dashboard/referrals", label: "Referrals", icon: "referrals" },
   { href: "/admin/dashboard/rides", label: "Rides", icon: "rides" },
+  { href: "/admin/dashboard/recordings", label: "Trip recordings", icon: "rides", ownerOnly: true },
   { href: "/admin/dashboard/fees", label: "Fees", icon: "fees" },
   { href: "/admin/dashboard/data", label: "Data", icon: "rides" },
   { href: "/admin/dashboard/stellar", label: "Stellar", icon: "stellar" },
@@ -162,6 +163,7 @@ const SUPPORT_NAV: typeof NAV_ITEMS = [
   { href: "/admin/dashboard/support", label: "Inbox", icon: "activity", badge: "support" },
   { href: "/admin/dashboard/activity", label: "Activity", icon: "alerts" },
   { href: "/admin/desk", label: "People & trips", icon: "riders" },
+  { href: "/admin/dashboard/recordings", label: "Trip recordings", icon: "rides" },
 ];
 
 export default function AdminPanelLayout({
