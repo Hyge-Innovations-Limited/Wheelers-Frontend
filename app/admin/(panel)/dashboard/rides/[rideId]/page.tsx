@@ -126,7 +126,7 @@ export default function RideDetailPage({ params }: { params: Promise<{ rideId: s
         </Card>
       ) : null}
 
-      <Card title={`Chat (${data.messages.filter((m) => m.kind === "text").length} messages)`}>
+      <Card title={`Chat (${data.messages.filter((m) => m.kind === "text").length} messages)`} right={<Link href={`/admin/dashboard/chats/trips/${rideId}`}>Full chat →</Link>}>
         {data.messages.length === 0 ? (
           <EmptyState>No messages on this trip.</EmptyState>
         ) : (

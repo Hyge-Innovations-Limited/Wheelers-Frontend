@@ -57,6 +57,7 @@ const policySections = [
     body: [
       "We use your information to manage the waitlist, understand rider and driver needs, improve pricing and route experiences, respond to early access interest, test product ideas, detect abuse, keep the website reliable, and measure site performance.",
       "If you gave contact consent, we may contact you about early access, research, testing, launch updates, or follow-up questions related to Wheelers.",
+      "Wheelers support may read your chats with Wheelers to help with a trip or complaint.",
     ],
   },
   {
@@ -126,7 +127,7 @@ export default function PrivacyPage() {
           </p>
           <div className="privacy-meta mono">
             <span>Effective date: June 5, 2026</span>
-            <span>Last updated: November 1, 2026</span>
+            <span>Last updated: November 4, 2026</span>
           </div>
         </div>
       </section>

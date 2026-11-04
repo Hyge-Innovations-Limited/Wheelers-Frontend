@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 
 import { adminJson } from "@/lib/admin-api";
@@ -59,7 +61,8 @@ function Copy({ text, label = "Copy" }: { text: string; label?: string }) {
 }
 
 export default function TripRecordingsPage() {
-  const [q, setQ] = useState("");
+  // A link from a chat or a ride opens the page already searched for that trip.
+  const [q, setQ] = useState(useSearchParams().get("q") ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [offset, setOffset] = useState(0);
@@ -162,6 +165,7 @@ export default function TripRecordingsPage() {
                           </td>
                           <td>{row.kept === 0 ? "Deleted" : day(row.deletesFrom)}</td>
                           <td style={{ whiteSpace: "nowrap" }}>
+                            <Link href={`/admin/dashboard/chats/trips/${row.rideId}`} className="admin-btn-ghost">Chat</Link>{" "}
                             <button type="button" className="admin-btn-ghost" onClick={() => setOpen(open === row.rideId ? null : row.rideId)}>
                               {open === row.rideId ? "Hide files" : "Files"}
                             </button>{" "}
