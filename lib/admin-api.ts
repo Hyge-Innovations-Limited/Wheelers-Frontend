@@ -61,8 +61,13 @@ export async function adminFetch(path: string, init?: RequestInit): Promise<Resp
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   // The API no longer accepts this login (two hours are up): back to sign-in.
   if (res.status === 401 && token && path !== "/admin/login") endSession();
+  // A locked area (Chats, recordings, money) closed on the server: its page shows the lock card.
+  if (res.status === 423 && typeof window !== "undefined") window.dispatchEvent(new Event(ADMIN_LOCKED_EVENT));
   return res;
 }
+
+/** Fired when the API says a locked area is locked (423); LockedArea listens. */
+export const ADMIN_LOCKED_EVENT = "wheelers:admin-locked";
 
 /** Thrown for any non-2xx response, carrying the backend's own message. */
 export class AdminApiError extends Error {
