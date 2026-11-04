@@ -27,7 +27,10 @@ export default function ChatsPage() {
   const params = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
   if (q.trim()) params.set("q", q.trim());
   const path = `/admin/chats/${tab}?${params.toString()}`;
-  const { data, error, loading, refresh } = useAdminData<Page<Person> | Page<Trip>>(path, [path]);
+  // One list per tab, so switching never shows one tab's rows in the other's table while the new ones load.
+  const people = useAdminData<Page<Person>>(tab === "people" ? path : null, [path]);
+  const trips = useAdminData<Page<Trip>>(tab === "trips" ? path : null, [path]);
+  const { data, error, loading, refresh } = tab === "people" ? people : trips;
 
   return (
     <>
@@ -62,7 +65,7 @@ export default function ChatsPage() {
                   <>
                     <thead><tr><th>Person</th><th>Last</th><th>Trips</th><th>Messages</th><th /></tr></thead>
                     <tbody>
-                      {(data.items as Person[]).map((p) => (
+                      {(people.data?.items ?? []).map((p) => (
                         <tr key={p.userId}>
                           <td>
                             <Link href={`/admin/dashboard/chats/people/${p.userId}`} style={{ fontWeight: 700 }}>{p.name ?? "No name"}</Link>
@@ -83,7 +86,7 @@ export default function ChatsPage() {
                   <>
                     <thead><tr><th>Trip</th><th>Rider</th><th>Driver</th><th>When</th><th>Chat</th><th /></tr></thead>
                     <tbody>
-                      {(data.items as Trip[]).map((t) => (
+                      {(trips.data?.items ?? []).map((t) => (
                         <tr key={t.rideId}>
                           <td>
                             <Link href={`/admin/dashboard/chats/trips/${t.rideId}`} style={{ fontWeight: 700 }}>{t.tripId ?? "—"}</Link>
@@ -91,7 +94,7 @@ export default function ChatsPage() {
                           </td>
                           <td>{t.riderName ?? "—"}{t.riderPhone ? <div style={{ fontSize: 12, color: "#786F68" }}>{t.riderPhone}</div> : null}</td>
                           <td>{t.driverName ?? "—"}</td>
-                          <td>{when(t.createdAt)}<div style={{ fontSize: 12, color: "#786F68" }}>{t.status.toLowerCase().replace(/_/g, " ")}</div></td>
+                          <td>{when(t.createdAt)}<div style={{ fontSize: 12, color: "#786F68" }}>{(t.status ?? "").toLowerCase().replace(/_/g, " ")}</div></td>
                           <td>{t.chats} messages · {t.calls} calls</td>
                           <td><Link href={`/admin/dashboard/chats/trips/${t.rideId}`}>Open</Link></td>
                         </tr>
