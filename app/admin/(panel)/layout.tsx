@@ -147,6 +147,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard/chats", label: "Chats", icon: "activity", ownerOnly: true },
   { href: "/admin/dashboard/fees", label: "Fees", icon: "fees" },
   { href: "/admin/dashboard/data", label: "Data", icon: "rides" },
+  { href: "/admin/dashboard/studio", label: "Studio", icon: "dashboard", ownerOnly: true },
   { href: "/admin/dashboard/stellar", label: "Stellar", icon: "stellar" },
   { href: "/admin/dashboard/group-rides", label: "Group rides", icon: "group" },
   { href: "/admin/dashboard/drivers", label: "Driver KYC", icon: "drivers" },
