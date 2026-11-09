@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AreaChart, BarChart, CHART_COLORS } from "@/components/admin/charts";
 import { Card, EmptyState, ErrorState, PageHeader, RefreshButton, Spinner, StatCard, StatGrid, TableWrap } from "@/components/admin/ui";
 import { useAdminData } from "@/components/admin/use-admin-data";
-import { adminFetch, type HealthRange, type HealthReport, type HealthSql, type HealthStatus } from "@/lib/admin-api";
+import { adminFetch, type HealthDay, type HealthRange, type HealthReport, type HealthSql, type HealthStatus } from "@/lib/admin-api";
 import { useAdminSession } from "@/lib/admin-session";
 
 /**
@@ -61,7 +61,8 @@ function duration(msTotal: number): string {
 
 export default function HealthPage() {
   const [range, setRange] = useState<HealthRange>("24h");
-  const { data, error, loading, refresh } = useAdminData<HealthReport>(`/admin/health?range=${range}`, [range], { refreshMs: 30_000 });
+  const [days, setDays] = useState<"30" | "90" | "all">("30");
+  const { data, error, loading, refresh } = useAdminData<HealthReport>(`/admin/health?range=${range}&days=${days}`, [range, days], { refreshMs: 30_000 });
   const sql = useAdminData<HealthSql>("/admin/health/sql", [], { refreshMs: 120_000 });
   const { isOwner } = useAdminSession();
   const [resetting, setResetting] = useState(false);
@@ -86,6 +87,17 @@ export default function HealthPage() {
       traffic: points.map((p) => ({ label: label(p.at), values: [p.requests, p.errors] })),
       dbP95: points.map((p) => ({ label: label(p.at), value: p.dbP95 ?? 0 })),
       queries: points.map((p) => ({ label: label(p.at), values: [p.queries, p.slowQueries + p.dbErrors] })),
+      locPings: points.map((p) => ({ label: label(p.at), value: p.locPings ?? 0 })),
+      locP95: points.map((p) => ({ label: label(p.at), value: p.locP95 ?? 0 })),
+      kafka: (data?.kafka?.points ?? []).map((p) => ({ label: label(p.at), value: p.lag ?? 0 })),
+      vitals: (data?.vitals ?? []).map((v) => ({
+        svc: v.svc,
+        processes: v.processes,
+        latest: v.latest,
+        loop: v.points.map((p) => ({ label: label(p.at), value: p.loopP99Ms ?? 0 })),
+        cpu: v.points.map((p) => ({ label: label(p.at), value: p.cpuPct ?? 0 })),
+        rss: v.points.map((p) => ({ label: label(p.at), value: p.rssMb ?? 0 })),
+      })),
     };
   }, [data, range]);
 
@@ -217,6 +229,42 @@ export default function HealthPage() {
               <BarChart data={charts.queries} series={[{ name: "Queries", color: CHART_COLORS.MUTED }, { name: "Slow or failed", color: "#FF3333" }]} formatValue={n} />
             </Card>
           </div>
+
+          <div className="health-charts">
+            <Card title="Driver location pings" right={data.summary.locPings !== undefined ? `${n(data.summary.locPings ?? 0)} in the last ${rangeWord}` : undefined} padded>
+              <AreaChart data={charts.locPings} color={CHART_COLORS.MUTED} formatValue={n} />
+            </Card>
+            <Card title="Location ping time (p95)" padded>
+              <AreaChart data={charts.locP95} color={CHART_COLORS.ORANGE} formatValue={(v) => ms(v)} />
+            </Card>
+            <Card
+              title="Ride events waiting (Kafka backlog)"
+              right={data.kafka?.latest ? Object.entries(data.kafka.latest.lag).map(([g, v]) => `${g} ${n(v)}`).join(" · ") : "No reading yet"}
+              padded
+            >
+              <AreaChart data={charts.kafka} color={CHART_COLORS.ORANGE} formatValue={n} />
+            </Card>
+          </div>
+
+          {charts.vitals.map((v) => (
+            <div key={v.svc} className="health-charts">
+              <Card
+                title={`${v.svc}: event-loop delay (p99)`}
+                right={`${v.processes} process${v.processes === 1 ? "" : "es"} · alert over 100 ms`}
+                padded
+              >
+                <AreaChart data={v.loop} color={CHART_COLORS.ORANGE} formatValue={(x) => ms(x)} />
+              </Card>
+              <Card title={`${v.svc}: CPU (busiest process)`} padded>
+                <AreaChart data={v.cpu} color={CHART_COLORS.GREEN} formatValue={(x) => `${x.toFixed(0)}%`} />
+              </Card>
+              <Card title={`${v.svc}: memory (busiest process)`} padded>
+                <AreaChart data={v.rss} color={CHART_COLORS.MUTED} formatValue={(x) => `${n(x)} MB`} />
+              </Card>
+            </div>
+          ))}
+
+          <LongTerm days={data.days ?? []} span={days} onSpan={setDays} />
 
           <Card title="Spikes" right="Stretches at least 3× the usual for this period">
             {data.spikes.length === 0 ? (
@@ -456,6 +504,77 @@ export default function HealthPage() {
             </Card>
           </div>
         </>
+      ) : null}
+    </>
+  );
+}
+
+/** One row per Lagos day, kept for good: how load and speed move as Wheelers grows. */
+function LongTerm({ days, span, onSpan }: { days: HealthDay[]; span: "30" | "90" | "all"; onSpan: (s: "30" | "90" | "all") => void }) {
+  const label = (d: string) => d.slice(5);
+  const tabs = (
+    <div className="admin-range-tabs" role="group" aria-label="Days">
+      {(["30", "90", "all"] as const).map((k) => (
+        <button key={k} type="button" className={`admin-range-tab${k === span ? " active" : ""}`} onClick={() => onSpan(k)}>
+          {k === "all" ? "All" : `${k} days`}
+        </button>
+      ))}
+    </div>
+  );
+  if (days.length === 0) {
+    return (
+      <Card title="Day by day, kept for good" right={tabs}>
+        <EmptyState>The first day is written just after midnight (Lagos), then one a day.</EmptyState>
+      </Card>
+    );
+  }
+  const slowest = days[days.length - 1]?.slowRoutes ?? [];
+  return (
+    <>
+      <Card title="Day by day, kept for good" right={tabs} padded>
+        <BarChart
+          data={days.map((d) => ({ label: label(d.day), values: [d.searches, d.trips] }))}
+          series={[{ name: "Searches", color: CHART_COLORS.MUTED }, { name: "Trips", color: CHART_COLORS.ORANGE }]}
+          formatValue={(v) => v.toLocaleString("en-NG")}
+        />
+      </Card>
+      <div className="health-charts">
+        <Card title="API time (p95), by day" padded>
+          <AreaChart data={days.map((d) => ({ label: label(d.day), value: d.apiP95Ms ?? 0 }))} color={CHART_COLORS.ORANGE} formatValue={(v) => `${v} ms`} />
+        </Card>
+        <Card title="Event-loop delay peak, by day" padded>
+          <AreaChart data={days.map((d) => ({ label: label(d.day), value: d.maxLoopP99Ms ?? 0 }))} color={CHART_COLORS.ORANGE} formatValue={(v) => `${v} ms`} />
+        </Card>
+        <Card title="API requests, by day" padded>
+          <AreaChart data={days.map((d) => ({ label: label(d.day), value: d.apiRequests }))} color={CHART_COLORS.MUTED} formatValue={(v) => v.toLocaleString("en-NG")} />
+        </Card>
+        <Card title="Location pings, by day" padded>
+          <AreaChart data={days.map((d) => ({ label: label(d.day), value: d.locPings }))} color={CHART_COLORS.GREEN} formatValue={(v) => v.toLocaleString("en-NG")} />
+        </Card>
+        <Card title="Active riders and drivers, by day" padded>
+          <BarChart
+            data={days.map((d) => ({ label: label(d.day), values: [d.activeRiders, d.activeDrivers] }))}
+            series={[{ name: "Riders", color: CHART_COLORS.ORANGE }, { name: "Drivers", color: CHART_COLORS.GREEN }]}
+            formatValue={(v) => v.toLocaleString("en-NG")}
+          />
+        </Card>
+        <Card title="Kafka backlog peak, by day" padded>
+          <AreaChart data={days.map((d) => ({ label: label(d.day), value: d.maxKafkaLag ?? 0 }))} color={CHART_COLORS.MUTED} formatValue={(v) => v.toLocaleString("en-NG")} />
+        </Card>
+      </div>
+      {slowest.length ? (
+        <Card title={`Slowest endpoints on ${days[days.length - 1]!.day}`}>
+          <TableWrap>
+            <table className="admin-table">
+              <thead><tr><th>Endpoint</th><th className="num">Requests</th><th className="num">Average</th></tr></thead>
+              <tbody>
+                {slowest.map((r) => (
+                  <tr key={r.route}><td>{r.route}</td><td className="num">{r.count.toLocaleString("en-NG")}</td><td className="num">{r.avgMs} ms</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+        </Card>
       ) : null}
     </>
   );

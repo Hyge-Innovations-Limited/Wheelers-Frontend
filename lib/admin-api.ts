@@ -1068,6 +1068,28 @@ export interface HealthPoint {
   slowQueries: number;
   dbPingMs: number | null;
   redisPingMs: number | null;
+  /** Driver location pings handled, and how long 95% took. Absent on older servers. */
+  locPings?: number;
+  locP95?: number | null;
+}
+
+/** One process's worst minute in each point. */
+export interface HealthVitalsPoint { at: number; loopP99Ms: number | null; cpuPct: number | null; rssMb: number | null }
+export interface HealthVitals {
+  svc: string;
+  processes: number;
+  points: HealthVitalsPoint[];
+  latest: Array<{ at: number; svc: string; id: string; cpuPct: number; rssMb: number; heapMb: number; loopP99Ms: number }>;
+}
+/** One Lagos day, kept for good. */
+export interface HealthDay {
+  day: string;
+  apiRequests: number; apiErrors: number; apiP95Ms: number | null;
+  dbQueries: number; dbP95Ms: number | null;
+  locPings: number; locP95Ms: number | null;
+  maxLoopP99Ms: number | null; maxCpuPct: number | null; maxRssMb: number | null; maxKafkaLag: number | null;
+  searches: number; trips: number; activeRiders: number; activeDrivers: number;
+  slowRoutes: Array<{ route: string; count: number; avgMs: number }> | null;
 }
 
 export interface HealthEndpoint {
@@ -1115,10 +1137,16 @@ export interface HealthReport {
     dbRunP95?: number | null;
     dbSlowRuns?: number;
     dbWaitAvgMs?: number | null;
+    /** Driver location pings in the period. Absent on older servers. */
+    locPings?: number;
   };
   /** Where API time goes, per endpoint, most total time first. Absent on older servers. */
   endpoints?: HealthEndpoint[];
   points: HealthPoint[];
+  /** Absent on older servers. */
+  vitals?: HealthVitals[];
+  kafka?: { points: Array<{ at: number; lag: number | null }>; latest: { at: number; lag: Record<string, number> } | null };
+  days?: HealthDay[];
   spikes: Array<{ metric: string; label: string; unit: "ms" | "count"; from: number; to: number; peak: number; usual: number }>;
   incidents: Array<{ key: string; label: string; status: HealthStatus; from: number; to: number; minutes: number; ongoing: boolean }>;
   queries: Array<{ name: string; count: number; sumMs: number; slow: number; errors: number; avgMs: number }>;
