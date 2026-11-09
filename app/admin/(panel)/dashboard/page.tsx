@@ -13,6 +13,7 @@ import type {
   ReconcileCheck,
 } from "@/lib/admin-api";
 import { adminDownload } from "@/lib/admin-api";
+
 import {
   formatDate,
   formatDistance,
@@ -291,7 +292,8 @@ function DashboardBody() {
     setDownloading(true);
     setDownloadError(null);
     try {
-      await adminDownload(`/admin/insights/export${filtersQuery(filters, { scope: "overview", bucket })}`, `wheelers-overview-${filters.from}-to-${filters.to}.xlsx`);
+      // One zip: the Excel workbook and the Power BI pack (the analyst's 30 files) in its powerbi/ folder.
+      await adminDownload(`/admin/insights/export${filtersQuery(filters, { scope: "overview", bucket, format: "zip" })}`, `wheelers-overview-${filters.from}-to-${filters.to}.zip`);
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : "Download failed");
     } finally {
@@ -312,7 +314,7 @@ function DashboardBody() {
           <div className="admin-header-actions">
             {isOwner ? (
               <button type="button" className="admin-btn-ghost" onClick={() => void download()} disabled={downloading}>
-                {downloading ? "Preparing Excel…" : "Download Excel"}
+                {downloading ? "Preparing download…" : "Download Excel + Power BI"}
               </button>
             ) : null}
             <RefreshButton busy={summary.loading || series.loading || overview.loading} onClick={refreshAll} />
