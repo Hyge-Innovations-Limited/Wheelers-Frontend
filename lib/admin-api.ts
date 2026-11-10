@@ -179,6 +179,8 @@ export interface TimeseriesPoint {
 
 export interface AdminUserRow {
   id: string;
+  /** Their latest app or web device. Absent on an older backend. */
+  device?: { platform: string | null; model: string | null; source: string } | null;
   name: string | null;
   username: string | null;
   email: string | null;
@@ -234,6 +236,19 @@ export interface AdminRideRow {
   cancelledAt: string | null;
 }
 
+/** One device a person uses (collected for their profile). */
+export interface AdminUserDevice {
+  id: string;
+  source: "app" | "web" | "whatsapp" | string;
+  platform: string | null; osVersion: string | null; maker: string | null; model: string | null;
+  formFactor: string | null; browser: string | null; browserVersion: string | null;
+  appVersion: string | null; appBuild: string | null; ramGb: number | null; cpuCores: number | null;
+  network: string | null; saveData: boolean | null; fromWhatsapp: boolean | null;
+  language: string | null; timeZone: string | null; screen: string | null;
+  phoneNetwork: string | null; formsOpen: boolean | null;
+  firstSeenAt: string; lastSeenAt: string; timesSeen: number;
+}
+
 export interface AdminUserDetail {
   user: {
     id: string; name: string | null; username: string | null; email: string | null;
@@ -281,6 +296,8 @@ export interface AdminUserDetail {
     id: string; status: string; amountNgn: string; bankAccountNumber: string;
     bankAccountName: string; failureReason: string | null; createdAt: string; settledAt: string | null;
   }>;
+  /** The devices they use (app, our web pages, WhatsApp). Absent on an older backend. */
+  devices?: AdminUserDevice[];
   /** What stands between this user and a withdrawal. Null on an older backend. */
   security?: {
     hasPin: boolean;

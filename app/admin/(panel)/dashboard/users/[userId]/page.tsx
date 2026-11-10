@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { adminJson, setWithdrawalFreeze, type AdminUserDetail } from "@/lib/admin-api";
+import { adminJson, setWithdrawalFreeze, type AdminUserDetail, type AdminUserDevice } from "@/lib/admin-api";
 import {
   displayName,
   formatDate,
@@ -126,6 +126,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
           <StatCard label="Last activity" value={rideRows[0] ? formatWhen(rideRows[0].createdAt) : "—"} />
         </StatGrid>
       ) : null}
+
+      <DevicesCard devices={data.devices} />
 
       <div className="admin-tabs standalone">
         {(["rides", "money", "activity"] as Tab[]).map((t) => (
@@ -423,6 +425,67 @@ function WithdrawalFreeze({
           </button>
         )}
       </div>
+    </Card>
+  );
+}
+
+const PLATFORM: Record<string, string> = { android: "Android", ios: "iOS", windows: "Windows", mac: "Mac", linux: "Linux", chromeos: "ChromeOS" };
+
+/** The devices this person uses: the app, our web pages (from WhatsApp links), and what WhatsApp tells us. */
+function DevicesCard({ devices }: { devices: AdminUserDevice[] | undefined }) {
+  if (!devices) return null;
+  const whatsapp = devices.find((d) => d.source === "whatsapp");
+  const others = devices.filter((d) => d.source !== "whatsapp");
+  const what = (d: AdminUserDevice) =>
+    [
+      [d.maker, d.model].filter(Boolean).join(" ") || (d.formFactor === "computer" ? "Computer" : d.formFactor === "tablet" ? "Tablet" : "Phone"),
+      d.platform ? `${PLATFORM[d.platform] ?? d.platform}${d.osVersion ? ` ${d.osVersion}` : ""}` : null,
+      d.source === "app" ? `Wheelers app ${d.appVersion ?? ""}${d.appBuild ? ` (${d.appBuild})` : ""}`.trim() : d.browser ? `${d.browser}${d.browserVersion ? ` ${d.browserVersion}` : ""}` : null,
+    ].filter(Boolean).join(" · ");
+  const details = (d: AdminUserDevice) =>
+    [
+      d.ramGb ? `${d.ramGb} GB RAM` : null,
+      d.cpuCores ? `${d.cpuCores} cores` : null,
+      d.network ? d.network.toUpperCase() : null,
+      d.saveData ? "data saver on" : null,
+      d.fromWhatsapp ? "opened from WhatsApp" : null,
+      d.screen,
+    ].filter(Boolean).join(" · ");
+  return (
+    <Card
+      title="Devices"
+      right={
+        whatsapp
+          ? [
+              whatsapp.phoneNetwork ? `Network: ${whatsapp.phoneNetwork}` : null,
+              `WhatsApp forms open: ${whatsapp.formsOpen === true ? "yes" : whatsapp.formsOpen === false ? "no (desktop or second device)" : "not known yet"}`,
+            ].filter(Boolean).join(" · ")
+          : undefined
+      }
+    >
+      {others.length === 0 ? (
+        <EmptyState>No app or web page visit recorded yet.</EmptyState>
+      ) : (
+        <TableWrap>
+          <table className="admin-table">
+            <thead>
+              <tr><th>Device</th><th>Where</th><th>Details</th><th className="num">Seen</th><th>First seen</th><th>Last seen</th></tr>
+            </thead>
+            <tbody>
+              {others.map((d) => (
+                <tr key={d.id}>
+                  <td><strong>{what(d)}</strong></td>
+                  <td>{d.source === "app" ? "App" : "Web page"}</td>
+                  <td>{details(d) || "—"}</td>
+                  <td className="num">{formatNumber(d.timesSeen)}</td>
+                  <td>{formatWhen(d.firstSeenAt)}</td>
+                  <td>{formatWhen(d.lastSeenAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableWrap>
+      )}
     </Card>
   );
 }

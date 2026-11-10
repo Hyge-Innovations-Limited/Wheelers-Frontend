@@ -46,13 +46,15 @@ function UsersDirectory() {
   const [role, setRole] = useState<Role>((params.get("role") as Role) || "all");
   const [sort, setSort] = useState<Sort>((params.get("sort") as Sort) || "recent");
   const [search, setSearch] = useState(params.get("q") ?? "");
+  // People who have used this kind of device (the app or our web pages).
+  const [device, setDevice] = useState<"" | "android" | "ios" | "computer">((params.get("device") as "android" | "ios" | "computer" | null) ?? "");
   const [offset, setOffset] = useState(0);
   const query = useDebounced(search);
 
   // Searching or refiltering should start from page one, not page seven.
   useEffect(() => {
     setOffset(0);
-  }, [query, role, sort]);
+  }, [query, role, sort, device]);
 
   // Keep the URL shareable so an operator can send a filtered view to someone.
   useEffect(() => {
@@ -60,11 +62,12 @@ function UsersDirectory() {
       role: role === "all" ? undefined : role,
       sort: sort === "recent" ? undefined : sort,
       q: query || undefined,
+      device: device || undefined,
     });
     router.replace(`/admin/dashboard/users${qs}`, { scroll: false });
-  }, [role, sort, query, router]);
+  }, [role, sort, query, device, router]);
 
-  const path = `/admin/users${buildQuery({ role, sort, q: query, limit: PAGE_SIZE, offset })}`;
+  const path = `/admin/users${buildQuery({ role, sort, q: query, device: device || undefined, limit: PAGE_SIZE, offset })}`;
   const { data, error, loading, refresh } = useAdminData<PagedResponse<AdminUserRow>>(path);
 
   return (
@@ -89,6 +92,12 @@ function UsersDirectory() {
             { value: "driver", label: "Drivers" },
           ]}
         />
+        <select className="admin-select" value={device} onChange={(e) => setDevice(e.target.value as "" | "android" | "ios" | "computer")} aria-label="Device">
+          <option value="">Any device</option>
+          <option value="android">Android</option>
+          <option value="ios">iPhone</option>
+          <option value="computer">Computer</option>
+        </select>
         <select className="admin-select" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>
@@ -115,6 +124,7 @@ function UsersDirectory() {
                   <th>User</th>
                   <th>WhatsApp / contact</th>
                   <th>Role</th>
+                  <th>Device</th>
                   <th className="num">Rides</th>
                   <th className="num">{role === "driver" ? "Earned" : "Spent"}</th>
                   <th className="num">Wallet</th>
@@ -152,6 +162,16 @@ function UsersDirectory() {
                         <span className={statusBadgeClass(u.riderKycStatus === "VERIFIED" ? "VERIFIED" : "")}>
                           {u.riderKycStatus === "VERIFIED" ? "Verified rider" : "Rider"}
                         </span>
+                      )}
+                    </td>
+                    <td>
+                      {u.device ? (
+                        <span className="admin-stack">
+                          <span>{u.device.platform === "ios" ? "iPhone" : u.device.platform === "android" ? "Android" : u.device.platform ?? "—"}</span>
+                          <em>{[u.device.model, u.device.source === "app" ? "app" : "web"].filter(Boolean).join(" · ")}</em>
+                        </span>
+                      ) : (
+                        "—"
                       )}
                     </td>
                     <td className="num">
