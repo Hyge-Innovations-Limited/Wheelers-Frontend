@@ -5,9 +5,17 @@ import {
   CHANNELS, DAY_PARTS, FARE_SIZES, JOINED_VIA, PROMO_FILTER, RIDE_CLASSES, RIDER_TYPES, VARIANTS, WEATHERS, ZONES,
 } from "@/lib/studio/schema";
 import { pickLabel, pickOf, setPick, type StudioFilters } from "@/lib/studio/filters";
+import { ExportTable, PanelTitle, useExportScope, type Cell } from "./export";
 
-/** A chart card: title, one line under it, the chart. */
-export function Panel({ title, sub, right, children }: { title: ReactNode; sub?: ReactNode; right?: ReactNode; children: ReactNode }) {
+/**
+ * A chart card: title, one line under it, the chart. `missing`: what this chart needs that is not recorded yet
+ * (live data): the card says so instead of drawing zeros as if they were facts. `name`: the card's name in the Excel
+ * when its title is not plain text.
+ */
+export function Panel({ title, name, sub, right, missing, children }: { title: ReactNode; name?: string; sub?: ReactNode; right?: ReactNode; missing?: string | false; children: ReactNode }) {
+  const scope = useExportScope();
+  const label = name ?? (typeof title === "string" ? title : "");
+  if (scope) return missing ? null : <PanelTitle title={label}>{children}</PanelTitle>;
   return (
     <section className="studio-panel">
       <div className="studio-panel-head">
@@ -15,12 +23,15 @@ export function Panel({ title, sub, right, children }: { title: ReactNode; sub?:
         {right}
       </div>
       {sub ? <p className="studio-panel-sub">{sub}</p> : null}
-      <div className="studio-panel-body">{children}</div>
+      <div className="studio-panel-body">
+        {missing ? <div className="studio-missing"><b>Not recorded yet</b><span>{missing}</span></div> : <PanelTitle title={label}>{children}</PanelTitle>}
+      </div>
     </section>
   );
 }
 
 export function Kpis({ items }: { items: Array<{ label: string; value: string; hint?: string }> }) {
+  if (useExportScope()) return <ExportTable title="Headline numbers" columns={["", "Value", "Note"]} rows={items.map((k) => [k.label, k.value, k.hint ?? null])} />;
   return (
     <div className="studio-kpis" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map((k) => (
@@ -51,6 +62,7 @@ export function Legend({ items }: { items: Array<{ name: string; color: string }
 
 /** A plain table inside a panel (e.g. why riders changed their price). */
 export function MiniTable({ head, rows, align }: { head: string[]; rows: Array<Array<ReactNode>>; align?: Array<"left" | "right"> }) {
+  if (useExportScope()) return <ExportTable columns={head} rows={rows.map((r) => r.map((c) => (typeof c === "number" || typeof c === "string" ? c : c === null || c === undefined ? null : String(c)) as Cell))} />;
   return (
     <table className="studio-table">
       <thead><tr>{head.map((h, i) => <th key={h} style={{ textAlign: align?.[i] ?? (i === 0 ? "left" : "right") }}>{h}</th>)}</tr></thead>
@@ -84,7 +96,8 @@ function setPromo(f: StudioFilters, value: string): StudioFilters {
   return value.startsWith("Onboarded") ? setPick(cleared, "onboarded", value) : setPick(cleared, "promo", value);
 }
 
-export function FilterBar({ filters, onChange, min, max }: { filters: StudioFilters; onChange: (f: StudioFilters) => void; min: string; max: string }) {
+export function FilterBar({ filters, onChange, min, max, zones }: { filters: StudioFilters; onChange: (f: StudioFilters) => void; min: string; max: string; zones: string[] }) {
+  const bar = BAR.map((b) => (b.key === "zone" || b.key === "destZone" ? { ...b, options: zones } : b));
   return (
     <div className="studio-filterbar">
       <label className="studio-field">
@@ -95,7 +108,7 @@ export function FilterBar({ filters, onChange, min, max }: { filters: StudioFilt
         <span>To</span>
         <input type="date" min={min} max={max} value={filters.to} onChange={(e) => onChange({ ...filters, to: e.target.value })} />
       </label>
-      {BAR.map((b) => (
+      {bar.map((b) => (
         <label className={`studio-field${b.wide ? " wide" : ""}`} key={b.key}>
           <span>{b.label}</span>
           <select value={pickOf(filters, b.key)} onChange={(e) => onChange(setPick(filters, b.key, e.target.value))}>

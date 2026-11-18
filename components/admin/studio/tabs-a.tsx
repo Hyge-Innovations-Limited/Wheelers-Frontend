@@ -11,6 +11,7 @@ import {
 import { countBy, groupBy, median, naira, num, pct, searchedAndMatch, secs, share, signedPct, sum } from "@/lib/studio/stats";
 import { CATEGORY_ORDER, EChart, barsOption, comboOption, donutOption, hbarsOption, stacked100Option } from "./charts";
 import { Grid, Kpis, Legend, MiniTable, Panel } from "./parts";
+import { ExportTable } from "./export";
 import type { TabProps } from "./tab-props";
 
 const OUTCOME_SERIES = OUTCOMES.map((name, i) => ({ name, color: CATEGORY_ORDER[i] }));
@@ -79,7 +80,7 @@ export function Overview({ f, fx, pick, sel }: TabProps) {
 
 // ── Demand & supply ───────────────────────────────────────────────────────
 
-export function DemandSupply({ f, fx, pick, sel }: TabProps) {
+export function DemandSupply({ f, fx, pick, sel, nr }: TabProps) {
   const s = f.sessions;
   const srch = s.filter(searched);
   const intents = useMemo(() => intentsOf(s), [s]);
@@ -103,13 +104,18 @@ export function DemandSupply({ f, fx, pick, sel }: TabProps) {
             { label: "Completed", value: srch.filter((x) => x.outcome === "Completed").length, text: num(srch.filter((x) => x.outcome === "Completed").length) },
           ] })} />
         </Panel>
-        <Panel title="Free drivers nearby decide matching" sub="Free drivers within 6.5 km when search started. Click a band to filter.">
+        <Panel title="Free drivers nearby decide matching" sub="Free drivers near the pickup when the search started. Click a band to filter.">
           <EChart option={comboOption({ rows: searchedAndMatch(fx("freeBand").sessions, (x) => freeBandOf(x.freeDrivers), FREE_BANDS), barName: "Searched", lineName: "Match rate", selected: sel("freeBand") })} onClick={(c) => pick("freeBand", c.name)} />
         </Panel>
         <Panel title="How ride intents end" sub="An intent = one need to travel, across retries.">
           <EChart option={donutOption({ items: countBy(intents, (i) => i.end, INTENT_ENDS).map((r, i) => ({ name: r.label, value: r.value, color: CATEGORY_ORDER[i] })) })} />
         </Panel>
         <Panel title="Match rate: weekday × day part" sub="Darker = higher match rate. Hover for numbers.">
+          <ExportTable columns={["", ...DAY_PARTS]} rows={WEEKDAYS.map((d) => [d, ...DAY_PARTS.map((p) => {
+            const cell = srch.filter((x) => x.weekday === d && x.dayPart === p);
+            const rate = share(cell.filter(matched).length, cell.length);
+            return rate === null ? null : Math.round(rate);
+          })])} />
           <table className="studio-table studio-heat">
             <thead><tr><th />{DAY_PARTS.map((p) => <th key={p}>{shortPart(p)}</th>)}</tr></thead>
             <tbody>
@@ -136,7 +142,7 @@ export function DemandSupply({ f, fx, pick, sel }: TabProps) {
             barName: "Intents", lineName: "Got a ride",
           })} />
         </Panel>
-        <Panel title="Where riders drop off before searching" sub="Abandoned sessions by stage.">
+        <Panel title="Where riders drop off before searching" sub="Abandoned sessions by stage." missing={nr("abandonStage") && "the steps before a search (destination set, fare shown, pickup set)."}>
           <EChart height={220} option={hbarsOption({ rows: countBy(s, (x) => x.abandonStage, ABANDON_STAGES).map((r) => ({ ...r, text: num(r.value) })) })} />
         </Panel>
       </Grid>
@@ -146,7 +152,7 @@ export function DemandSupply({ f, fx, pick, sel }: TabProps) {
 
 // ── Rider pricing ─────────────────────────────────────────────────────────
 
-export function RiderPricing({ f, fx, pick, sel }: TabProps) {
+export function RiderPricing({ f, fx, pick, sel, nr }: TabProps) {
   const s = f.sessions;
   const srch = s.filter(searched);
   const raisedIds = new Set(f.priceChanges.filter((c) => c.direction === "Raise").map((c) => c.sessionId));
@@ -176,13 +182,13 @@ export function RiderPricing({ f, fx, pick, sel }: TabProps) {
             })}
           />
         </Panel>
-        <Panel title="Who raises, by rider type" sub="Bars: searched sessions. Line: share that raised.">
+        <Panel title="Who raises, by rider type" sub="Bars: searched sessions. Line: share that raised." missing={nr("riderType") && "rider type (Student, Young professional, Business, Occasional) is not asked yet."}>
           <EChart option={comboOption({ rows: groupBy(fx("riderType").sessions.filter(searched), (x) => x.riderType, RIDER_TYPES).map((g) => ({ label: g.label, bar: g.rows.length, line: share(g.rows.filter((x) => raisedIds.has(x.id)).length, g.rows.length) })), barName: "Searched", lineName: "Raised", selected: sel("riderType") })} onClick={(c) => pick("riderType", c.name)} />
         </Panel>
         <Panel title="Final fare vs suggested, by class" sub="Completed trips; median gap between agreed fare and suggested.">
           <EChart option={comboOption({ rows: groupBy(fx("rideClass").sessions.filter((x) => x.outcome === "Completed"), (x) => x.rideClass, RIDE_CLASSES).map((g) => ({ label: g.label, bar: g.rows.length, line: median(g.rows.map((x) => ((x.agreedNgn! / x.suggestedNgn) - 1) * 100)) })), barName: "Completed trips", lineName: "Agreed vs suggested", lineFormat: "signedPct", selected: sel("rideClass") })} onClick={(c) => pick("rideClass", c.name)} />
         </Panel>
-        <Panel title="Experiment: 40s vs 60s offer timeout" sub="Match rate and expired offers per searched session, by variant.">
+        <Panel title="Experiment: 40s vs 60s offer timeout" sub="Match rate and expired offers per searched session, by variant." missing={nr("variant") && "no offer-timeout experiment is running."}>
           <EChart option={comboOption({ rows: searchedAndMatch(fx("variant").sessions, (x) => x.variant, VARIANTS), barName: "Searched", lineName: "Match rate", selected: sel("variant") })} onClick={(c) => pick("variant", c.name)} />
           <p className="studio-note">
             Expired offers per searched session: {VARIANTS.map((v) => {
@@ -199,7 +205,7 @@ export function RiderPricing({ f, fx, pick, sel }: TabProps) {
 
 // ── Offers & choice ───────────────────────────────────────────────────────
 
-export function OffersChoice({ f, fx, pick, sel, byId }: TabProps) {
+export function OffersChoice({ f, fx, pick, sel, byId, nr }: TabProps) {
   const o = f.offers;
   const acted = o.filter((x) => x.status === "Accepted" || x.status === "Rejected");
   const accepted = o.filter((x) => x.status === "Accepted");
@@ -237,7 +243,7 @@ export function OffersChoice({ f, fx, pick, sel, byId }: TabProps) {
         <Panel title="Speed and attention" sub="Driver response latency and rider profile views on offers.">
           <EChart height={200} option={hbarsOption({ rows: [
             { label: "Median driver response latency (s)", value: median(o.map((x) => x.latencySec)) ?? 0, text: num(median(o.map((x) => x.latencySec)), 1) },
-            { label: "Offers whose profile was viewed (%)", value: share(o.filter((x) => x.profileViewed).length, o.length) ?? 0, text: num(share(o.filter((x) => x.profileViewed).length, o.length), 1) },
+            { label: "Offers whose profile was viewed (%)", value: nr("profileViewed") ? 0 : share(o.filter((x) => x.profileViewed).length, o.length) ?? 0, text: nr("profileViewed") ? "not recorded" : num(share(o.filter((x) => x.profileViewed).length, o.length), 1) },
             { label: "Offers per searched session", value: searchedCount ? o.length / searchedCount : 0, text: num(searchedCount ? o.length / searchedCount : null, 1) },
           ] })} />
         </Panel>
@@ -255,7 +261,7 @@ const FACTORS = {
 } as const;
 type Factor = keyof typeof FACTORS;
 
-export function Drivers({ data, f, fx, pick, sel }: TabProps) {
+export function Drivers({ data, f, fx, pick, sel, nr }: TabProps) {
   const [factor, setFactor] = useState<Factor>("Car ownership");
   const by = FACTORS[factor];
   const p = f.pings;
@@ -267,36 +273,38 @@ export function Drivers({ data, f, fx, pick, sel }: TabProps) {
     <>
       <Kpis items={[
         { label: "Drivers pinged", value: num(p.length) },
-        { label: "Seen rate", value: pct(share(seen.length, p.length)) },
+        { label: "Seen rate", value: nr("pingSeen") ? "—" : pct(share(seen.length, p.length)), ...(nr("pingSeen") ? { hint: "not recorded yet" } : {}) },
         { label: "Bid rate", value: pct(share(bids.length, p.length)) },
-        { label: "Decline rate", value: pct(share(p.filter((x) => x.action === "Declined").length, seen.length)) },
+        { label: "Decline rate", value: pct(share(p.filter((x) => x.action === "Declined").length, nr("pingSeen") ? p.length : seen.length)) },
         { label: "Bid win rate", value: pct(share(f.offers.filter((o) => o.status === "Accepted").length, f.offers.length)) },
       ]} />
       <Grid>
         <Panel
           title={<>Driver behaviour by <select className="studio-inline-select" value={factor} onChange={(e) => setFactor(e.target.value as Factor)}>{Object.keys(FACTORS).map((k) => <option key={k}>{k}</option>)}</select></>}
+          name="Driver behaviour"
           sub="Share of pinged drivers who bid, for each group. Click a bar to filter everything driver-side."
+          missing={factor === "Car ownership" && nr("carOwnership") && "drivers are not asked whether they own, hire-purchase or rent the car."}
         >
           <EChart height={260} option={hbarsOption({ rows: groupBy(fx(by.key).pings, by.of, by.bands).map((g) => { const v = share(g.rows.filter(isBid).length, g.rows.length); return { label: g.label, value: v ?? 0, text: pct(v) }; }), selected: sel(by.key) })} onClick={(c) => pick(by.key, c.name, "ping")} />
         </Panel>
-        <Panel title="How high they bid, same factor" sub="Median offer vs the suggested fare, by the factor picked on the left.">
+        <Panel title="How high they bid, same factor" sub="Median offer vs the suggested fare, by the factor picked on the left." missing={factor === "Car ownership" && nr("carOwnership") && "car ownership is not recorded."}>
           <EChart height={260} option={hbarsOption({ rows: groupBy(bids, by.of, by.bands).map((g) => { const v = median(g.rows.map((x) => x.bidVsSuggestedPct ?? 0)); return { label: g.label, value: v ?? 0, text: signedPct(v) }; }) })} />
         </Panel>
-        <Panel title="Why drivers decline" sub="Explicit declines only; silent ignores carry no reason.">
+        <Panel title="Why drivers decline" sub="Explicit declines only; silent ignores carry no reason." missing={nr("declineReason") && "drivers decline without picking a reason."}>
           <EChart height={300} option={hbarsOption({ rows: countBy(fx("declineReason").pings, (x) => x.declineReason, DECLINE_REASONS).map((r) => ({ ...r, text: num(r.value) })), selected: sel("declineReason") })} onClick={(c) => pick("declineReason", c.name, "ping")} />
         </Panel>
         <Panel title="Ping funnel" sub="Sent → delivered → seen → bid.">
           <EChart height={260} option={hbarsOption({ rows: [
             { label: "Pings sent", value: p.length, text: num(p.length) },
-            { label: "Delivered", value: delivered.length, text: num(delivered.length) },
-            { label: "Seen", value: seen.length, text: num(seen.length) },
+            ...(nr("pingDelivered") ? [] : [{ label: "Delivered", value: delivered.length, text: num(delivered.length) }]),
+            ...(nr("pingSeen") ? [] : [{ label: "Seen", value: seen.length, text: num(seen.length) }]),
             { label: "Bid", value: bids.length, text: num(bids.length) },
           ] })} />
         </Panel>
         <Panel title="Supply and utilisation by day" sub="Bars: online hours. Line: share of online time on trips. Date filter only.">
           <EChart option={comboOption({ rows: shifts.map((d) => ({ label: d.date, bar: d.onlineHours, line: share(d.tripHours, d.onlineHours) })), barName: "Online hours", lineName: "On trips", labelFormat: dayLabel })} />
         </Panel>
-        <Panel title="Last trip changes the next bid" sub="Bid rate by how the driver's previous trip ended.">
+        <Panel title="Last trip changes the next bid" sub="Bid rate by how the driver's previous trip ended." missing={nr("lastTripEnd") && "how each pinged driver's previous trip ended is not worked out yet."}>
           <EChart height={260} option={hbarsOption({ rows: groupBy(fx("lastTripEnd").pings, (x) => x.lastTripEnd, LAST_TRIP_ENDS).map((g) => { const v = share(g.rows.filter(isBid).length, g.rows.length); return { label: g.label, value: v ?? 0, text: pct(v) }; }), selected: sel("lastTripEnd") })} onClick={(c) => pick("lastTripEnd", c.name, "ping")} />
         </Panel>
       </Grid>

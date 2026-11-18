@@ -99,10 +99,10 @@ function DrillDown({ s, data, onClose }: { s: StudioSession; data: TabProps["dat
   const changes = data.priceChanges.filter((c) => c.sessionId === s.id);
   const pings = data.pings.filter((p) => p.sessionId === s.id);
   const facts: Array<[string, string]> = [
-    ["Date", `${s.date} · ${s.weekday} · ${String(s.hour).padStart(2, "0")}:00`], ["Channel", s.channel], ["Class", s.rideClass], ["Rider type", s.riderType],
-    ["Weather", s.weather], ["Zone", s.zone], ["Attempt", `#${s.attempt} · ${s.variant}`], ["Outcome", s.reason ? `${s.outcome} — ${s.reason}` : s.outcome],
+    ["Date", `${s.date} · ${s.weekday} · ${String(s.hour).padStart(2, "0")}:00`], ["Channel", s.channel], ["Class", s.rideClass], ["Rider type", s.riderType ?? "not recorded"],
+    ["Weather", s.weather], ["Zone", s.zone], ["Attempt", s.variant ? `#${s.attempt} · ${s.variant}` : `#${s.attempt}`], ["Outcome", s.reason ? `${s.outcome} — ${s.reason}` : s.outcome],
     ["Suggested fare", naira(s.suggestedNgn)], ["Opened at", naira(s.openingNgn)], ["Final price", naira(s.finalNgn)], ["Time to match", s.matchSec === null ? "—" : `${s.matchSec}s`],
-    ["Rounds", num(s.rounds)], ["Drivers pinged", num(s.pinged)], ["Offers received", num(s.offersReceived)], ["Wheelers net", naira(s.wheelersNetNgn)],
+    ["Rounds", num(s.rounds)], ["Drivers pinged", s.pinged === null ? "not recorded" : num(s.pinged)], ["Offers received", num(s.offersReceived)], ["Wheelers net", naira(s.wheelersNetNgn)],
     ["Rider", s.riderId], ["Route", `${s.km.toFixed(1)} km → ${s.destZone}`], ["Agreed fare", naira(s.agreedNgn)], ["Promo", s.promo === "No promo" ? "none" : s.promo],
     ["Rider joined via", s.joinedVia],
   ];

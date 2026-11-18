@@ -242,7 +242,7 @@ export function sampleDataset(seed = 20261001): StudioDataset {
         const late = Math.round(normal() * 2.4 + 1.2);
         if (outcome === 'Completed') {
           const method = pick<PayMethod>(['Card (Paystack)', 'Bank transfer', 'Wallet', 'Cash'], [38, 27, 14, 21]);
-          const failP = { 'Card (Paystack)': 0.07, 'Bank transfer': 0.06, Wallet: 0.05, Cash: 0.02 }[method];
+          const failP: number = { 'Card (Paystack)': 0.07, 'Bank transfer': 0.06, Wallet: 0.05, Cash: 0.02, 'Stellar (XLM)': 0.05 }[method];
           let paid = false;
           for (let t = 0; t < 3 && !paid; t++) {
             const ok = !chance(failP);
@@ -303,5 +303,5 @@ export function sampleDataset(seed = 20261001): StudioDataset {
     );
   }
 
-  return { source: 'sample', from: FROM, to: TO, sessions, offers, pings, priceChanges, payments, shifts, ledger };
+  return { source: 'sample', from: FROM, to: TO, zones: ['Yaba', 'Lagos Island', 'Outside zones'], notRecorded: [], sessions, offers, pings, priceChanges, payments, shifts, ledger };
 }

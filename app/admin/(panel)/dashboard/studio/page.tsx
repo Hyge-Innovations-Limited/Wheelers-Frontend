@@ -3,21 +3,24 @@
 /**
  * Analytics Studio (Timi, 18 Nov 2026): the "Wheelers Analytics Studio" mock-up, made real. Ten tabs, one filter bar,
  * and a click on any bar, slice or band cross-filters the whole page (again to clear). Session explorer drills into
- * any single request. Runs on the seeded sample dataset until the server endpoint exists (lib/studio/source.ts).
+ * any single request. Live data (GET /admin/insights/studio-dataset, the last 30 days) or the seeded sample, one
+ * switch (lib/studio/source.ts). "Download Excel": one sheet per tab with the numbers on screen, then the data.
  * Owners only, like the live Studio (/admin/dashboard/studio/live).
  */
 import "../../../../../styles/studio.css";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useAdminSession } from "@/lib/admin-session";
-import { EmptyState } from "@/components/admin/ui";
+import { EmptyState, Spinner } from "@/components/admin/ui";
 import { applyFilters, NO_FILTERS, pickOf, togglePick, type Filtered, type Level, type StudioFilters } from "@/lib/studio/filters";
-import { useStudioDataset } from "@/lib/studio/source";
+import { useStudioDataset, type StudioSource } from "@/lib/studio/source";
+import type { StudioDataset } from "@/lib/studio/schema";
 import { num } from "@/lib/studio/stats";
 import { Chips, FilterBar } from "@/components/admin/studio/parts";
 import { DemandSupply, Drivers, OffersChoice, Overview, RiderPricing } from "@/components/admin/studio/tabs-a";
 import { Money, PeoplePromos, PriceAnatomy, PricePsychology } from "@/components/admin/studio/tabs-b";
 import { Explorer } from "@/components/admin/studio/explorer";
+import { downloadWorkbook, ExportScope, type ExportItem } from "@/components/admin/studio/export";
 import type { TabProps } from "@/components/admin/studio/tab-props";
 
 const TABS = [
@@ -33,6 +36,7 @@ const TABS = [
   { id: "explorer", label: "Session explorer", View: Explorer },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
+const CHART_TABS = TABS.filter((t) => t.id !== "explorer");
 
 export default function AnalyticsStudioPage() {
   const { isOwner } = useAdminSession();
@@ -41,9 +45,46 @@ export default function AnalyticsStudioPage() {
 }
 
 function Studio() {
-  const data = useStudioDataset();
+  const [source, setSource] = useState<StudioSource>("live");
+  const { data, loading, error, refresh } = useStudioDataset(source);
+  return (
+    <div className="studio">
+      <header className="studio-head">
+        <div>
+          <h1 className="studio-title">Wheelers Analytics Studio</h1>
+          <p className="studio-intro">
+            {data?.source === "sample" ? <><b>Simulated sample data</b> — {num(data.sessions.length)} ride requests, generated to rehearse the analytics. </> : null}
+            {data?.source === "live" ? <><b>Live data</b> — {num(data.sessions.length)} ride requests, {data.from} to {data.to}. Charts that need something we do not record yet say so. </> : null}
+            Filter with the bar below; <b>click any bar, slice or band to cross-filter the whole page</b> (click it again to clear). Open Session explorer to drill into any single request.
+          </p>
+        </div>
+        <div className="studio-head-right">
+          <div className="studio-source" role="group" aria-label="Data">
+            <button type="button" className={source === "live" ? "on" : ""} onClick={() => setSource("live")}>Live</button>
+            <button type="button" className={source === "sample" ? "on" : ""} onClick={() => setSource("sample")}>Sample</button>
+          </div>
+          <Link href="/admin/dashboard/studio/live" className="studio-link">Live numbers →</Link>
+        </div>
+      </header>
+      {error ? (
+        <div className="studio-error">
+          Could not load the live data. <button type="button" className="studio-reset" onClick={refresh}>Try again</button>
+        </div>
+      ) : loading || !data ? (
+        <Spinner label="Loading the Studio…" />
+      ) : (
+        // A new dataset starts with no filters (its days and zones differ).
+        <StudioBody key={`${data.source}:${data.from}`} data={data} />
+      )}
+    </div>
+  );
+}
+
+function StudioBody({ data }: { data: StudioDataset }) {
   const [tab, setTab] = useState<TabId>("overview");
   const [filters, setFilters] = useState<StudioFilters>(NO_FILTERS);
+  const [exporting, setExporting] = useState(false);
+  const items = useRef<ExportItem[]>([]);
   const f = useMemo(() => applyFilters(data, filters), [data, filters]);
   const byId = useMemo(() => new Map(data.sessions.map((s) => [s.id, s])), [data]);
   const pick = useCallback((key: string, value: string, level: Level = "session") => setFilters((now) => togglePick(now, { key, value, level })), []);
@@ -51,26 +92,27 @@ function Studio() {
   // For each pick, the page without it (a few ms each; a key with no pick is just f).
   const without = useMemo(() => new Map<string, Filtered>(filters.picks.map((p) => [p.key, applyFilters(data, filters, p.key)])), [data, filters]);
   const fx = useCallback((key: string): Filtered => without.get(key) ?? f, [without, f]);
-  const period = new Date(`${data.from}T12:00:00Z`).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
-  const props: TabProps = { data, f, filters, pick, sel, byId, fx };
+  const notRecorded = useMemo(() => new Set(data.notRecorded), [data]);
+  const nr = useCallback((field: string) => notRecorded.has(field), [notRecorded]);
+  const period = data.source === "sample"
+    ? new Date(`${data.from}T12:00:00Z`).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })
+    : `${data.from} to ${data.to}`;
+  const props: TabProps = { data, f, filters, pick, sel, byId, fx, nr };
   const View = TABS.find((t) => t.id === tab)!.View;
 
-  return (
-    <div className="studio">
-      <header className="studio-head">
-        <div>
-          <h1 className="studio-title">Wheelers Analytics Studio</h1>
-          <p className="studio-intro">
-            {data.source === "sample" ? <><b>Simulated sample data</b> — {num(data.sessions.length)} ride requests, {period}, generated to rehearse the analytics. </> : null}
-            Filter with the bar below; <b>click any bar, slice or band to cross-filter the whole page</b> (click it again to clear). Open Session explorer to drill into any single request.
-          </p>
-        </div>
-        <div className="studio-head-right">
-          {data.source === "sample" ? <span className="studio-badge">Sample data</span> : null}
-          <Link href="/admin/dashboard/studio/live" className="studio-link">Live numbers →</Link>
-        </div>
-      </header>
+  const startExport = () => {
+    items.current = [];
+    setExporting(true);
+  };
+  const finishExport = useCallback(() => {
+    const name = `wheelers-studio-${data.source}-${filters.from || data.from}-to-${filters.to || data.to}.xlsx`;
+    void downloadWorkbook({ name, items: items.current, tabs: CHART_TABS.map((t) => t.label), f })
+      .catch((e) => console.error("[studio] Excel not made", e))
+      .finally(() => setExporting(false));
+  }, [data, filters, f]);
 
+  return (
+    <>
       <nav className="studio-tabs" role="tablist">
         {TABS.map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
@@ -79,16 +121,37 @@ function Studio() {
         ))}
       </nav>
 
-      <FilterBar filters={filters} onChange={setFilters} min={data.from} max={data.to} />
-      <Chips filters={filters} onChange={setFilters} period={period} />
+      <FilterBar filters={filters} onChange={setFilters} min={data.from} max={data.to} zones={data.zones} />
+      <div className="studio-bar-after">
+        <Chips filters={filters} onChange={setFilters} period={period} />
+        <button type="button" className="studio-download" disabled={exporting} onClick={startExport}>{exporting ? "Making the Excel…" : "Download Excel"}</button>
+      </div>
 
       <View {...props} />
 
+      {exporting ? (
+        // Every tab once, hidden: each chart hands over its numbers (components/admin/studio/export.tsx).
+        <div hidden aria-hidden>
+          {CHART_TABS.map((t) => (
+            <ExportScope key={t.id} tab={t.label} add={(item) => items.current.push(item)}>
+              <t.View {...props} />
+            </ExportScope>
+          ))}
+          <AfterExportPass onDone={finishExport} />
+        </div>
+      ) : null}
+
       <p className="studio-foot">
         {data.source === "sample"
-          ? "Simulated data, generated in the browser from a fixed seed to rehearse Wheelers analytics — not real traffic. Live numbers are on the Live numbers page."
-          : "Live data."}
+          ? "Simulated data, generated in the browser from a fixed seed to rehearse Wheelers analytics — not real traffic."
+          : "Live data: one row per ride request; no names or phone numbers. Group rides are not in it yet."}
       </p>
-    </div>
+    </>
   );
+}
+
+/** Mounted after the hidden tabs: its effect runs once theirs have handed over their numbers. */
+function AfterExportPass({ onDone }: { onDone: () => void }) {
+  useEffect(() => { onDone(); }, [onDone]);
+  return null;
 }

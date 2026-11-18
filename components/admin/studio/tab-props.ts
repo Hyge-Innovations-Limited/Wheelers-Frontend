@@ -13,4 +13,6 @@ export interface TabProps {
   byId: Map<string, StudioSession>;
   /** What the filters keep without the pick on `key`: for the chart that pick is made on. */
   fx: (key: string) => Filtered;
+  /** A field the data does not record yet (live data): its charts say so. */
+  nr: (field: string) => boolean;
 }

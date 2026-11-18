@@ -9,6 +9,8 @@
  */
 
 export const CHANNELS = ['App', 'WhatsApp', 'Claude'] as const;
+/** Real rows may carry a channel the app could not tell (older rides). */
+export type ChannelValue = (typeof CHANNELS)[number] | 'Unknown';
 export const RIDE_CLASSES = ['Economy', 'Comfort', 'XL'] as const;
 export const RIDER_TYPES = ['Student', 'Young professional', 'Business', 'Occasional'] as const;
 export const WEATHERS = ['Clear', 'Light rain', 'Heavy rain'] as const;
@@ -27,10 +29,10 @@ export const INTENT_ENDS = ['Got a ride', 'Gave up negotiating', 'Match fell thr
 export const ABANDON_STAGES = ['After destination', 'After fare shown', 'After pickup'] as const;
 export const OFFER_STATUSES = ['Accepted', 'Rejected', 'Expired', 'Lost to other driver', 'Voided by price change', 'Withdrawn', 'Search timed out'] as const;
 export const PRICE_TRIGGERS = ['No offers came in', 'Offers above their price', 'Matched lowest counter', 'Got takers, tried lower'] as const;
-export const PAY_METHODS = ['Card (Paystack)', 'Bank transfer', 'Wallet', 'Cash'] as const;
+export const PAY_METHODS = ['Card (Paystack)', 'Bank transfer', 'Wallet', 'Cash', 'Stellar (XLM)'] as const;
 export const CAR_OWNERSHIP = ['Owns car', 'Hire purchase', 'Rented'] as const;
 export const DECLINE_REASONS = ['Too far', 'Price too low', 'Ending shift', 'Heading elsewhere', 'Wants cash', 'Low rider rating'] as const;
-export const PING_ACTIONS = ['Never opened', 'Opened, ignored', 'Declined', 'Countered', 'Took rider price'] as const;
+export const PING_ACTIONS = ['Never opened', 'Opened, ignored', 'No answer', 'Declined', 'Countered', 'Took rider price'] as const;
 export const LAST_TRIP_ENDS = ['Completed', 'Rider cancelled', 'Driver cancelled', 'Rider no-show'] as const;
 export const LEDGER_TYPES = ['Trip earnings', 'Cash booking fee owed', 'Withdrawals', 'Withdrawal fees', 'Failed withdrawals'] as const;
 
@@ -77,16 +79,19 @@ export interface StudioSession {
   hour: number;
   weekday: Weekday;
   dayPart: DayPart;
-  channel: Channel;
+  channel: ChannelValue;
   rideClass: RideClass;
   riderId: string;
-  riderType: RiderType;
-  joinedVia: Channel;
-  onboardedWithPromo: boolean;
+  /** Null: not recorded (real data, until riders are asked). */
+  riderType: RiderType | null;
+  joinedVia: ChannelValue;
+  onboardedWithPromo: boolean | null;
   weather: Weather;
-  zone: Zone;
-  destZone: Zone;
-  variant: Variant;
+  /** A launch zone's name, or 'Outside zones' (real zones come in StudioDataset.zones). */
+  zone: string;
+  destZone: string;
+  /** Null: no experiment running. */
+  variant: Variant | null;
   promo: Promo;
   intentId: string;
   /** 1 = first try of the intent. */
@@ -101,10 +106,11 @@ export interface StudioSession {
   outcome: Outcome;
   reason: string | null;
   abandonStage: AbandonStage | null;
-  /** Free drivers within 6.5 km when the search started. */
-  freeDrivers: number;
+  /** Free drivers near the pickup when the search started. Null: not recorded for this ride. */
+  freeDrivers: number | null;
   rounds: number;
-  pinged: number;
+  /** Drivers the request went to. Null: not recorded for this ride. */
+  pinged: number | null;
   offersReceived: number;
   firstOfferSec: number | null;
   matchSec: number | null;
@@ -142,23 +148,24 @@ export interface StudioOffer {
   cheapest: boolean | null;
   premiumNgn: number | null;
   latencySec: number;
-  profileViewed: boolean;
-  driverRating: number;
-  pickupKm: number;
+  profileViewed: boolean | null;
+  driverRating: number | null;
+  pickupKm: number | null;
 }
 
 export interface StudioPing {
   sessionId: string;
   driverId: string;
-  ownership: CarOwnership;
-  driverRating: number;
-  pickupKm: number;
-  delivered: boolean;
-  seen: boolean;
+  /** Null (here and below): not recorded. */
+  ownership: CarOwnership | null;
+  driverRating: number | null;
+  pickupKm: number | null;
+  delivered: boolean | null;
+  seen: boolean | null;
   action: PingAction;
   declineReason: DeclineReason | null;
   /** How the driver's previous trip ended. */
-  lastTripEnd: LastTripEnd;
+  lastTripEnd: LastTripEnd | null;
   /** The rider's price against our suggested fare when pinged, %. */
   riderVsSuggestedPct: number;
   /** The offer's gap to the suggested fare, %, when they bid. */
@@ -194,10 +201,14 @@ export interface StudioLedgerRow {
 }
 
 export interface StudioDataset {
-  /** 'sample' until the endpoint exists. */
+  /** 'sample': the seeded rehearsal data; 'live': GET /admin/insights/studio-dataset. */
   source: 'sample' | 'live';
   from: string;
   to: string;
+  /** The zones to filter by (real: the launch zones and 'Outside zones'). */
+  zones: string[];
+  /** Fields the live data does not record yet: their charts say so instead of showing zeros. */
+  notRecorded: string[];
   sessions: StudioSession[];
   offers: StudioOffer[];
   pings: StudioPing[];
@@ -247,7 +258,8 @@ export function moveBandOf(openingNgn: number, finalNgn: number): (typeof MOVE_B
 }
 
 export const FREE_BANDS = ['0-2 free', '3-5 free', '6-10 free', '11+ free'] as const;
-export function freeBandOf(n: number): (typeof FREE_BANDS)[number] {
+export function freeBandOf(n: number | null): (typeof FREE_BANDS)[number] | null {
+  if (n === null) return null;
   if (n <= 2) return '0-2 free';
   if (n <= 5) return '3-5 free';
   if (n <= 10) return '6-10 free';
@@ -286,7 +298,8 @@ export function offerVsSuggestedBandOf(pct: number): (typeof OFFER_VS_SUGGESTED_
 }
 
 export const RATING_BANDS = ['Under 4.3★', '4.3-4.6★', '4.6-4.8★', '4.8★+'] as const;
-export function ratingBandOf(r: number): (typeof RATING_BANDS)[number] {
+export function ratingBandOf(r: number | null): (typeof RATING_BANDS)[number] | null {
+  if (r === null) return null;
   if (r < 4.3) return 'Under 4.3★';
   if (r < 4.6) return '4.3-4.6★';
   if (r < 4.8) return '4.6-4.8★';
@@ -294,7 +307,8 @@ export function ratingBandOf(r: number): (typeof RATING_BANDS)[number] {
 }
 
 export const PICKUP_BANDS = ['Under 1.5 km', '1.5-3 km', '3-4.5 km', '4.5+ km'] as const;
-export function pickupBandOf(km: number): (typeof PICKUP_BANDS)[number] {
+export function pickupBandOf(km: number | null): (typeof PICKUP_BANDS)[number] | null {
+  if (km === null) return null;
   if (km < 1.5) return 'Under 1.5 km';
   if (km < 3) return '1.5-3 km';
   if (km < 4.5) return '3-4.5 km';

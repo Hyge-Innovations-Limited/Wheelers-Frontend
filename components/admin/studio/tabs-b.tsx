@@ -27,7 +27,7 @@ const PER_KM = [
 
 // ── Money ─────────────────────────────────────────────────────────────────
 
-export function Money({ data, f, fx, pick, sel }: TabProps) {
+export function Money({ data, f, fx, pick, sel, nr }: TabProps) {
   const s = f.sessions;
   const done = s.filter((x) => x.outcome === "Completed" && x.trip);
   const attempts = f.payments;
@@ -40,10 +40,10 @@ export function Money({ data, f, fx, pick, sel }: TabProps) {
       <Kpis items={[
         { label: "Fares + fees collected", value: naira(gross) },
         { label: "Booking fees earned", value: naira(sum(done.map((x) => x.bookingFeeNgn))) },
-        { label: "Processor fees", value: naira(sum(s.map((x) => x.processorFeeNgn))) },
-        { label: "Messaging cost", value: naira(sum(s.map((x) => x.messagingCostNgn))) },
+        { label: "Processor fees", value: nr("processorFeeNgn") ? "—" : naira(sum(s.map((x) => x.processorFeeNgn))), ...(nr("processorFeeNgn") ? { hint: "not recorded yet" } : {}) },
+        { label: "Messaging cost", value: nr("messagingCostNgn") ? "—" : naira(sum(s.map((x) => x.messagingCostNgn))), ...(nr("messagingCostNgn") ? { hint: "not recorded yet" } : {}) },
         { label: "Wheelers net", value: naira(sum(s.map((x) => x.wheelersNetNgn))) },
-        { label: "Payment failure rate", value: pct(share(attempts.filter((p) => !p.success).length, attempts.length)) },
+        { label: "Payment failure rate", value: nr("paymentFailures") ? "—" : pct(share(attempts.filter((p) => !p.success).length, attempts.length)), ...(nr("paymentFailures") ? { hint: "not recorded yet" } : {}) },
       ]} />
       <Grid>
         <Panel title="Wheelers net by day" sub="Booking fees + commission − processor fees − messaging − refunds, per session day.">
@@ -52,13 +52,13 @@ export function Money({ data, f, fx, pick, sel }: TabProps) {
         <Panel title="Fares by method actually used" sub="Successful charges, after fallbacks. Click to filter payment charts.">
           <EChart height={260} option={hbarsOption({ rows: PAY_METHODS.map((m) => { const v = sum(fx("payMethod").sessions.filter((x) => x.outcome === "Completed" && x.trip).filter((x) => x.trip!.method === m).map((x) => x.agreedNgn ?? 0)); return { label: m, value: v, text: naira(v) }; }), selected: sel("payMethod") })} onClick={(c) => pick("payMethod", c.name)} />
         </Panel>
-        <Panel title="Net per completed trip by channel" sub="WhatsApp messaging costs eat most of the booking fee.">
+        <Panel title="Net per completed trip by channel" sub={nr("messagingCostNgn") ? "Wheelers' share per completed trip (messaging cost not recorded yet)." : "WhatsApp messaging costs eat most of the booking fee."}>
           <EChart height={220} option={hbarsOption({ rows: CHANNELS.map((ch) => { const v = mean(fx("channel").sessions.filter((x) => x.outcome === "Completed" && x.trip).filter((x) => x.channel === ch).map((x) => x.wheelersNetNgn)); return { label: ch, value: v ?? 0, text: naira(v) }; }), selected: sel("channel") })} onClick={(c) => pick("channel", c.name)} />
         </Panel>
         <Panel title="Driver wallet movements" sub="All drivers; date filter only.">
           <EChart height={280} option={hbarsOption({ rows: LEDGER_TYPES.map((t) => { const v = sum(ledger.filter((r) => r.type === t).map((r) => r.amountNgn)); return { label: t, value: v, text: naira(v) }; }) })} />
         </Panel>
-        <Panel title="Payment attempts by method" sub="Success vs failure of charge attempts.">
+        <Panel title="Payment attempts by method" sub="Success vs failure of charge attempts." missing={nr("paymentFailures") && "failed charge attempts are not kept (only payments that went through)."}>
           <Legend items={[{ name: "Success", color: STUDIO_COLORS.blue }, { name: "Failed", color: STUDIO_COLORS.orange }]} />
           <EChart height={240} option={stacked100Option({
             rows: PAY_METHODS.map((m) => ({ label: m, parts: { Success: attempts.filter((p) => p.method === m && p.success).length, Failed: attempts.filter((p) => p.method === m && !p.success).length } })),
@@ -205,7 +205,7 @@ export function PricePsychology({ f, fx, pick, sel, byId }: TabProps) {
 
 // ── People & promos ───────────────────────────────────────────────────────
 
-export function PeoplePromos({ f, fx, pick, sel }: TabProps) {
+export function PeoplePromos({ f, fx, pick, sel, nr }: TabProps) {
   const all = f.sessions;
   const s = all.filter(searched);
   const promoRides = s.filter((x) => x.promo !== "No promo");
@@ -217,9 +217,9 @@ export function PeoplePromos({ f, fx, pick, sel }: TabProps) {
   return (
     <>
       <Kpis items={[
-        { label: "Riders onboarded with a promo", value: pct(share(all.filter((x) => x.onboardedWithPromo).length, all.length)), hint: "of sessions (placeholder data)" },
+        { label: "Riders onboarded with a promo", value: nr("onboardedWithPromo") ? "—" : pct(share(all.filter((x) => x.onboardedWithPromo).length, all.length)), hint: nr("onboardedWithPromo") ? "not recorded yet" : "of sessions (placeholder data)" },
         { label: "Rides with a promo attached", value: num(promoRides.length) },
-        { label: "Completion with promo", value: pct(completion(promoRides)) },
+        { label: "Completion with promo", value: nr("promo") ? "—" : pct(completion(promoRides)), ...(nr("promo") ? { hint: "no promos yet" } : {}) },
         { label: "Completion without", value: pct(completion(noPromo)) },
         { label: "Median decision time", value: secs(median(s.flatMap((x) => (x.decisionSec === null ? [] : [x.decisionSec])))) },
       ]} />
@@ -227,7 +227,7 @@ export function PeoplePromos({ f, fx, pick, sel }: TabProps) {
         <Panel title="By how the rider joined" sub="Searched sessions and match rate by signup channel. Click to filter.">
           <EChart option={comboOption({ rows: searchedAndMatch(fx("joinedVia").sessions, (x) => x.joinedVia, JOINED_VIA), barName: "Searched", lineName: "Match rate", selected: sel("joinedVia") })} onClick={(c) => pick("joinedVia", c.name)} />
         </Panel>
-        <Panel title="Outcomes by promo on the ride" sub="Click a row to filter. Placeholder promo data.">
+        <Panel title="Outcomes by promo on the ride" sub="Click a row to filter. Placeholder promo data." missing={nr("promo") && "there are no promos yet (only referral cashback)."}>
           <Legend items={OUTCOME_SERIES} />
           <EChart height={220} option={stacked100Option({
             rows: PROMOS.map((p) => ({ label: p, parts: Object.fromEntries(countBy(fx("promo").sessions.filter((x) => x.promo === p), (x) => x.outcome, OUTCOMES).map((c) => [c.label, c.value])) })),

@@ -10,6 +10,7 @@ import * as echarts from "echarts/core";
 import { BarChart, LineChart, PieChart } from "echarts/charts";
 import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { ExportTable, optionTable, useExportScope } from "./export";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, MarkLineComponent, TooltipComponent, CanvasRenderer]);
 
@@ -39,7 +40,19 @@ const WRAP = { width: 62, overflow: "break" as const, lineHeight: 14 };
 type Option = echarts.EChartsCoreOption;
 export type ChartClick = { name: string; seriesName?: string };
 
-export function EChart({ option, height = 300, onClick }: { option: Option; height?: number; onClick?: (click: ChartClick) => void }) {
+/** A chart on screen; inside an Excel export (export.tsx), its numbers instead. */
+export function EChart(props: { option: Option; height?: number; onClick?: (click: ChartClick) => void }) {
+  const scope = useExportScope();
+  if (scope) return <ExportChart option={props.option} />;
+  return <LiveChart {...props} />;
+}
+
+function ExportChart({ option }: { option: Option }) {
+  const table = optionTable(option as Record<string, unknown>);
+  return <ExportTable columns={table.columns} rows={table.rows} />;
+}
+
+function LiveChart({ option, height = 300, onClick }: { option: Option; height?: number; onClick?: (click: ChartClick) => void }) {
   const box = useRef<HTMLDivElement>(null);
   const chart = useRef<echarts.ECharts | null>(null);
   const clickRef = useRef(onClick);
