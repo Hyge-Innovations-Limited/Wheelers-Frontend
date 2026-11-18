@@ -3,19 +3,16 @@
 /**
  * Analytics Studio (Timi, 18 Nov 2026): the "Wheelers Analytics Studio" mock-up, made real. Ten tabs, one filter bar,
  * and a click on any bar, slice or band cross-filters the whole page (again to clear). Session explorer drills into
- * any single request. Live data (GET /admin/insights/studio-dataset, the last 30 days) or the seeded sample, one
- * switch (lib/studio/source.ts). "Download Excel": one sheet per tab with the numbers on screen, then the data.
+ * any single request. Live data only (GET /admin/insights/studio-dataset, the last 30 days; lib/studio/source.ts). "Download Excel": one sheet per tab with the numbers on screen, then the data.
  * Owners only, like the live Studio (/admin/dashboard/studio/live).
  */
 import "../../../../../styles/studio.css";
-import Link from "next/link";
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useAdminSession } from "@/lib/admin-session";
 import { EmptyState, Spinner } from "@/components/admin/ui";
 import { applyFilters, NO_FILTERS, pickOf, togglePick, type Filtered, type Level, type StudioFilters } from "@/lib/studio/filters";
-import { useStudioDataset, type StudioSource } from "@/lib/studio/source";
+import { useStudioDataset } from "@/lib/studio/source";
 import type { StudioDataset } from "@/lib/studio/schema";
-import { num } from "@/lib/studio/stats";
 import { Chips, FilterBar } from "@/components/admin/studio/parts";
 import { DemandSupply, Drivers, OffersChoice, Overview, RiderPricing } from "@/components/admin/studio/tabs-a";
 import { Money, PeoplePromos, PriceAnatomy, PricePsychology } from "@/components/admin/studio/tabs-b";
@@ -45,26 +42,11 @@ export default function AnalyticsStudioPage() {
 }
 
 function Studio() {
-  const [source, setSource] = useState<StudioSource>("live");
-  const { data, loading, error, refresh } = useStudioDataset(source);
+  const { data, loading, error, refresh } = useStudioDataset("live");
   return (
     <div className="studio">
       <header className="studio-head">
-        <div>
-          <h1 className="studio-title">Wheelers Analytics Studio</h1>
-          <p className="studio-intro">
-            {data?.source === "sample" ? <><b>Simulated sample data</b> — {num(data.sessions.length)} ride requests, generated to rehearse the analytics. </> : null}
-            {data?.source === "live" ? <><b>Live data</b> — {num(data.sessions.length)} ride requests, {data.from} to {data.to}. Charts that need something we do not record yet say so. </> : null}
-            Filter with the bar below; <b>click any bar, slice or band to cross-filter the whole page</b> (click it again to clear). Open Session explorer to drill into any single request.
-          </p>
-        </div>
-        <div className="studio-head-right">
-          <div className="studio-source" role="group" aria-label="Data">
-            <button type="button" className={source === "live" ? "on" : ""} onClick={() => setSource("live")}>Live</button>
-            <button type="button" className={source === "sample" ? "on" : ""} onClick={() => setSource("sample")}>Sample</button>
-          </div>
-          <Link href="/admin/dashboard/studio/live" className="studio-link">Live numbers →</Link>
-        </div>
+        <h1 className="studio-title">Wheelers Analytics Studio</h1>
       </header>
       {error ? (
         <div className="studio-error">
@@ -142,9 +124,7 @@ function StudioBody({ data }: { data: StudioDataset }) {
       ) : null}
 
       <p className="studio-foot">
-        {data.source === "sample"
-          ? "Simulated data, generated in the browser from a fixed seed to rehearse Wheelers analytics — not real traffic."
-          : "Live data: one row per ride request; no names or phone numbers. Group rides are not in it yet."}
+        Live data: one row per ride request; no names or phone numbers. Group rides are not in it yet.
       </p>
     </>
   );
