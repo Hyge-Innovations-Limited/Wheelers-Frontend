@@ -51,6 +51,14 @@ const SESSION_FIELDS: Record<string, (s: StudioSession) => string | null> = {
   onScreen: (s) => (s.offersOnScreen ? screenBandOf(s.offersOnScreen) : null),
   payMethod: (s) => s.trip?.method ?? null,
   lateness: (s) => (s.trip?.pickupDelayMin == null ? null : latenessBandOf(s.trip.pickupDelayMin)),
+  // Devices (20 Nov 2026): the rider's device the request came from.
+  platform: (s) => s.platform,
+  phoneTier: (s) => s.phoneTier,
+  signal: (s) => s.signal,
+  mobileNetwork: (s) => s.mobileNetwork,
+  phoneModel: (s) => s.phoneModel,
+  appVersion: (s) => s.appVersion,
+  formsOpen: (s) => (s.formsOpen === null ? null : s.formsOpen ? 'Forms open' : "Forms don't open"),
 };
 
 const OFFER_FIELDS: Record<string, (o: StudioOffer) => string | null> = {
@@ -61,6 +69,9 @@ const OFFER_FIELDS: Record<string, (o: StudioOffer) => string | null> = {
   offerVsSuggested: (o) => offerVsSuggestedBandOf(o.gapToSuggestedPct),
   ratingBand: (o) => ratingBandOf(o.driverRating),
   pickupBand: (o) => pickupBandOf(o.pickupKm),
+  driverPlatform: (o) => o.driverPlatform,
+  driverPhoneTier: (o) => o.driverPhoneTier,
+  driverAppVersion: (o) => o.driverAppVersion,
 };
 
 const PING_FIELDS: Record<string, (p: StudioPing) => string | null> = {
@@ -70,6 +81,8 @@ const PING_FIELDS: Record<string, (p: StudioPing) => string | null> = {
   pingPickup: (p) => pickupBandOf(p.pickupKm),
   declineReason: (p) => p.declineReason,
   lastTripEnd: (p) => p.lastTripEnd,
+  pingPlatform: (p) => p.driverPlatform,
+  pingPhoneTier: (p) => p.driverPhoneTier,
 };
 
 export const sessionValue = (key: string, s: StudioSession) => SESSION_FIELDS[key]?.(s) ?? null;
@@ -102,6 +115,8 @@ export interface Filtered {
   dateOnly: (date: string) => boolean;
   priceChanges: StudioDataset['priceChanges'];
   payments: StudioDataset['payments'];
+  /** The devices of the requests and offers kept. */
+  devices: StudioDataset['devices'];
 }
 
 /**
@@ -116,9 +131,12 @@ export function applyFilters(data: StudioDataset, filters: StudioFilters, except
   const pingPicks = picks.filter((p) => p.level === 'ping');
   const sessions = data.sessions.filter((s) => dateOnly(s.date) && sessionPicks.every((p) => sessionValue(p.key, s) === p.value));
   const kept = new Set(sessions.map((s) => s.id));
+  const offers = data.offers.filter((o) => kept.has(o.sessionId) && offerPicks.every((p) => offerValue(p.key, o) === p.value));
+  const usedDevices = new Set<string>([...sessions.flatMap((s) => (s.deviceId ? [s.deviceId] : [])), ...offers.flatMap((o) => (o.driverDeviceId ? [o.driverDeviceId] : []))]);
   return {
     sessions,
-    offers: data.offers.filter((o) => kept.has(o.sessionId) && offerPicks.every((p) => offerValue(p.key, o) === p.value)),
+    offers,
+    devices: (data.devices ?? []).filter((d) => usedDevices.has(d.deviceId)),
     pings: data.pings.filter((p) => kept.has(p.sessionId) && pingPicks.every((k) => pingValue(k.key, p) === k.value)),
     dateOnly,
     priceChanges: data.priceChanges.filter((c) => kept.has(c.sessionId)),

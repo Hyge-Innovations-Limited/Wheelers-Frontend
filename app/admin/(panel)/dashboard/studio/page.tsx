@@ -17,6 +17,7 @@ import { Chips, FilterBar } from "@/components/admin/studio/parts";
 import { DemandSupply, Drivers, OffersChoice, Overview, RiderPricing } from "@/components/admin/studio/tabs-a";
 import { Money, PeoplePromos, PriceAnatomy, PricePsychology } from "@/components/admin/studio/tabs-b";
 import { Explorer } from "@/components/admin/studio/explorer";
+import { Devices } from "@/components/admin/studio/tabs-c";
 import { downloadWorkbook, ExportScope, type ExportItem } from "@/components/admin/studio/export";
 import type { TabProps } from "@/components/admin/studio/tab-props";
 
@@ -30,6 +31,7 @@ const TABS = [
   { id: "anatomy", label: "Price anatomy", View: PriceAnatomy },
   { id: "psychology", label: "Price psychology", View: PricePsychology },
   { id: "people", label: "People & promos", View: PeoplePromos },
+  { id: "devices", label: "Devices", View: Devices },
   { id: "explorer", label: "Session explorer", View: Explorer },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import {
-  CHANNELS, DAY_PARTS, FARE_SIZES, JOINED_VIA, PROMO_FILTER, RIDE_CLASSES, RIDER_TYPES, VARIANTS, WEATHERS, ZONES,
+  CHANNELS, DAY_PARTS, FARE_SIZES, JOINED_VIA, PHONE_TIERS, PLATFORMS, PROMO_FILTER, RIDE_CLASSES, RIDER_TYPES, SIGNALS, VARIANTS, WEATHERS, ZONES,
 } from "@/lib/studio/schema";
 import { pickLabel, pickOf, setPick, type StudioFilters } from "@/lib/studio/filters";
 import { ExportTable, PanelTitle, useExportScope, type Cell } from "./export";
@@ -86,6 +86,9 @@ const BAR: Array<{ key: string; label: string; options: readonly string[]; wide?
   { key: "fareSize", label: "Fare size", options: FARE_SIZES },
   { key: "destZone", label: "Destination", options: ZONES },
   { key: "joinedVia", label: "Rider joined via", options: JOINED_VIA },
+  { key: "platform", label: "Phone", options: PLATFORMS },
+  { key: "phoneTier", label: "Phone tier", options: PHONE_TIERS },
+  { key: "signal", label: "Signal", options: SIGNALS },
 ];
 
 /** Promo is one dropdown over two fields: a promo on the ride, or how the rider was onboarded. */

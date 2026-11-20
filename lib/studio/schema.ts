@@ -23,6 +23,11 @@ export const PROMOS = ['First-ride promo', 'Rain promo', 'No promo'] as const;
 /** The Promo filter: a promo on the ride, or how the rider was onboarded. */
 export const PROMO_FILTER = [...PROMOS, 'Onboarded with promo', 'Onboarded without promo'] as const;
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+/** Devices (Timi, 20 Nov 2026): the phone each request and each offer came from. */
+export const PLATFORMS = ['Android', 'iPhone', 'Computer', 'Other', 'Unknown'] as const;
+export const PHONE_TIERS = ['Low-end', 'Mid-range', 'High-end', 'Unknown'] as const;
+export const SIGNALS = ['4G', '3G', '2G', 'Unknown'] as const;
+export const MOBILE_NETWORKS = ['MTN', 'Airtel', 'Glo', '9mobile', 'Unknown'] as const;
 
 export const OUTCOMES = ['Completed', 'Cancelled after match', 'Rider cancelled', 'Search timed out', 'Left before search'] as const;
 export const INTENT_ENDS = ['Got a ride', 'Gave up negotiating', 'Match fell through', 'Gave up after timeout', 'Left before search'] as const;
@@ -57,6 +62,9 @@ export type DeclineReason = (typeof DECLINE_REASONS)[number];
 export type PingAction = (typeof PING_ACTIONS)[number];
 export type LastTripEnd = (typeof LAST_TRIP_ENDS)[number];
 export type LedgerType = (typeof LEDGER_TYPES)[number];
+export type Platform = (typeof PLATFORMS)[number];
+export type PhoneTier = (typeof PHONE_TIERS)[number];
+export type Signal = (typeof SIGNALS)[number];
 
 export interface StudioTrip {
   status: 'Completed' | 'Cancelled after match';
@@ -128,6 +136,23 @@ export interface StudioSession {
   wheelersNetNgn: number;
   fuelNgn: number;
   trip: StudioTrip | null;
+  /** The rider's device the request came from (a short id). Null: none known. */
+  deviceId: string | null;
+  /** False: from before devices were recorded per request, the newest device of that kind they had then. */
+  deviceRecorded: boolean;
+  platform: Platform;
+  phoneMaker: string | null;
+  /** As people say it ("Galaxy A10s"), else as the maker reports it. */
+  phoneModel: string | null;
+  phoneTier: PhoneTier;
+  /** The mobile signal the ride page saw (the app does not say). */
+  signal: Signal;
+  appVersion: string | null;
+  browser: string | null;
+  /** From the WhatsApp number (approximate: numbers move between networks). */
+  mobileNetwork: string;
+  /** WhatsApp forms open on their phone; null: not known. */
+  formsOpen: boolean | null;
 }
 
 export interface StudioOffer {
@@ -151,6 +176,11 @@ export interface StudioOffer {
   profileViewed: boolean | null;
   driverRating: number | null;
   pickupKm: number | null;
+  driverDeviceId: string | null;
+  driverPlatform: Platform;
+  driverPhoneTier: PhoneTier;
+  driverPhoneModel: string | null;
+  driverAppVersion: string | null;
 }
 
 export interface StudioPing {
@@ -170,6 +200,37 @@ export interface StudioPing {
   riderVsSuggestedPct: number;
   /** The offer's gap to the suggested fare, %, when they bid. */
   bidVsSuggestedPct: number | null;
+  driverPlatform: Platform;
+  driverPhoneTier: PhoneTier;
+}
+
+/** One device in the period's requests and offers. */
+export interface StudioDevice {
+  deviceId: string;
+  owner: 'Rider' | 'Driver';
+  ownerId: string;
+  /** app | web | whatsapp */
+  source: string;
+  platform: Platform;
+  phoneMaker: string | null;
+  phoneModel: string | null;
+  phoneModelCode: string | null;
+  phoneTier: PhoneTier;
+  signal: Signal;
+  appVersion: string | null;
+  browser: string | null;
+  osVersion: string | null;
+  ramGb: number | null;
+  cpuCores: number | null;
+  screen: string | null;
+  mobileNetwork: string;
+  formsOpen: boolean | null;
+  firstSeen: string;
+  lastSeen: string;
+  timesSeen: number;
+  requests: number;
+  completed: number;
+  bids: number;
 }
 
 export interface StudioPriceChange {
@@ -216,6 +277,7 @@ export interface StudioDataset {
   payments: StudioPayment[];
   shifts: StudioShiftDay[];
   ledger: StudioLedgerRow[];
+  devices: StudioDevice[];
 }
 
 // ── Bands, shared by the charts and the filters ──────────────────────────

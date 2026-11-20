@@ -90,6 +90,7 @@ export async function downloadWorkbook(p: { name: string; items: ExportItem[]; t
   data("Data · pings", p.f.pings as unknown as Array<Record<string, unknown>>);
   data("Data · price changes", p.f.priceChanges as unknown as Array<Record<string, unknown>>);
   data("Data · payments", p.f.payments as unknown as Array<Record<string, unknown>>);
+  data("Data · devices", p.f.devices as unknown as Array<Record<string, unknown>>);
   const blob = new Blob([await book.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

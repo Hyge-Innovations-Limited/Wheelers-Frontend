@@ -9,7 +9,7 @@ import {
   type CarOwnership, type Channel, type DeclineReason, type LastTripEnd, type Outcome, type PayMethod,
   type PriceTrigger, type Promo, type RideClass, type RiderType, type StudioDataset, type StudioLedgerRow,
   type StudioOffer, type StudioPayment, type StudioPing, type StudioPriceChange, type StudioSession, type StudioShiftDay,
-  type Variant, type Weather, type Weekday, type Zone, WEEKDAYS,
+  type Variant, type Weather, type Weekday, type Zone, WEEKDAYS, type Platform, type PhoneTier, type Signal, type StudioDevice,
 } from './schema';
 
 const SESSIONS = 4453;
@@ -53,11 +53,57 @@ export function sampleDataset(seed = 20261001): StudioDataset {
     onboardedWithPromo: chance(0.39),
     variant: (chance(0.5) ? 'Control (40s)' : 'Treatment (60s)') as Variant,
   }));
+  // Devices: a rough Lagos mix (more Android, many low-end; drivers' phones from the same shelf).
+  const PHONES: Array<{ platform: Platform; maker: string; model: string; tier: PhoneTier; w: number }> = [
+    { platform: 'Android', maker: 'samsung', model: 'Galaxy A14', tier: 'Low-end', w: 14 },
+    { platform: 'Android', maker: 'samsung', model: 'Galaxy A05s', tier: 'Low-end', w: 10 },
+    { platform: 'Android', maker: 'TECNO', model: 'Tecno KI7', tier: 'Low-end', w: 16 },
+    { platform: 'Android', maker: 'INFINIX', model: 'Infinix X6525', tier: 'Low-end', w: 12 },
+    { platform: 'Android', maker: 'samsung', model: 'Galaxy A54 5G', tier: 'Mid-range', w: 10 },
+    { platform: 'Android', maker: 'Xiaomi', model: 'Redmi Note 12', tier: 'Mid-range', w: 9 },
+    { platform: 'Android', maker: 'samsung', model: 'Galaxy S23 Ultra', tier: 'High-end', w: 4 },
+    { platform: 'iPhone', maker: 'Apple', model: 'iPhone 11', tier: 'High-end', w: 8 },
+    { platform: 'iPhone', maker: 'Apple', model: 'iPhone 13', tier: 'High-end', w: 9 },
+    { platform: 'iPhone', maker: 'Apple', model: 'iPhone XR', tier: 'Mid-range', w: 5 },
+    { platform: 'Computer', maker: '', model: '', tier: 'Unknown', w: 3 },
+  ];
+  const devicePick = () => pick(PHONES, PHONES.map((x) => x.w));
+  const devices: StudioDevice[] = [];
+  const makeDevice = (owner: 'Rider' | 'Driver', ownerId: string) => {
+    const ph = devicePick();
+    const d: StudioDevice = {
+      deviceId: `DV-${String(devices.length + 1).padStart(4, '0')}`, owner, ownerId, source: owner === 'Driver' ? 'app' : chance(0.5) ? 'app' : 'web',
+      platform: ph.platform, phoneMaker: ph.maker || null, phoneModel: ph.model || null, phoneModelCode: null, phoneTier: ph.tier,
+      signal: pick<Signal>(['4G', '3G', '2G', 'Unknown'], [60, 22, 5, 13]), appVersion: '1.4.2', browser: null, osVersion: null,
+      ramGb: ph.tier === 'Low-end' ? 3 : ph.tier === 'Mid-range' ? 6 : 8, cpuCores: 8, screen: null,
+      mobileNetwork: pick(['MTN', 'Airtel', 'Glo', '9mobile'], [58, 27, 12, 3]), formsOpen: ph.platform === 'Computer' ? false : true,
+      firstSeen: `${FROM}T08:00:00.000Z`, lastSeen: `${TO}T20:00:00.000Z`, timesSeen: int(2, 40), requests: 0, completed: 0, bids: 0,
+    };
+    devices.push(d);
+    return d;
+  };
+  const riderDevice = new Map<string, StudioDevice>();
+  const driverDevice = new Map<string, StudioDevice>();
   const drivers = Array.from({ length: 350 }, (_, i) => ({
     id: `D-${String(i + 1).padStart(3, '0')}`,
     ownership: pick<CarOwnership>(['Owns car', 'Hire purchase', 'Rented'], [40, 35, 25]),
     rating: Math.min(5, Math.max(3.9, 4.6 + normal() * 0.22)),
   }));
+
+  const riderDeviceFields = (riderId: string) => {
+    const d = riderDevice.get(riderId) ?? makeDevice('Rider', riderId);
+    riderDevice.set(riderId, d);
+    return {
+      deviceId: d.deviceId, deviceRecorded: true, platform: d.platform, phoneMaker: d.phoneMaker, phoneModel: d.phoneModel, phoneTier: d.phoneTier,
+      signal: d.source === 'web' ? d.signal : ('Unknown' as Signal), appVersion: d.source === 'app' ? d.appVersion : null, browser: d.source === 'web' ? 'Chrome' : null,
+      mobileNetwork: d.mobileNetwork, formsOpen: d.formsOpen,
+    };
+  };
+  const driverDeviceFields = (driverId: string) => {
+    const d = driverDevice.get(driverId) ?? makeDevice('Driver', driverId);
+    driverDevice.set(driverId, d);
+    return { driverDeviceId: d.deviceId, driverPlatform: d.platform, driverPhoneTier: d.phoneTier, driverPhoneModel: d.phoneModel, driverAppVersion: d.appVersion };
+  };
 
   const sessions: StudioSession[] = [];
   const offers: StudioOffer[] = [];
@@ -100,6 +146,7 @@ export function sampleDataset(seed = 20261001): StudioDataset {
         weather, zone, destZone, variant: rider.variant, promo, intentId, attempt, km: Math.round(km * 10) / 10,
         suggestedNgn, fareSize: fareSizeOf(suggestedNgn),
         freeDrivers: 0,
+        ...riderDeviceFields(rider.id),
       };
       const messagingPerMsg = channel === 'WhatsApp' ? 12 : 0;
 
@@ -173,12 +220,14 @@ export function sampleDataset(seed = 20261001): StudioDataset {
               gapToRiderPct: Math.round(((priceNgn / price) - 1) * 1000) / 10, gapToSuggestedPct: Math.round(bidVs * 10) / 10,
               round, status: 'Expired', listPos: null, cheapest: null, premiumNgn: null, latencySec,
               profileViewed: chance(0.17), driverRating: Math.round(d.rating * 100) / 100, pickupKm,
+              ...driverDeviceFields(d.id),
             });
           }
           pings.push({
             sessionId: id, driverId: d.id, ownership: d.ownership, driverRating: Math.round(d.rating * 100) / 100, pickupKm,
             delivered, seen, action, declineReason, lastTripEnd, riderVsSuggestedPct: Math.round(riderVs * 10) / 10,
             bidVsSuggestedPct: bidVs === null ? null : Math.round(bidVs * 10) / 10,
+            driverPlatform: driverDeviceFields(d.id).driverPlatform, driverPhoneTier: driverDeviceFields(d.id).driverPhoneTier,
           });
         }
         // Accept now? The cheapest offers in this round are on screen.
@@ -303,5 +352,9 @@ export function sampleDataset(seed = 20261001): StudioDataset {
     );
   }
 
-  return { source: 'sample', from: FROM, to: TO, zones: ['Yaba', 'Lagos Island', 'Outside zones'], notRecorded: [], sessions, offers, pings, priceChanges, payments, shifts, ledger };
+  for (const x of sessions) { const d = devices.find((v) => v.deviceId === x.deviceId); if (d) { d.requests += 1; if (x.outcome === 'Completed') d.completed += 1; } }
+  const byDevice = new Map(devices.map((d) => [d.deviceId, d]));
+  for (const o of offers) { const d = o.driverDeviceId ? byDevice.get(o.driverDeviceId) : null; if (d) d.bids += 1; }
+
+  return { source: 'sample', from: FROM, to: TO, zones: ['Yaba', 'Lagos Island', 'Outside zones'], notRecorded: [], sessions, offers, pings, priceChanges, payments, shifts, ledger, devices };
 }
